@@ -1,0 +1,4 @@
+class ClanChatBubble {
+friends/
+pk/
+}
