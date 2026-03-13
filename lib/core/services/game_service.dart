@@ -9,16 +9,16 @@ class GameService {
   final DatabaseService _databaseService = DatabaseService();
 
   // Game types
-  static const Map<String, GameConfig> gameConfigs = {
+  static const Map<String, GameConfig> gameConfigs = <String, GameConfig>{
     'roulette': GameConfig(
       minBet: 100,
       maxBet: 10000,
-      winMultiplier: {'red': 2, 'black': 2, 'green': 35},
+      winMultiplier: <String, int>{'red': 2, 'black': 2, 'green': 35},
     ),
     'threePatti': GameConfig(
       minBet: 500,
       maxBet: 50000,
-      winMultiplier: {'trail': 100, 'pureSequence': 50, 'sequence': 20, 'color': 10, 'pair': 5, 'highCard': 1},
+      winMultiplier: <String, int>{'trail': 100, 'pureSequence': 50, 'sequence': 20, 'color': 10, 'pair': 5, 'highCard': 1},
     ),
     'ludo': GameConfig(
       minBet: 200,
@@ -33,7 +33,7 @@ class GameService {
     'greedyCat': GameConfig(
       minBet: 100,
       maxBet: 5000,
-      winMultiplier: {'jackpot': 50, 'bonus': 10, 'small': 2},
+      winMultiplier: <String, int>{'jackpot': 50, 'bonus': 10, 'small': 2},
     ),
   };
 
@@ -43,11 +43,11 @@ class GameService {
     required String betType, // 'red', 'black', 'green', or number 0-36
     required int? betNumber,
   }) {
-    final random = Random();
-    final winningNumber = random.nextInt(37); // 0-36
+    final Random random = Random();
+    final int winningNumber = random.nextInt(37); // 0-36
     
-    bool won = false;
-    int winAmount = 0;
+    var won = false;
+    var winAmount = 0;
     
     if (betType == 'number' && betNumber != null) {
       won = winningNumber == betNumber;
@@ -57,15 +57,12 @@ class GameService {
         case 'red':
           won = _isRed(winningNumber);
           winAmount = won ? betAmount * 2 : 0;
-          break;
         case 'black':
           won = _isBlack(winningNumber);
           winAmount = won ? betAmount * 2 : 0;
-          break;
         case 'green':
           won = winningNumber == 0;
           winAmount = won ? betAmount * 35 : 0;
-          break;
       }
     }
     
@@ -78,7 +75,7 @@ class GameService {
   }
 
   bool _isRed(int number) {
-    final redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
+    final List<int> redNumbers = <int>[1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
     return redNumbers.contains(number);
   }
 
@@ -93,31 +90,26 @@ class GameService {
     required List<int> playerCards,
     required List<int> opponentCards,
   }) {
-    final playerRank = _getThreePattiRank(playerCards);
-    final opponentRank = _getThreePattiRank(opponentCards);
+    final ThreePattiRank playerRank = _getThreePattiRank(playerCards);
+    final ThreePattiRank opponentRank = _getThreePattiRank(opponentCards);
     
-    int comparison = _compareThreePattiRanks(playerRank, opponentRank);
-    bool won = comparison > 0;
-    bool draw = comparison == 0;
+    var comparison = _compareThreePattiRanks(playerRank, opponentRank);
+    var won = comparison > 0;
+    var draw = comparison == 0;
     
-    int winAmount = 0;
+    var winAmount = 0;
     if (won) {
       switch (playerRank.type) {
         case 'trail':
           winAmount = betAmount * 100;
-          break;
         case 'pureSequence':
           winAmount = betAmount * 50;
-          break;
         case 'sequence':
           winAmount = betAmount * 20;
-          break;
         case 'color':
           winAmount = betAmount * 10;
-          break;
         case 'pair':
           winAmount = betAmount * 5;
-          break;
         default:
           winAmount = betAmount * 2;
       }
@@ -144,8 +136,8 @@ class GameService {
     }
     
     // Check for pure sequence (straight flush)
-    bool sameSuit = cards[0] % 4 == cards[1] % 4 && cards[1] % 4 == cards[2] % 4;
-    bool sequence = (cards[1] - cards[0] == 1) && (cards[2] - cards[1] == 1);
+    var sameSuit = cards[0] % 4 == cards[1] % 4 && cards[1] % 4 == cards[2] % 4;
+    var sequence = (cards[1] - cards[0] == 1) && (cards[2] - cards[1] == 1);
     
     if (sameSuit && sequence) {
       return ThreePattiRank(type: 'pureSequence', value: cards[2] ~/ 4);
@@ -171,7 +163,7 @@ class GameService {
   }
 
   int _compareThreePattiRanks(ThreePattiRank a, ThreePattiRank b) {
-    final typeOrder = ['trail', 'pureSequence', 'sequence', 'color', 'pair', 'highCard'];
+    final List<String> typeOrder = <String>['trail', 'pureSequence', 'sequence', 'color', 'pair', 'highCard'];
     
     if (a.type != b.type) {
       return typeOrder.indexOf(a.type).compareTo(typeOrder.indexOf(b.type));
@@ -188,14 +180,14 @@ class GameService {
     required int diceRoll,
   }) {
     // Simple Ludo logic - first to reach home wins
-    const homePosition = 57;
+    const int homePosition = 57;
     
-    int newPlayerPosition = playerPosition + diceRoll;
+    var newPlayerPosition = playerPosition + diceRoll;
     if (newPlayerPosition > homePosition) {
       newPlayerPosition = homePosition - (newPlayerPosition - homePosition);
     }
     
-    bool won = newPlayerPosition >= homePosition;
+    final var won = newPlayerPosition >= homePosition;
     
     return LudoResult(
       newPosition: newPlayerPosition,
@@ -212,14 +204,15 @@ class GameService {
     required String striker,
   }) {
     // Simple Carrom scoring
-    int score = 0;
-    for (String piece in pocketed) {
-      if (piece == 'queen') score += 50;
-      else if (piece == 'red') score += 25;
+    var score = 0;
+    for (var piece in pocketed) {
+      if (piece == 'queen') {
+        score += 50;
+      } else if (piece == 'red') score += 25;
       else score += 10;
     }
     
-    bool won = score > 100;
+    final var won = score > 100;
     
     return CarromResult(
       score: score,
@@ -234,12 +227,12 @@ class GameService {
     required int betAmount,
     required int selectedBox,
   }) {
-    final random = Random();
-    final winningBox = random.nextInt(10) + 1; // 1-10
+    final Random random = Random();
+    final int winningBox = random.nextInt(10) + 1; // 1-10
     
-    bool won = selectedBox == winningBox;
-    int winAmount = 0;
-    String prize = '';
+    final var won = selectedBox == winningBox;
+    var winAmount = 0;
+    var prize = '';
     
     if (won) {
       // Jackpot or small prize
@@ -267,17 +260,17 @@ class GameService {
   WerewolfGame createWerewolfGame(List<String> players) {
     if (players.length < 6) throw Exception('Need at least 6 players');
     
-    int werewolfCount = (players.length ~/ 4).clamp(2, 4);
-    int villagerCount = players.length - werewolfCount - 1; // 1 for seer
+    var werewolfCount = (players.length ~/ 4).clamp(2, 4);
+    var villagerCount = players.length - werewolfCount - 1; // 1 for seer
     
     // Assign roles
-    List<String> roles = List.filled(werewolfCount, 'werewolf');
+    var roles = List<String>.filled(werewolfCount, 'werewolf');
     roles.addAll(List.filled(villagerCount, 'villager'));
     roles.add('seer');
     roles.shuffle();
     
-    Map<String, String> playerRoles = {};
-    for (int i = 0; i < players.length; i++) {
+    var playerRoles = <String, String><String, String>{};
+    for (var i = 0; i < players.length; i++) {
       playerRoles[players[i]] = roles[i];
     }
     
@@ -320,22 +313,22 @@ class GameService {
 
   // ==================== TRIVIA ====================
   List<TriviaQuestion> getTriviaQuestions() {
-    return [
+    return <TriviaQuestion>[
       TriviaQuestion(
         question: 'What is the capital of France?',
-        options: ['London', 'Berlin', 'Paris', 'Madrid'],
+        options: <String>['London', 'Berlin', 'Paris', 'Madrid'],
         correctAnswer: 2,
         points: 100,
       ),
       TriviaQuestion(
         question: 'Which planet is known as the Red Planet?',
-        options: ['Venus', 'Mars', 'Jupiter', 'Saturn'],
+        options: <String>['Venus', 'Mars', 'Jupiter', 'Saturn'],
         correctAnswer: 1,
         points: 100,
       ),
       TriviaQuestion(
         question: 'Who painted the Mona Lisa?',
-        options: ['Van Gogh', 'Picasso', 'Da Vinci', 'Rembrandt'],
+        options: <String>['Van Gogh', 'Picasso', 'Da Vinci', 'Rembrandt'],
         correctAnswer: 2,
         points: 100,
       ),
@@ -347,15 +340,15 @@ class GameService {
     required List<int> answers,
     required List<TriviaQuestion> questions,
   }) {
-    int score = 0;
-    for (int i = 0; i < answers.length; i++) {
+    var score = 0;
+    for (var i = 0; i < answers.length; i++) {
       if (answers[i] == questions[i].correctAnswer) {
         score += questions[i].points;
       }
     }
     
-    int totalPossible = questions.fold(0, (sum, q) => sum + q.points);
-    double percentage = score / totalPossible;
+    var totalPossible = questions.fold(0, (int sum, TriviaQuestion q) => sum + q.points);
+    var percentage = score / totalPossible;
     
     return TriviaResult(
       score: score,
@@ -367,14 +360,14 @@ class GameService {
 
   // ==================== PICTIONARY ====================
   PictionaryWord getRandomWord() {
-    List<String> words = [
+    var words = <String><String>[
       'cat', 'dog', 'house', 'car', 'tree', 'sun', 'moon', 'star',
       'apple', 'banana', 'book', 'chair', 'table', 'phone', 'computer',
       'happy', 'sad', 'angry', 'scared', 'excited', 'tired',
       'running', 'jumping', 'eating', 'sleeping', 'driving',
     ];
     
-    final random = Random();
+    final Random random = Random();
     return PictionaryWord(
       word: words[random.nextInt(words.length)],
       difficulty: random.nextInt(3), // 0=easy, 1=medium, 2=hard
@@ -383,7 +376,7 @@ class GameService {
 
   // ==================== TRUTH OR DARE ====================
   TruthOrDareQuestion getRandomQuestion(String type) {
-    List<TruthOrDareQuestion> questions = [
+    var questions = <TruthOrDareQuestion><TruthOrDareQuestion>[
       // Truth questions
       TruthOrDareQuestion(
         type: 'truth',
@@ -419,8 +412,8 @@ class GameService {
       ),
     ];
     
-    final filtered = questions.where((q) => q.type == type).toList();
-    final random = Random();
+    final List<TruthOrDareQuestion> filtered = questions.where((TruthOrDareQuestion q) => q.type == type).toList();
+    final Random random = Random();
     return filtered[random.nextInt(filtered.length)];
   }
 
@@ -433,12 +426,12 @@ class GameService {
     required int winAmount,
     Map<String, dynamic>? gameData,
   }) async {
-    final user = await _databaseService.getUser(userId);
+    final UserModel? user = await _databaseService.getUser(userId);
     if (user == null) throw Exception('User not found');
 
-    int finalCoins = user.coins;
-    int finalDiamonds = user.diamonds;
-    int coinsChange = 0;
+    var finalCoins = user.coins;
+    var finalDiamonds = user.diamonds;
+    var coinsChange = 0;
 
     if (won) {
       // Add winnings
@@ -462,7 +455,7 @@ class GameService {
     user.coins = finalCoins;
 
     // Update user
-    await _databaseService.updateUser(userId, {
+    await _databaseService.updateUser(userId, <String, dynamic>{
       'coins': finalCoins,
       'diamonds': finalDiamonds,
       'stats': user.stats,
@@ -502,7 +495,7 @@ class GameService {
     required int winAmount,
     Map<String, dynamic>? gameData,
   }) async {
-    await _firestore.collection('game_history').add({
+    await _firestore.collection('game_history').add(<String, >{
       'userId': userId,
       'gameType': gameType,
       'betAmount': betAmount,
@@ -538,22 +531,18 @@ class GameService {
 // ==================== MODEL CLASSES ====================
 
 class GameConfig {
-  final int minBet;
-  final int maxBet;
-  final dynamic winMultiplier;
   
   GameConfig({
     required this.minBet,
     required this.maxBet,
     required this.winMultiplier,
   });
+  final int minBet;
+  final int maxBet;
+  final dynamic winMultiplier;
 }
 
 class RouletteResult {
-  final int winningNumber;
-  final bool won;
-  final int winAmount;
-  final String betType;
   
   RouletteResult({
     required this.winningNumber,
@@ -561,21 +550,20 @@ class RouletteResult {
     required this.winAmount,
     required this.betType,
   });
+  final int winningNumber;
+  final bool won;
+  final int winAmount;
+  final String betType;
 }
 
 class ThreePattiRank {
-  final String type;
-  final int value;
   
   ThreePattiRank({required this.type, required this.value});
+  final String type;
+  final int value;
 }
 
 class ThreePattiResult {
-  final ThreePattiRank playerRank;
-  final ThreePattiRank opponentRank;
-  final bool won;
-  final bool draw;
-  final int winAmount;
   
   ThreePattiResult({
     required this.playerRank,
@@ -584,13 +572,14 @@ class ThreePattiResult {
     required this.draw,
     required this.winAmount,
   });
+  final ThreePattiRank playerRank;
+  final ThreePattiRank opponentRank;
+  final bool won;
+  final bool draw;
+  final int winAmount;
 }
 
 class LudoResult {
-  final int newPosition;
-  final int diceRoll;
-  final bool won;
-  final int winAmount;
   
   LudoResult({
     required this.newPosition,
@@ -598,13 +587,13 @@ class LudoResult {
     required this.won,
     required this.winAmount,
   });
+  final int newPosition;
+  final int diceRoll;
+  final bool won;
+  final int winAmount;
 }
 
 class CarromResult {
-  final int score;
-  final String striker;
-  final bool won;
-  final int winAmount;
   
   CarromResult({
     required this.score,
@@ -612,13 +601,13 @@ class CarromResult {
     required this.won,
     required this.winAmount,
   });
+  final int score;
+  final String striker;
+  final bool won;
+  final int winAmount;
 }
 
 class GreedyCatResult {
-  final int winningBox;
-  final bool won;
-  final int winAmount;
-  final String prize;
   
   GreedyCatResult({
     required this.winningBox,
@@ -626,16 +615,13 @@ class GreedyCatResult {
     required this.winAmount,
     required this.prize,
   });
+  final int winningBox;
+  final bool won;
+  final int winAmount;
+  final String prize;
 }
 
 class WerewolfGame {
-  List<String> players;
-  Map<String, String> roles;
-  String phase;
-  int dayCount;
-  List<String> alive;
-  Map<String, int> votes = {};
-  List<String> killed = [];
   
   WerewolfGame({
     required this.players,
@@ -644,6 +630,13 @@ class WerewolfGame {
     required this.dayCount,
     required this.alive,
   });
+  List<String> players;
+  Map<String, String> roles;
+  String phase;
+  int dayCount;
+  List<String> alive;
+  Map<String, int> votes = <String, int>{};
+  List<String> killed = <String>[];
   
   void kill(String player) {
     killed.add(player);
@@ -665,10 +658,6 @@ class WerewolfGame {
 }
 
 class TriviaQuestion {
-  final String question;
-  final List<String> options;
-  final int correctAnswer;
-  final int points;
   
   TriviaQuestion({
     required this.question,
@@ -676,13 +665,13 @@ class TriviaQuestion {
     required this.correctAnswer,
     required this.points,
   });
+  final String question;
+  final List<String> options;
+  final int correctAnswer;
+  final int points;
 }
 
 class TriviaResult {
-  final int score;
-  final int totalPossible;
-  final double percentage;
-  final bool passed;
   
   TriviaResult({
     required this.score,
@@ -690,33 +679,32 @@ class TriviaResult {
     required this.percentage,
     required this.passed,
   });
+  final int score;
+  final int totalPossible;
+  final double percentage;
+  final bool passed;
 }
 
 class PictionaryWord {
-  final String word;
-  final int difficulty;
   
   PictionaryWord({required this.word, required this.difficulty});
+  final String word;
+  final int difficulty;
 }
 
 class TruthOrDareQuestion {
-  final String type;
-  final String text;
-  final int difficulty;
   
   TruthOrDareQuestion({
     required this.type,
     required this.text,
     required this.difficulty,
   });
+  final String type;
+  final String text;
+  final int difficulty;
 }
 
 class GamePlayResult {
-  final bool won;
-  final int betAmount;
-  final int winAmount;
-  final int finalCoins;
-  final int finalDiamonds;
   
   GamePlayResult({
     required this.won,
@@ -725,14 +713,14 @@ class GamePlayResult {
     required this.finalCoins,
     required this.finalDiamonds,
   });
+  final bool won;
+  final int betAmount;
+  final int winAmount;
+  final int finalCoins;
+  final int finalDiamonds;
 }
 
 class GameLeaderboardEntry {
-  final String userId;
-  final String username;
-  final String? photoURL;
-  final int totalWinnings;
-  final int gamesPlayed;
   
   GameLeaderboardEntry({
     required this.userId,
@@ -741,4 +729,9 @@ class GameLeaderboardEntry {
     required this.totalWinnings,
     required this.gamesPlayed,
   });
+  final String userId;
+  final String username;
+  final String? photoURL;
+  final int totalWinnings;
+  final int gamesPlayed;
 }

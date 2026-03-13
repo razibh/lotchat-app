@@ -7,9 +7,9 @@ import '../../widgets/common/empty_state_widget.dart';
 import '../../widgets/animation/fade_animation.dart';
 
 class ClanRequestsScreen extends StatefulWidget {
-  final String clanId;
 
   const ClanRequestsScreen({Key? key, required this.clanId}) : super(key: key);
+  final String clanId;
 
   @override
   State<ClanRequestsScreen> createState() => _ClanRequestsScreenState();
@@ -18,9 +18,9 @@ class ClanRequestsScreen extends StatefulWidget {
 class _ClanRequestsScreenState extends State<ClanRequestsScreen> 
     with LoadingMixin, ToastMixin {
   
-  final _clanService = ServiceLocator().get<ClanService>();
+  final ClanService _clanService = ServiceLocator().get<ClanService>();
   
-  List<Map<String, dynamic>> _requests = [];
+  List<Map<String, dynamic>> _requests = <Map<String, dynamic>>[];
   bool _isLoading = true;
 
   @override
@@ -31,7 +31,7 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
   }
 
   void _setupStream() {
-    _clanService.getJoinRequests(widget.clanId).listen((requests) {
+    _clanService.getJoinRequests(widget.clanId).listen((List<Map<String, dynamic>> requests) {
       if (mounted) {
         setState(() {
           _requests = requests;
@@ -47,7 +47,7 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
 
   Future<void> _approveRequest(String requestId, String userId) async {
     await runWithLoading(() async {
-      final success = await _clanService.approveRequest(requestId, widget.clanId);
+      final bool success = await _clanService.approveRequest(requestId, widget.clanId);
       if (success) {
         showSuccess('Request approved');
       }
@@ -56,7 +56,7 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
 
   Future<void> _rejectRequest(String requestId) async {
     await runWithLoading(() async {
-      final success = await _clanService.rejectRequest(requestId);
+      final bool success = await _clanService.rejectRequest(requestId);
       if (success) {
         showSuccess('Request rejected');
       }
@@ -64,8 +64,8 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
   }
 
   String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
+    final DateTime now = DateTime.now();
+    final Duration difference = now.difference(time);
 
     if (difference.inMinutes < 1) {
       return 'Just now';
@@ -97,7 +97,7 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
                   padding: const EdgeInsets.all(16),
                   itemCount: _requests.length,
                   itemBuilder: (context, index) {
-                    final request = _requests[index];
+                    final Map<String, dynamic> request = _requests[index];
                     final timestamp = (request['timestamp'] as Timestamp).toDate();
                     
                     return FadeAnimation(
@@ -117,7 +117,7 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
                           subtitle: Text('Requested ${_formatTime(timestamp)}'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: [
+                            children: <>[
                               IconButton(
                                 icon: const Icon(Icons.check_circle, color: Colors.green),
                                 onPressed: () => _approveRequest(

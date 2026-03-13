@@ -1,0 +1,12 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="32" cy="32" r="24" fill="url(#giftOfDayGradient)"/>
+  <circle cx="32" cy="28" r="8" stroke="white" stroke-width="2" fill="none"/>
+  <text x="32" y="48" font-size="8" text-anchor="middle" fill="white">GIFT</text>
+  <text x="32" y="56" font-size="8" text-anchor="middle" fill="white">OF DAY</text>
+  <defs>
+    <linearGradient id="giftOfDayGradient" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F59E0B"/>
+      <stop offset="1" stop-color="#D97706"/>
+    </linearGradient>
+  </defs>
+</svg>

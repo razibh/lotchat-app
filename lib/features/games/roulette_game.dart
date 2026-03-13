@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 
 class RouletteGame extends StatefulWidget {
-  final int betAmount;
 
   const RouletteGame({super.key, required this.betAmount});
+  final int betAmount;
 
   @override
   State<RouletteGame> createState() => _RouletteGameState();
@@ -20,10 +20,10 @@ class _RouletteGameState extends State<RouletteGame>
   String selectedColor = 'red';
   int userCoins = 10000;
 
-  final List<int> numbers = List.generate(37, (index) => index);
-  final Map<String, List<int>> colors = {
-    'red': [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36],
-    'black': [
+  final List<int> numbers = List.generate(37, (int index) => index);
+  final Map<String, List<int>> colors = <String, List<int>>{
+    'red': <int>[1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36],
+    'black': <int>[
       2,
       4,
       6,
@@ -43,7 +43,7 @@ class _RouletteGameState extends State<RouletteGame>
       33,
       35
     ],
-    'green': [0],
+    'green': <int>[0],
   };
 
   @override
@@ -51,7 +51,7 @@ class _RouletteGameState extends State<RouletteGame>
     super.initState();
     _spinController = AnimationController(
       vsync: this,
-      duration: Duration(seconds: 3),
+      duration: const Duration(seconds: 3),
     );
 
     _spinAnimation = Tween<double>(begin: 0, end: 360 * 10).animate(
@@ -83,13 +83,13 @@ class _RouletteGameState extends State<RouletteGame>
   }
 
   void _checkWin() {
-    final won = selectedColor == 'red' && colors['red']!.contains(result) ||
+    final bool won = selectedColor == 'red' && colors['red']!.contains(result) ||
         selectedColor == 'black' && colors['black']!.contains(result) ||
         selectedColor == 'green' && result == 0;
 
     if (won) {
-      int multiplier = selectedColor == 'green' ? 35 : 2;
-      int winnings = widget.betAmount * multiplier;
+      final var multiplier = selectedColor == 'green' ? 35 : 2;
+      final int winnings = widget.betAmount * multiplier;
       setState(() {
         userCoins += winnings;
       });
@@ -115,7 +115,7 @@ class _RouletteGameState extends State<RouletteGame>
                 ? 'You won $amount coins!\nWinning number: $result'
                 : 'Better luck next time!\nWinning number: $result',
           ),
-          actions: [
+          actions: <>[
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
@@ -141,11 +141,11 @@ class _RouletteGameState extends State<RouletteGame>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF1a1a2e), Color(0xFF16213e)],
+            colors: <>[Color(0xFF1a1a2e), Color(0xFF16213e)],
           ),
         ),
         child: Column(
-          children: [
+          children: <>[
             // Coins Display
             Container(
               margin: EdgeInsets.all(16),
@@ -156,7 +156,7 @@ class _RouletteGameState extends State<RouletteGame>
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
+                children: <>[
                   Text(
                     'Your Coins:',
                     style: TextStyle(color: Colors.white, fontSize: 18),
@@ -181,9 +181,9 @@ class _RouletteGameState extends State<RouletteGame>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [Colors.purple, Colors.pink],
+                  colors: <>[Colors.purple, Colors.pink],
                 ),
-                boxShadow: [
+                boxShadow: <>[
                   BoxShadow(
                     color: Colors.purple.withOpacity(0.5),
                     blurRadius: 20,
@@ -214,7 +214,7 @@ class _RouletteGameState extends State<RouletteGame>
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(
-                  children: [
+                  children: <>[
                     Text(
                       'Result: $result',
                       style: TextStyle(
@@ -250,7 +250,7 @@ class _RouletteGameState extends State<RouletteGame>
             Container(
               margin: EdgeInsets.all(16),
               child: Column(
-                children: [
+                children: <>[
                   Text(
                     'Place your bet on:',
                     style: TextStyle(color: Colors.white, fontSize: 16),
@@ -258,7 +258,7 @@ class _RouletteGameState extends State<RouletteGame>
                   SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
+                    children: <>[
                       _buildBetOption(
                           'RED', Colors.red, selectedColor == 'red'),
                       _buildBetOption(
@@ -337,9 +337,9 @@ class _RouletteGameState extends State<RouletteGame>
 }
 
 class RouletteWheelPainter extends CustomPainter {
-  final int? winningNumber;
 
   RouletteWheelPainter({this.winningNumber});
+  final int? winningNumber;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -351,13 +351,13 @@ class RouletteWheelPainter extends CustomPainter {
     final greenPaint = Paint()..color = Colors.green;
 
     // Draw 37 segments
-    for (int i = 0; i < 37; i++) {
-      final startAngle = (2 * pi / 37) * i;
-      final sweepAngle = 2 * pi / 37;
+    for (var i = 0; i < 37; i++) {
+      final double startAngle = (2 * pi / 37) * i;
+      const double sweepAngle = 2 * pi / 37;
 
       final paint = i == 0
           ? greenPaint
-          : [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+          : <int>[1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
                   .contains(i)
               ? redPaint
               : blackPaint;
@@ -380,7 +380,7 @@ class RouletteWheelPainter extends CustomPainter {
       );
       textPainter.layout();
 
-      final angle = startAngle + sweepAngle / 2;
+      final double angle = startAngle + sweepAngle / 2;
       final textOffset = Offset(
         center.dx + (radius * 0.7) * cos(angle),
         center.dy + (radius * 0.7) * sin(angle),

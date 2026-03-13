@@ -1,15 +1,4 @@
 class CallSettings {
-  bool enableBeautyFilter;
-  bool enableVoiceChanger;
-  int beautyLevel; // 0-100
-  String selectedVoice;
-  bool enableNoiseCancellation;
-  bool enableEchoCancellation;
-  bool autoAnswer;
-  int maxCallDuration;
-  bool recordCalls;
-  bool pictureInPicture;
-  VideoQuality videoQuality;
 
   CallSettings({
     this.enableBeautyFilter = false,
@@ -24,20 +13,6 @@ class CallSettings {
     this.pictureInPicture = true,
     this.videoQuality = VideoQuality.hd,
   });
-
-  Map<String, dynamic> toJson() => {
-    'enableBeautyFilter': enableBeautyFilter,
-    'enableVoiceChanger': enableVoiceChanger,
-    'beautyLevel': beautyLevel,
-    'selectedVoice': selectedVoice,
-    'enableNoiseCancellation': enableNoiseCancellation,
-    'enableEchoCancellation': enableEchoCancellation,
-    'autoAnswer': autoAnswer,
-    'maxCallDuration': maxCallDuration,
-    'recordCalls': recordCalls,
-    'pictureInPicture': pictureInPicture,
-    'videoQuality': videoQuality.index,
-  };
 
   factory CallSettings.fromJson(Map<String, dynamic> json) {
     return CallSettings(
@@ -54,6 +29,31 @@ class CallSettings {
       videoQuality: VideoQuality.values[json['videoQuality'] ?? 1],
     );
   }
+  bool enableBeautyFilter;
+  bool enableVoiceChanger;
+  int beautyLevel; // 0-100
+  String selectedVoice;
+  bool enableNoiseCancellation;
+  bool enableEchoCancellation;
+  bool autoAnswer;
+  int maxCallDuration;
+  bool recordCalls;
+  bool pictureInPicture;
+  VideoQuality videoQuality;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'enableBeautyFilter': enableBeautyFilter,
+    'enableVoiceChanger': enableVoiceChanger,
+    'beautyLevel': beautyLevel,
+    'selectedVoice': selectedVoice,
+    'enableNoiseCancellation': enableNoiseCancellation,
+    'enableEchoCancellation': enableEchoCancellation,
+    'autoAnswer': autoAnswer,
+    'maxCallDuration': maxCallDuration,
+    'recordCalls': recordCalls,
+    'pictureInPicture': pictureInPicture,
+    'videoQuality': videoQuality.index,
+  };
 }
 
 enum VideoQuality {

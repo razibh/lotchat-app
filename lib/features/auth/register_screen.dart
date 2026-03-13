@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/di/service_locator.dart';
+import '../../core/models/user_model.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/utils/validators.dart';
 import '../../mixins/loading_mixin.dart';
@@ -19,7 +20,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> 
     with LoadingMixin, ToastMixin, FormMixin {
   
-  final _authService = ServiceLocator().get<AuthService>();
+  final AuthService _authService = ServiceLocator().get<AuthService>();
   
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -51,7 +52,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     
     await runWithLoading(() async {
       try {
-        final user = await _authService.signUpWithEmail(
+        final UserModel? user = await _authService.signUpWithEmail(
           email: _emailController.text.trim(),
           password: _passwordController.text,
           username: _usernameController.text.trim(),
@@ -91,7 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             autovalidateMode: autovalidateMode,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+              children: <>[
                 const SizedBox(height: 20),
                 
                 // Username
@@ -165,7 +166,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 
                 // Terms & Conditions
                 Row(
-                  children: [
+                  children: <>[
                     Checkbox(
                       value: _acceptTerms,
                       onChanged: (value) {
@@ -185,7 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                           text: const TextSpan(
                             text: 'I accept the ',
                             style: TextStyle(color: Colors.black),
-                            children: [
+                            children: <>[
                               TextSpan(
                                 text: 'Terms & Conditions',
                                 style: TextStyle(
@@ -221,7 +222,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 // Login link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
+                  children: <>[
                     const Text('Already have an account? '),
                     TextButton(
                       onPressed: () {

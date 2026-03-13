@@ -14,20 +14,20 @@ class ClanService {
     String? rules,
     String? emblem,
     ClanJoinType joinType = ClanJoinType.open,
-    List<String> tags = const [],
+    List<String> tags = const <String>[],
   }) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('User not logged in');
 
     try {
-      final clanData = ClanModel(
+      final ClanModel clanData = ClanModel(
         id: '', // Will be set after creation
         name: name,
         description: description,
         rules: rules,
         emblem: emblem,
         leaderId: user.uid,
-        members: [
+        members: <ClanMember>[
           ClanMember(
             userId: user.uid,
             username: user.displayName ?? 'User',
@@ -51,7 +51,7 @@ class ClanService {
       final docRef = await _firestore.collection('clans').add(clanData.toJson());
       
       // Update user's clan ID
-      await _firestore.collection('users').doc(user.uid).update({
+      await _firestore.collection('users').doc(user.uid).update(<String, >{
         'clanId': docRef.id,
       });
 
@@ -88,7 +88,7 @@ class ClanService {
       final snapshot = await _firestore
           .collection('clans')
           .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: query + '\uf8ff')
+          .where('name', isLessThanOrEqualTo: '$query\uf8ff')
           .limit(20)
           .get();
 
@@ -97,7 +97,7 @@ class ClanService {
           .toList();
     } catch (e) {
       print('Error searching clans: $e');
-      return [];
+      return <ClanModel>[];
     }
   }
 
@@ -114,10 +114,10 @@ class ClanService {
         final clanDoc = await transaction.get(clanRef);
         if (!clanDoc.exists) throw Exception('Clan not found');
 
-        final clan = ClanModel.fromJson(clanDoc.data()!);
+        final ClanModel clan = ClanModel.fromJson(clanDoc.data()!);
         
         if (clan.isFull) throw Exception('Clan is full');
-        if (clan.members.any((m) => m.userId == user.uid)) {
+        if (clan.members.any((ClanMember m) => m.userId == user.uid)) {
           throw Exception('Already a member');
         }
 
@@ -125,7 +125,7 @@ class ClanService {
           // Add to join requests
           transaction.set(
             _firestore.collection('clan_requests').doc(),
-            {
+            <String, >{
               'clanId': clanId,
               'userId': user.uid,
               'username': user.displayName,
@@ -136,7 +136,7 @@ class ClanService {
           );
         } else {
           // Direct join
-          final newMember = ClanMember(
+          final ClanMember newMember = ClanMember(
             userId: user.uid,
             username: user.displayName ?? 'User',
             avatar: user.photoURL,
@@ -144,8 +144,8 @@ class ClanService {
             joinedAt: DateTime.now(),
           );
 
-          transaction.update(clanRef, {
-            'members': FieldValue.arrayUnion([newMember.toJson()]),
+          transaction.update(clanRef, <String, >{
+            'members': FieldValue.arrayUnion(<Map<String, dynamic>>[newMember.toJson()]),
             'memberCount': FieldValue.increment(1),
             'lastActive': FieldValue.serverTimestamp(),
           });
@@ -153,7 +153,7 @@ class ClanService {
           // Update user's clan ID
           transaction.update(
             _firestore.collection('users').doc(user.uid),
-            {'clanId': clanId},
+            <String, String>{'clanId': clanId},
           );
         }
       });
@@ -176,7 +176,7 @@ class ClanService {
         final clanDoc = await transaction.get(clanRef);
         if (!clanDoc.exists) throw Exception('Clan not found');
 
-        final clan = ClanModel.fromJson(clanDoc.data()!);
+        final ClanModel clan = ClanModel.fromJson(clanDoc.data()!);
         
         if (clan.isLeader(user.uid)) {
           // Leader can't leave, must transfer leadership or disband
@@ -184,15 +184,15 @@ class ClanService {
         }
 
         // Remove member
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayRemove([clan.getMember(user.uid)!.toJson()]),
+        transaction.update(clanRef, <String, >{
+          'members': FieldValue.arrayRemove(<Map<String, dynamic>>[clan.getMember(user.uid)!.toJson()]),
           'memberCount': FieldValue.increment(-1),
         });
 
         // Update user's clan ID
         transaction.update(
           _firestore.collection('users').doc(user.uid),
-          {'clanId': null},
+          <String, Null>{'clanId': null},
         );
       });
 
@@ -214,13 +214,13 @@ class ClanService {
         final clanDoc = await transaction.get(clanRef);
         if (!clanDoc.exists) throw Exception('Clan not found');
 
-        final clan = ClanModel.fromJson(clanDoc.data()!);
+        final ClanModel clan = ClanModel.fromJson(clanDoc.data()!);
         
         if (!clan.canManage(user.uid)) {
           throw Exception('Not authorized to kick members');
         }
 
-        final member = clan.getMember(memberId);
+        final ClanMember? member = clan.getMember(memberId);
         if (member == null) throw Exception('Member not found');
 
         if (member.role == ClanRole.leader) {
@@ -232,15 +232,15 @@ class ClanService {
         }
 
         // Remove member
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayRemove([member.toJson()]),
+        transaction.update(clanRef, <String, >{
+          'members': FieldValue.arrayRemove(<Map<String, dynamic>>[member.toJson()]),
           'memberCount': FieldValue.increment(-1),
         });
 
         // Update user's clan ID
         transaction.update(
           _firestore.collection('users').doc(memberId),
-          {'clanId': null},
+          <String, Null>{'clanId': null},
         );
       });
 
@@ -262,17 +262,17 @@ class ClanService {
         final clanDoc = await transaction.get(clanRef);
         if (!clanDoc.exists) throw Exception('Clan not found');
 
-        final clan = ClanModel.fromJson(clanDoc.data()!);
+        final ClanModel clan = ClanModel.fromJson(clanDoc.data()!);
         
         if (!clan.canManage(user.uid)) {
           throw Exception('Not authorized to change roles');
         }
 
-        final member = clan.getMember(memberId);
+        final ClanMember? member = clan.getMember(memberId);
         if (member == null) throw Exception('Member not found');
 
         // Update member role
-        final updatedMember = ClanMember(
+        final ClanMember updatedMember = ClanMember(
           userId: member.userId,
           username: member.username,
           avatar: member.avatar,
@@ -286,12 +286,12 @@ class ClanService {
         );
 
         // Remove old and add updated
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayRemove([member.toJson()]),
+        transaction.update(clanRef, <String, >{
+          'members': FieldValue.arrayRemove(<Map<String, dynamic>>[member.toJson()]),
         });
         
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayUnion([updatedMember.toJson()]),
+        transaction.update(clanRef, <String, >{
+          'members': FieldValue.arrayUnion(<Map<String, dynamic>>[updatedMember.toJson()]),
         });
       });
 
@@ -323,12 +323,12 @@ class ClanService {
       
       if (!requestDoc.exists) throw Exception('Request not found');
 
-      final requestData = requestDoc.data()!;
+      final requestData = requestDoc.data();
       final userId = requestData['userId'];
 
       await _firestore.runTransaction((transaction) async {
         // Update request status
-        transaction.update(requestRef, {'status': 'approved'});
+        transaction.update(requestRef, <String, String>{'status': 'approved'});
 
         // Add to clan members
         final clanRef = _firestore.collection('clans').doc(clanId);
@@ -336,7 +336,7 @@ class ClanService {
         
         if (!clanDoc.exists) throw Exception('Clan not found');
 
-        final newMember = ClanMember(
+        final ClanMember newMember = ClanMember(
           userId: userId,
           username: requestData['username'],
           avatar: requestData['avatar'],
@@ -344,15 +344,15 @@ class ClanService {
           joinedAt: DateTime.now(),
         );
 
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayUnion([newMember.toJson()]),
+        transaction.update(clanRef, <String, >{
+          'members': FieldValue.arrayUnion(<Map<String, dynamic>>[newMember.toJson()]),
           'memberCount': FieldValue.increment(1),
         });
 
         // Update user's clan ID
         transaction.update(
           _firestore.collection('users').doc(userId),
-          {'clanId': clanId},
+          <String, String>{'clanId': clanId},
         );
       });
 
@@ -368,7 +368,7 @@ class ClanService {
       await _firestore
           .collection('clan_requests')
           .doc(requestId)
-          .update({'status': 'rejected'});
+          .update(<String, String>{'status': 'rejected'});
       return true;
     } catch (e) {
       print('Error rejecting request: $e');
@@ -386,12 +386,12 @@ class ClanService {
         final clanDoc = await transaction.get(clanRef);
         if (!clanDoc.exists) return;
 
-        final clan = ClanModel.fromJson(clanDoc.data()!);
-        final member = clan.getMember(userId);
+        final ClanModel clan = ClanModel.fromJson(clanDoc.data()!);
+        final ClanMember? member = clan.getMember(userId);
         
         if (member == null) return;
 
-        final updatedMember = ClanMember(
+        final ClanMember updatedMember = ClanMember(
           userId: member.userId,
           username: member.username,
           avatar: member.avatar,
@@ -405,20 +405,20 @@ class ClanService {
         );
 
         // Update member
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayRemove([member.toJson()]),
+        transaction.update(clanRef, <String, >{
+          'members': FieldValue.arrayRemove(<Map<String, dynamic>>[member.toJson()]),
         });
         
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayUnion([updatedMember.toJson()]),
+        transaction.update(clanRef, <String, >{
+          'members': FieldValue.arrayUnion(<Map<String, dynamic>>[updatedMember.toJson()]),
           'xp': FieldValue.increment(points),
           'lastActive': FieldValue.serverTimestamp(),
         });
 
         // Check for level up
-        final newXp = clan.xp + points;
+        final int newXp = clan.xp + points;
         if (newXp >= clan.xpToNextLevel) {
-          transaction.update(clanRef, {
+          transaction.update(clanRef, <String, >{
             'level': FieldValue.increment(1),
             'xp': newXp - clan.xpToNextLevel,
             'xpToNextLevel': clan.xpToNextLevel * 2, // Double required XP
@@ -438,12 +438,12 @@ class ClanService {
         final clanDoc = await transaction.get(clanRef);
         if (!clanDoc.exists) return;
 
-        final clan = ClanModel.fromJson(clanDoc.data()!);
-        final member = clan.getMember(userId);
+        final ClanModel clan = ClanModel.fromJson(clanDoc.data()!);
+        final ClanMember? member = clan.getMember(userId);
         
         if (member == null) return;
 
-        final updatedMember = ClanMember(
+        final ClanMember updatedMember = ClanMember(
           userId: member.userId,
           username: member.username,
           avatar: member.avatar,
@@ -456,12 +456,12 @@ class ClanService {
           stats: member.stats,
         );
 
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayRemove([member.toJson()]),
+        transaction.update(clanRef, <String, >{
+          'members': FieldValue.arrayRemove(<Map<String, dynamic>>[member.toJson()]),
         });
         
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayUnion([updatedMember.toJson()]),
+        transaction.update(clanRef, <String, >{
+          'members': FieldValue.arrayUnion(<Map<String, dynamic>>[updatedMember.toJson()]),
           'clanCoins': FieldValue.increment(amount),
         });
       });
@@ -491,10 +491,10 @@ class ClanService {
         .doc(clanId)
         .snapshots()
         .map((doc) {
-          if (!doc.exists) return [];
-          final clan = ClanModel.fromJson(doc.data()!);
-          final members = clan.members;
-          members.sort((a, b) => b.activityPoints.compareTo(a.activityPoints));
+          if (!doc.exists) return <dynamic>[];
+          final ClanModel clan = ClanModel.fromJson(doc.data()!);
+          final List<ClanMember> members = clan.members;
+          members.sort((ClanMember a, ClanMember b) => b.activityPoints.compareTo(a.activityPoints));
           return members;
         });
   }

@@ -25,16 +25,16 @@ class AuthService {
   }) async {
     try {
       // Create user in Firebase Auth
-      final UserCredential result = await _auth.createUserWithEmailAndPassword(
+      final result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      final User? user = result.user;
+      final user = result.user;
       if (user == null) return null;
 
       // Create user model
-      final UserModel newUser = UserModel(
+      final newUser = UserModel(
         uid: user.uid,
         username: username,
         email: email,
@@ -42,9 +42,7 @@ class AuthService {
         country: country,
         region: region,
         coins: 1000, // Welcome bonus
-        diamonds: 0,
         tier: UserTier.normal,
-        role: UserRole.user,
         lastActive: DateTime.now(),
       );
 
@@ -69,16 +67,16 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final UserCredential result = await _auth.signInWithEmailAndPassword(
+      final result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      final User? user = result.user;
+      final user = result.user;
       if (user == null) return null;
 
       // Get user data from Firestore
-      final userData = await _databaseService.getUser(user.uid);
+      final UserModel? userData = await _databaseService.getUser(user.uid);
 
       // Save to local storage
       final prefs = await SharedPreferences.getInstance();
@@ -95,10 +93,10 @@ class AuthService {
   // Login with Google
   Future<UserModel?> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null;
 
-      final GoogleSignInAuthentication googleAuth = 
+      final googleAuth = 
           await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
@@ -106,14 +104,14 @@ class AuthService {
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential result = 
+      final result = 
           await _auth.signInWithCredential(credential);
       
-      final User? user = result.user;
+      final user = result.user;
       if (user == null) return null;
 
       // Check if user exists in Firestore
-      var userData = await _databaseService.getUser(user.uid);
+      UserModel? userData = await _databaseService.getUser(user.uid);
       
       if (userData == null) {
         // New user - create profile
@@ -126,9 +124,6 @@ class AuthService {
           country: 'Unknown',
           region: 'Unknown',
           coins: 1000,
-          diamonds: 0,
-          tier: UserTier.normal,
-          role: UserRole.user,
           lastActive: DateTime.now(),
         );
         await _databaseService.createUser(userData);
@@ -169,13 +164,13 @@ class AuthService {
         smsCode: smsCode,
       );
 
-      final UserCredential result = 
+      final result = 
           await _auth.signInWithCredential(credential);
       
-      final User? user = result.user;
+      final user = result.user;
       if (user == null) return null;
 
-      var userData = await _databaseService.getUser(user.uid);
+      UserModel? userData = await _databaseService.getUser(user.uid);
       
       if (userData == null) {
         userData = UserModel(
@@ -186,9 +181,6 @@ class AuthService {
           country: 'Unknown',
           region: 'Unknown',
           coins: 1000,
-          diamonds: 0,
-          tier: UserTier.normal,
-          role: UserRole.user,
           lastActive: DateTime.now(),
         );
         await _databaseService.createUser(userData);

@@ -6,7 +6,7 @@ class GameProvider extends ChangeNotifier {
   final GameService _gameService = GameService();
   final PaymentService _paymentService = PaymentService();
   
-  Map<String, dynamic> _gameState = {};
+  Map<String, dynamic> _gameState = <String, dynamic>{};
   bool _isPlaying = false;
   int _score = 0;
   String? _error;
@@ -17,7 +17,7 @@ class GameProvider extends ChangeNotifier {
   String? get error => _error;
 
   void startGame(String gameType, int betAmount) {
-    _gameState = {
+    _gameState = <String, dynamic>{
       'type': gameType,
       'bet': betAmount,
       'status': 'started',
@@ -45,20 +45,20 @@ class GameProvider extends ChangeNotifier {
       if (!hasBalance) throw Exception('Insufficient balance');
 
       // Play game
-      final result = _gameService.playRoulette(
+      final RouletteResult result = _gameService.playRoulette(
         betAmount: betAmount,
         betType: betType,
         betNumber: betNumber,
       );
 
       // Process result
-      final processed = await _gameService.processGameResult(
+      final GamePlayResult processed = await _gameService.processGameResult(
         userId: userId,
         gameType: 'roulette',
         betAmount: betAmount,
         won: result.won,
         winAmount: result.winAmount,
-        gameData: {
+        gameData: <String, dynamic>{
           'winningNumber': result.winningNumber,
           'betType': betType,
         },
@@ -69,7 +69,7 @@ class GameProvider extends ChangeNotifier {
       }
 
       notifyListeners();
-      return {
+      return <String, dynamic>{
         'result': result,
         'processed': processed,
       };
@@ -89,19 +89,19 @@ class GameProvider extends ChangeNotifier {
       final hasBalance = await _paymentService.checkBalance(userId, betAmount);
       if (!hasBalance) throw Exception('Insufficient balance');
 
-      final result = _gameService.playThreePatti(
+      final ThreePattiResult result = _gameService.playThreePatti(
         betAmount: betAmount,
         playerCards: playerCards,
         opponentCards: opponentCards,
       );
 
-      final processed = await _gameService.processGameResult(
+      final GamePlayResult processed = await _gameService.processGameResult(
         userId: userId,
         gameType: 'three_patti',
         betAmount: betAmount,
         won: result.won,
         winAmount: result.winAmount,
-        gameData: {
+        gameData: <String, dynamic>{
           'playerRank': result.playerRank.type,
           'opponentRank': result.opponentRank.type,
         },
@@ -112,7 +112,7 @@ class GameProvider extends ChangeNotifier {
       }
 
       notifyListeners();
-      return {
+      return <String, dynamic>{
         'result': result,
         'processed': processed,
       };
@@ -131,18 +131,18 @@ class GameProvider extends ChangeNotifier {
       final hasBalance = await _paymentService.checkBalance(userId, betAmount);
       if (!hasBalance) throw Exception('Insufficient balance');
 
-      final result = _gameService.playGreedyCat(
+      final GreedyCatResult result = _gameService.playGreedyCat(
         betAmount: betAmount,
         selectedBox: selectedBox,
       );
 
-      final processed = await _gameService.processGameResult(
+      final GamePlayResult processed = await _gameService.processGameResult(
         userId: userId,
         gameType: 'greedy_cat',
         betAmount: betAmount,
         won: result.won,
         winAmount: result.winAmount,
-        gameData: {
+        gameData: <String, dynamic>{
           'winningBox': result.winningBox,
           'prize': result.prize,
         },
@@ -153,7 +153,7 @@ class GameProvider extends ChangeNotifier {
       }
 
       notifyListeners();
-      return {
+      return <String, dynamic>{
         'result': result,
         'processed': processed,
       };
@@ -164,7 +164,7 @@ class GameProvider extends ChangeNotifier {
   }
 
   void endGame() {
-    _gameState = {};
+    _gameState = <String, dynamic>{};
     _isPlaying = false;
     notifyListeners();
   }

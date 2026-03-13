@@ -1,0 +1,32 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="150" cy="150" r="140" stroke="url(#birthdayGradient)" stroke-width="15" fill="none"/>
+  
+  <!-- Cake at Bottom -->
+  <rect x="120" y="180" width="60" height="30" rx="5" fill="#FFB6C1"/>
+  <rect x="130" y="160" width="40" height="20" rx="5" fill="#FF69B4"/>
+  <rect x="140" y="140" width="20" height="20" rx="5" fill="#FF1493"/>
+  
+  <!-- Candles -->
+  <rect x="145" y="120" width="10" height="25" fill="#FFD700"/>
+  <circle cx="150" cy="115" r="5" fill="#FF4500"/>
+  
+  <!-- Balloons -->
+  <circle cx="80" cy="100" r="20" fill="#FF69B4"/>
+  <line x1="80" y1="120" x2="80" y2="150" stroke="#FF69B4" stroke-width="2"/>
+  <circle cx="220" cy="80" r="20" fill="#8B5CF6"/>
+  <line x1="220" y1="100" x2="220" y2="130" stroke="#8B5CF6" stroke-width="2"/>
+  
+  <!-- Confetti Dots -->
+  <circle cx="50" cy="200" r="3" fill="#FFD700"/>
+  <circle cx="70" cy="220" r="3" fill="#FF69B4"/>
+  <circle cx="250" cy="180" r="3" fill="#8B5CF6"/>
+  <circle cx="230" cy="250" r="3" fill="#FF4500"/>
+  
+  <defs>
+    <linearGradient id="birthdayGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF69B4"/>
+      <stop offset="50%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+</svg>

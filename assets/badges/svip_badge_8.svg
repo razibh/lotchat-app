@@ -1,0 +1,24 @@
+<svg width="150" height="150" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="75" cy="75" r="60" fill="url(#gradient_svip8)" stroke="url(#stroke_gradient)" stroke-width="4"/>
+  <path d="M50 55 L75 30 L100 55 L90 90 L75 100 L60 90 L50 55Z" fill="white" opacity="1"/>
+  <text x="75" y="85" font-size="28" font-weight="bold" text-anchor="middle" fill="white" font-family="Arial">SVIP</text>
+  <text x="75" y="115" font-size="18" font-weight="bold" text-anchor="middle" fill="white" font-family="Arial">8</text>
+  <path d="M65 40 L75 30 L85 40 L80 50 L75 55 L70 50 L65 40Z" fill="white" opacity="0.8"/>
+  <path d="M55 70 L75 55 L95 70 L85 90 L75 95 L65 90 L55 70Z" fill="white" opacity="0.6"/>
+  <circle cx="50" cy="60" r="3" fill="white" opacity="0.5"/>
+  <circle cx="100" cy="60" r="3" fill="white" opacity="0.5"/>
+  <circle cx="75" cy="45" r="4" fill="white" opacity="0.7"/>
+  <defs>
+    <linearGradient id="gradient_svip8" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="33%" stop-color="#EC4899"/>
+      <stop offset="66%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="stroke_gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="50%" stop-color="#FFA500"/>
+      <stop offset="100%" stop-color="#FF4500"/>
+    </linearGradient>
+  </defs>
+</svg>

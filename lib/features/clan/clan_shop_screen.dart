@@ -8,9 +8,9 @@ import '../../widgets/common/custom_button.dart';
 import '../../widgets/animation/fade_animation.dart';
 
 class ClanShopScreen extends StatefulWidget {
-  final String clanId;
 
   const ClanShopScreen({Key? key, required this.clanId}) : super(key: key);
+  final String clanId;
 
   @override
   State<ClanShopScreen> createState() => _ClanShopScreenState();
@@ -19,13 +19,13 @@ class ClanShopScreen extends StatefulWidget {
 class _ClanShopScreenState extends State<ClanShopScreen> 
     with LoadingMixin, ToastMixin, DialogMixin {
   
-  final _clanService = ServiceLocator().get<ClanService>();
+  final ClanService _clanService = ServiceLocator().get<ClanService>();
   
   int _clanCoins = 1250;
   String _selectedCategory = 'All';
-  List<ClanShopItem> _items = [];
+  List<ClanShopItem> _items = <ClanShopItem>[];
 
-  final List<String> _categories = ['All', 'Badges', 'Frames', 'Effects', 'Gifts'];
+  final List<String> _categories = <String>['All', 'Badges', 'Frames', 'Effects', 'Gifts'];
 
   @override
   void initState() {
@@ -37,7 +37,7 @@ class _ClanShopScreenState extends State<ClanShopScreen>
     await runWithLoading(() async {
       await Future.delayed(const Duration(seconds: 1));
       
-      _items = [
+      _items = <ClanShopItem>[
         ClanShopItem(
           id: '1',
           name: 'Clan Warrior Badge',
@@ -126,7 +126,7 @@ class _ClanShopScreenState extends State<ClanShopScreen>
     if (_selectedCategory == 'All') {
       return _items;
     }
-    return _items.where((item) => item.category == _selectedCategory).toList();
+    return _items.where((ClanShopItem item) => item.category == _selectedCategory).toList();
   }
 
   Future<void> _purchaseItem(ClanShopItem item) async {
@@ -135,13 +135,13 @@ class _ClanShopScreenState extends State<ClanShopScreen>
       return;
     }
 
-    final confirmed = await showConfirmDialog(
+    final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Purchase Item',
       message: 'Buy ${item.name} for ${item.price} clan coins?',
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       await runWithLoading(() async {
         await Future.delayed(const Duration(seconds: 1));
         
@@ -160,7 +160,7 @@ class _ClanShopScreenState extends State<ClanShopScreen>
       appBar: AppBar(
         title: const Text('Clan Shop'),
         backgroundColor: Colors.deepPurple,
-        actions: [
+        actions: <>[
           Container(
             margin: const EdgeInsets.all(8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -169,7 +169,7 @@ class _ClanShopScreenState extends State<ClanShopScreen>
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
-              children: [
+              children: <>[
                 const Icon(Icons.monetization_on, color: Colors.white, size: 16),
                 const SizedBox(width: 4),
                 Text(
@@ -190,7 +190,7 @@ class _ClanShopScreenState extends State<ClanShopScreen>
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: ListView(
               scrollDirection: Axis.horizontal,
-              children: _categories.map((category) {
+              children: _categories.map((String category) {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: FilterChip(
@@ -225,15 +225,15 @@ class _ClanShopScreenState extends State<ClanShopScreen>
               ),
               itemCount: _filteredItems.length,
               itemBuilder: (context, index) {
-                final item = _filteredItems[index];
-                final canAfford = _clanCoins >= item.price;
+                final ClanShopItem item = _filteredItems[index];
+                final bool canAfford = _clanCoins >= item.price;
                 
                 return FadeAnimation(
                   delay: Duration(milliseconds: index * 100),
                   child: Card(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+                      children: <>[
                         // Item Image
                         Expanded(
                           flex: 3,
@@ -261,7 +261,7 @@ class _ClanShopScreenState extends State<ClanShopScreen>
                             padding: const EdgeInsets.all(8),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
+                              children: <>[
                                 Text(
                                   item.name,
                                   style: const TextStyle(
@@ -283,7 +283,7 @@ class _ClanShopScreenState extends State<ClanShopScreen>
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
-                                  children: [
+                                  children: <>[
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 4,
@@ -294,7 +294,7 @@ class _ClanShopScreenState extends State<ClanShopScreen>
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Row(
-                                        children: [
+                                        children: <>[
                                           const Icon(
                                             Icons.monetization_on,
                                             size: 10,
@@ -337,7 +337,6 @@ class _ClanShopScreenState extends State<ClanShopScreen>
                                   onPressed: canAfford ? () => _purchaseItem(item) : null,
                                   color: item.color,
                                   height: 28,
-                                  isFullWidth: true,
                                 ),
                               ],
                             ),
@@ -354,14 +353,6 @@ class _ClanShopScreenState extends State<ClanShopScreen>
 }
 
 class ClanShopItem {
-  final String id;
-  final String name;
-  final String description;
-  final int price;
-  final String category;
-  final IconData icon;
-  final Color color;
-  final int level;
 
   ClanShopItem({
     required this.id,
@@ -373,4 +364,12 @@ class ClanShopItem {
     required this.color,
     required this.level,
   });
+  final String id;
+  final String name;
+  final String description;
+  final int price;
+  final String category;
+  final IconData icon;
+  final Color color;
+  final int level;
 }

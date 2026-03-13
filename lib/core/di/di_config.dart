@@ -15,7 +15,7 @@ class DIConfig {
   static bool get isTesting => environment == 'test';
 
   // Service lifetimes
-  static const Map<Type, ServiceLifetime> serviceLifetimes = {
+  static const Map<Type, ServiceLifetime> serviceLifetimes = <Type, ServiceLifetime>{
     // Core services - Singleton
     ApiService: ServiceLifetime.singleton,
     AuthService: ServiceLifetime.singleton,
@@ -37,16 +37,16 @@ class DIConfig {
   };
 
   // Service dependencies
-  static const Map<Type, List<Type>> serviceDependencies = {
-    ApiService: [ConfigService, LoggerService],
-    DatabaseService: [StorageService],
-    SocketService: [AuthService, LoggerService],
-    GameService: [PaymentService, LoggerService],
-    CallService: [SocketService],
+  static const Map<Type, List<Type>> serviceDependencies = <Type, List<Type>>{
+    ApiService: <Type>[ConfigService, LoggerService],
+    DatabaseService: <Type>[StorageService],
+    SocketService: <Type>[AuthService, LoggerService],
+    GameService: <Type>[PaymentService, LoggerService],
+    CallService: <Type>[SocketService],
   };
 
   // Service initialization order
-  static const List<Type> initializationOrder = [
+  static const List<Type> initializationOrder = <Type>[
     StorageService,
     LoggerService,
     ConfigService,
@@ -58,7 +58,7 @@ class DIConfig {
   ];
 
   // Mock services for testing
-  static const Map<Type, Type> mockServices = {
+  static const Map<Type, Type> mockServices = <Type, Type>{
     ApiService: MockApiService,
     DatabaseService: MockDatabaseService,
     // ... other mocks
@@ -74,11 +74,6 @@ enum ServiceLifetime {
 
 // Service initialization info
 class ServiceInfo {
-  final Type type;
-  final ServiceLifetime lifetime;
-  final List<Type> dependencies;
-  final bool isAsync;
-  final Duration timeout;
 
   const ServiceInfo({
     required this.type,
@@ -87,19 +82,24 @@ class ServiceInfo {
     this.isAsync = false,
     this.timeout = const Duration(seconds: 30),
   });
+  final Type type;
+  final ServiceLifetime lifetime;
+  final List<Type> dependencies;
+  final bool isAsync;
+  final Duration timeout;
 
   // Predefined service infos
-  static const Map<Type, ServiceInfo> all = {
+  static const Map<Type, ServiceInfo> all = <Type, ServiceInfo>{
     ApiService: ServiceInfo(
       type: ApiService,
       lifetime: ServiceLifetime.singleton,
-      dependencies: [ConfigService, LoggerService],
+      dependencies: <Type>[ConfigService, LoggerService],
       isAsync: true,
     ),
     AuthService: ServiceInfo(
       type: AuthService,
       lifetime: ServiceLifetime.singleton,
-      dependencies: [ApiService, DatabaseService],
+      dependencies: <Type>[ApiService, DatabaseService],
     ),
     // ... other services
   };
@@ -107,7 +107,7 @@ class ServiceInfo {
 
 // Service registry for manual registration
 class ServiceRegistry {
-  static final Map<Type, dynamic> _registry = {};
+  static final Map<Type, dynamic> _registry = <Type, dynamic>{};
 
   static void register<T>(T instance) {
     _registry[T] = instance;

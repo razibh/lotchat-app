@@ -10,7 +10,7 @@ mixin CacheMixin {
 
   // Save data with expiration
   Future<void> setWithExpiry(String key, dynamic value, Duration expiry) async {
-    final data = {
+    final Map<String, dynamic> data = <String, dynamic>{
       'value': value,
       'expiry': DateTime.now().add(expiry).millisecondsSinceEpoch,
     };
@@ -24,7 +24,7 @@ mixin CacheMixin {
 
     try {
       final data = jsonDecode(jsonString);
-      final expiry = data['expiry'] as int;
+      final int expiry = data['expiry'] as int;
       
       if (DateTime.now().millisecondsSinceEpoch > expiry) {
         _prefs.remove(key);

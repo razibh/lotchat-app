@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 class ErrorWidget extends StatelessWidget {
-  final String message;
-  final VoidCallback? onRetry;
 
   const ErrorWidget({
     Key? key,
     required this.message,
     this.onRetry,
   }) : super(key: key);
+  final String message;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +17,7 @@ class ErrorWidget extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          children: <>[
             const Icon(
               Icons.error_outline,
               color: Colors.red,
@@ -32,7 +32,7 @@ class ErrorWidget extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            if (onRetry != null) ...[
+            if (onRetry != null) ...<>[
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: onRetry,

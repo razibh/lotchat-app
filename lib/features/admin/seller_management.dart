@@ -18,10 +18,10 @@ class SellerManagement extends StatefulWidget {
 class _SellerManagementState extends State<SellerManagement> 
     with LoadingMixin, ToastMixin, DialogMixin {
   
-  final _adminService = ServiceLocator().get<AdminService>();
-  final _paymentService = ServiceLocator().get<PaymentService>();
+  final AdminService _adminService = ServiceLocator().get<AdminService>();
+  final PaymentService _paymentService = ServiceLocator().get<PaymentService>();
   
-  List<Map<String, dynamic>> _sellers = [];
+  List<Map<String, dynamic>> _sellers = <Map<String, dynamic>>[];
   bool _isLoading = true;
 
   @override
@@ -34,7 +34,7 @@ class _SellerManagementState extends State<SellerManagement>
     await runWithLoading(() async {
       try {
         // Mock data
-        _sellers = List.generate(5, (index) => {
+        _sellers = List.generate(5, (int index) => <String, dynamic>{
           'id': 'seller_$index',
           'name': 'Seller ${index + 1}',
           'email': 'seller$index@example.com',
@@ -55,30 +55,30 @@ class _SellerManagementState extends State<SellerManagement>
   }
 
   Future<void> _createSeller() async {
-    final userId = await showInputDialog(
+    final String? userId = await showInputDialog(
       context,
       title: 'User ID',
       hintText: 'Enter user ID',
     );
 
     if (userId != null && userId.isNotEmpty) {
-      final commission = await showInputDialog(
+      final String? commission = await showInputDialog(
         context,
         title: 'Commission Rate',
         hintText: 'Enter commission rate (0.1 = 10%)',
       );
 
       if (commission != null && commission.isNotEmpty) {
-        final rate = double.tryParse(commission);
+        final double? rate = double.tryParse(commission);
         if (rate != null) {
-          final coins = await showInputDialog(
+          final String? coins = await showInputDialog(
             context,
             title: 'Initial Coins',
             hintText: 'Enter initial coin balance',
           );
 
           if (coins != null && coins.isNotEmpty) {
-            final initialCoins = int.tryParse(coins);
+            final int? initialCoins = int.tryParse(coins);
             if (initialCoins != null) {
               await runWithLoading(() async {
                 try {
@@ -101,14 +101,14 @@ class _SellerManagementState extends State<SellerManagement>
   }
 
   Future<void> _addCoins(Map<String, dynamic> seller) async {
-    final amount = await showInputDialog(
+    final String? amount = await showInputDialog(
       context,
       title: 'Add Coins',
       hintText: 'Enter coin amount',
     );
 
     if (amount != null && amount.isNotEmpty) {
-      final coins = int.tryParse(amount);
+      final int? coins = int.tryParse(amount);
       if (coins != null && coins > 0) {
         await runWithLoading(() async {
           try {
@@ -129,7 +129,7 @@ class _SellerManagementState extends State<SellerManagement>
   Future<void> _toggleStatus(Map<String, dynamic> seller) async {
     await runWithLoading(() async {
       try {
-        final newStatus = !seller['isActive'];
+        final bool newStatus = !seller['isActive'];
         // Update seller status
         showSuccess('Seller ${newStatus ? 'activated' : 'deactivated'}');
         _loadSellers();
@@ -145,7 +145,7 @@ class _SellerManagementState extends State<SellerManagement>
       appBar: AppBar(
         title: const Text('Seller Management'),
         backgroundColor: Colors.green,
-        actions: [
+        actions: <>[
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: _createSeller,
@@ -158,7 +158,7 @@ class _SellerManagementState extends State<SellerManagement>
               padding: const EdgeInsets.all(16),
               itemCount: _sellers.length,
               itemBuilder: (context, index) {
-                final seller = _sellers[index];
+                final Map<String, dynamic> seller = _sellers[index];
                 return _buildSellerCard(seller);
               },
             ),
@@ -171,10 +171,10 @@ class _SellerManagementState extends State<SellerManagement>
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: [
+          children: <>[
             // Header
             Row(
-              children: [
+              children: <>[
                 CircleAvatar(
                   backgroundColor: seller['isActive'] ? Colors.green : Colors.grey,
                   child: Text(
@@ -186,7 +186,7 @@ class _SellerManagementState extends State<SellerManagement>
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                    children: <>[
                       Text(
                         seller['name'],
                         style: const TextStyle(
@@ -218,7 +218,7 @@ class _SellerManagementState extends State<SellerManagement>
 
             // Stats
             Row(
-              children: [
+              children: <>[
                 Expanded(
                   child: _buildStatItem(
                     'Coin Balance',
@@ -237,7 +237,7 @@ class _SellerManagementState extends State<SellerManagement>
             ),
             const SizedBox(height: 8),
             Row(
-              children: [
+              children: <>[
                 Expanded(
                   child: _buildStatItem(
                     'Commission',
@@ -258,7 +258,7 @@ class _SellerManagementState extends State<SellerManagement>
 
             // Actions
             Row(
-              children: [
+              children: <>[
                 Expanded(
                   child: _buildActionButton(
                     icon: Icons.add_card,
@@ -295,12 +295,12 @@ class _SellerManagementState extends State<SellerManagement>
 
   Widget _buildStatItem(String label, String value, IconData icon) {
     return Row(
-      children: [
+      children: <>[
         Icon(icon, size: 16, color: Colors.grey),
         const SizedBox(width: 4),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          children: <>[
             Text(
               label,
               style: const TextStyle(fontSize: 10, color: Colors.grey),
@@ -330,7 +330,7 @@ class _SellerManagementState extends State<SellerManagement>
           borderRadius: BorderRadius.circular(4),
         ),
         child: Column(
-          children: [
+          children: <>[
             Icon(icon, color: color, size: 16),
             const SizedBox(height: 4),
             Text(
@@ -367,7 +367,7 @@ class _SellerManagementState extends State<SellerManagement>
             },
           ),
         ),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),

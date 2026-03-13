@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
 
 class LoadingWidget extends StatelessWidget {
-  final String? message;
-  final double size;
 
   const LoadingWidget({
     Key? key,
     this.message,
     this.size = 40,
   }) : super(key: key);
+  final String? message;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+        children: <>[
           SizedBox(
             width: size,
             height: size,
             child: const CircularProgressIndicator(),
           ),
-          if (message != null) ...[
+          if (message != null) ...<>[
             const SizedBox(height: 16),
             Text(
               message!,
@@ -38,9 +38,9 @@ class LoadingWidget extends StatelessWidget {
 }
 
 class FullScreenLoading extends StatelessWidget {
-  final String? message;
 
   const FullScreenLoading({Key? key, this.message}) : super(key: key);
+  final String? message;
 
   @override
   Widget build(BuildContext context) {
@@ -55,13 +55,13 @@ class FullScreenLoading extends StatelessWidget {
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: <>[
               const SizedBox(
                 width: 40,
                 height: 40,
                 child: CircularProgressIndicator(),
               ),
-              if (message != null) ...[
+              if (message != null) ...<>[
                 const SizedBox(height: 16),
                 Text(message!),
               ],

@@ -16,8 +16,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> with LoadingMixin {
-  final _authService = ServiceLocator().get<AuthService>();
-  final _configService = ServiceLocator().get<ConfigService>();
+  final AuthService _authService = ServiceLocator().get<AuthService>();
+  final ConfigService _configService = ServiceLocator().get<ConfigService>();
 
   @override
   void initState() {
@@ -57,7 +57,7 @@ class _SplashScreenState extends State<SplashScreen> with LoadingMixin {
       builder: (context) => AlertDialog(
         title: const Text('Under Maintenance'),
         content: Text(_configService.maintenanceMessage),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => exit(0),
             child: const Text('Exit'),
@@ -75,13 +75,13 @@ class _SplashScreenState extends State<SplashScreen> with LoadingMixin {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.purple, Colors.pink],
+            colors: <>[Colors.purple, Colors.pink],
           ),
         ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+            children: <>[
               // Logo
               Image.asset(
                 AssetConstants.logo,

@@ -9,9 +9,9 @@ import '../../widgets/animation/fade_animation.dart';
 import 'widgets/clan_progress_bar.dart';
 
 class ClanWarsScreen extends StatefulWidget {
-  final String clanId;
 
   const ClanWarsScreen({Key? key, required this.clanId}) : super(key: key);
+  final String clanId;
 
   @override
   State<ClanWarsScreen> createState() => _ClanWarsScreenState();
@@ -20,11 +20,11 @@ class ClanWarsScreen extends StatefulWidget {
 class _ClanWarsScreenState extends State<ClanWarsScreen> 
     with LoadingMixin, ToastMixin, DialogMixin {
   
-  final _clanService = ServiceLocator().get<ClanService>();
+  final ClanService _clanService = ServiceLocator().get<ClanService>();
   
-  List<ClanWar> _activeWars = [];
-  List<ClanWar> _upcomingWars = [];
-  List<ClanWar> _pastWars = [];
+  List<ClanWar> _activeWars = <ClanWar>[];
+  List<ClanWar> _upcomingWars = <ClanWar>[];
+  List<ClanWar> _pastWars = <ClanWar>[];
   bool _isLoading = true;
 
   @override
@@ -38,11 +38,10 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
       await Future.delayed(const Duration(seconds: 1));
       
       // Mock data
-      _activeWars = [
+      _activeWars = <ClanWar>[
         ClanWar(
           id: 'w1',
           opponentName: 'Dragon Clan',
-          opponentEmblem: null,
           startTime: DateTime.now().subtract(const Duration(hours: 2)),
           endTime: DateTime.now().add(const Duration(hours: 22)),
           ourScore: 1250,
@@ -52,11 +51,10 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
         ),
       ];
 
-      _upcomingWars = [
+      _upcomingWars = <ClanWar>[
         ClanWar(
           id: 'w2',
           opponentName: 'Phoenix Clan',
-          opponentEmblem: null,
           startTime: DateTime.now().add(const Duration(days: 1)),
           endTime: DateTime.now().add(const Duration(days: 2)),
           ourScore: 0,
@@ -67,7 +65,6 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
         ClanWar(
           id: 'w3',
           opponentName: 'Wolf Clan',
-          opponentEmblem: null,
           startTime: DateTime.now().add(const Duration(days: 3)),
           endTime: DateTime.now().add(const Duration(days: 4)),
           ourScore: 0,
@@ -77,11 +74,10 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
         ),
       ];
 
-      _pastWars = [
+      _pastWars = <ClanWar>[
         ClanWar(
           id: 'w4',
           opponentName: 'Tiger Clan',
-          opponentEmblem: null,
           startTime: DateTime.now().subtract(const Duration(days: 5)),
           endTime: DateTime.now().subtract(const Duration(days: 4)),
           ourScore: 2100,
@@ -92,7 +88,6 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
         ClanWar(
           id: 'w5',
           opponentName: 'Lion Clan',
-          opponentEmblem: null,
           startTime: DateTime.now().subtract(const Duration(days: 8)),
           endTime: DateTime.now().subtract(const Duration(days: 7)),
           ourScore: 1500,
@@ -124,8 +119,8 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
       context,
       title: 'Join War',
       message: 'Join the war against ${war.opponentName}?',
-    ).then((confirmed) {
-      if (confirmed == true) {
+    ).then((bool? confirmed) {
+      if (confirmed ?? false) {
         showSuccess('Joined the war!');
       }
     });
@@ -154,12 +149,12 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                children: <>[
                   // Start War Button
                   if (_activeWars.isEmpty && _upcomingWars.isEmpty)
                     Center(
                       child: Column(
-                        children: [
+                        children: <>[
                           const SizedBox(height: 50),
                           const Icon(
                             Icons.sports_mma,
@@ -191,7 +186,7 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
                     ),
 
                   // Active Wars
-                  if (_activeWars.isNotEmpty) ...[
+                  if (_activeWars.isNotEmpty) ...<>[
                     const Text(
                       'Active War',
                       style: TextStyle(
@@ -200,12 +195,12 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ..._activeWars.map((war) => _buildActiveWarCard(war)),
+                    ..._activeWars.map(_buildActiveWarCard),
                     const SizedBox(height: 24),
                   ],
 
                   // Upcoming Wars
-                  if (_upcomingWars.isNotEmpty) ...[
+                  if (_upcomingWars.isNotEmpty) ...<>[
                     const Text(
                       'Upcoming Wars',
                       style: TextStyle(
@@ -214,12 +209,12 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
                       ),
                     ),
                     const SizedBox(height: 12),
-                    ..._upcomingWars.map((war) => _buildUpcomingWarCard(war)),
+                    ..._upcomingWars.map(_buildUpcomingWarCard),
                     const SizedBox(height: 24),
                   ],
 
                   // Past Wars
-                  if (_pastWars.isNotEmpty) ...[
+                  if (_pastWars.isNotEmpty) ...<>[
                     const Text(
                       'War History',
                       style: TextStyle(
@@ -228,7 +223,7 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
                       ),
                     ),
                     const SizedBox(height: 12),
-                    ..._pastWars.map((war) => _buildPastWarCard(war)),
+                    ..._pastWars.map(_buildPastWarCard),
                   ],
                 ],
               ),
@@ -237,23 +232,23 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
   }
 
   Widget _buildActiveWarCard(ClanWar war) {
-    final totalScore = war.ourScore + war.opponentScore;
-    final ourProgress = totalScore > 0 ? war.ourScore / totalScore : 0.5;
-    final timeLeft = war.endTime.difference(DateTime.now());
+    final int totalScore = war.ourScore + war.opponentScore;
+    final double ourProgress = totalScore > 0 ? war.ourScore / totalScore : 0.5;
+    final Duration timeLeft = war.endTime.difference(DateTime.now());
 
     return Card(
       color: Colors.deepPurple.shade50,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: [
+          children: <>[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+              children: <>[
                 // Our Clan
                 Expanded(
                   child: Column(
-                    children: [
+                    children: <>[
                       Container(
                         width: 60,
                         height: 60,
@@ -286,7 +281,7 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
 
                 // VS
                 const Column(
-                  children: [
+                  children: <>[
                     Text(
                       'VS',
                       style: TextStyle(
@@ -303,7 +298,7 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
                 // Opponent Clan
                 Expanded(
                   child: Column(
-                    children: [
+                    children: <>[
                       Container(
                         width: 60,
                         height: 60,
@@ -341,12 +336,11 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
             ClanProgressBar(
               progress: ourProgress,
               color: Colors.deepPurple,
-              height: 8,
             ),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+              children: <>[
                 Text('Time left: ${_formatDuration(timeLeft)}'),
                 Text('Prize: ${war.prize}'),
               ],
@@ -365,7 +359,7 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
   }
 
   Widget _buildUpcomingWarCard(ClanWar war) {
-    final timeUntilStart = war.startTime.difference(DateTime.now());
+    final Duration timeUntilStart = war.startTime.difference(DateTime.now());
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -383,7 +377,7 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
         subtitle: Text('Starts in ${_formatDuration(timeUntilStart)}'),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          children: <>[
             Text(
               war.prize,
               style: const TextStyle(
@@ -407,7 +401,7 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
   }
 
   Widget _buildPastWarCard(ClanWar war) {
-    final isWon = war.status == 'won';
+    final bool isWon = war.status == 'won';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -428,7 +422,7 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
         subtitle: Text('${war.ourScore} - ${war.opponentScore}'),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          children: <>[
             Text(
               isWon ? 'VICTORY' : 'DEFEAT',
               style: TextStyle(
@@ -437,7 +431,7 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
                 fontSize: 12,
               ),
             ),
-            if (isWon) ...[
+            if (isWon) ...<>[
               const SizedBox(height: 4),
               Text(
                 war.prize,
@@ -452,15 +446,6 @@ class _ClanWarsScreenState extends State<ClanWarsScreen>
 }
 
 class ClanWar {
-  final String id;
-  final String opponentName;
-  final String? opponentEmblem;
-  final DateTime startTime;
-  final DateTime endTime;
-  final int ourScore;
-  final int opponentScore;
-  final String status;
-  final String prize;
 
   ClanWar({
     required this.id,
@@ -473,4 +458,13 @@ class ClanWar {
     required this.status,
     required this.prize,
   });
+  final String id;
+  final String opponentName;
+  final String? opponentEmblem;
+  final DateTime startTime;
+  final DateTime endTime;
+  final int ourScore;
+  final int opponentScore;
+  final String status;
+  final String prize;
 }

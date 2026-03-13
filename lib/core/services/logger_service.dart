@@ -11,13 +11,13 @@ enum LogLevel {
 }
 
 class LoggerService {
-  static final LoggerService _instance = LoggerService._internal();
   factory LoggerService() => _instance;
   LoggerService._internal();
+  static final LoggerService _instance = LoggerService._internal();
 
   bool _isInitialized = false;
   LogLevel _minLogLevel = LogLevel.debug;
-  final List<LogEntry> _recentLogs = [];
+  final List<LogEntry> _recentLogs = <LogEntry>[];
   static const int _maxRecentLogs = 100;
 
   // ==================== INITIALIZATION ====================
@@ -72,8 +72,8 @@ class LoggerService {
     if (!_isInitialized) return;
     if (level.index < _minLogLevel.index) return;
 
-    final timestamp = DateTime.now();
-    final logEntry = LogEntry(
+    final DateTime timestamp = DateTime.now();
+    final LogEntry logEntry = LogEntry(
       level: level,
       message: message,
       data: data,
@@ -106,9 +106,9 @@ class LoggerService {
   // ==================== OUTPUT METHODS ====================
 
   void _printToConsole(LogEntry entry) {
-    final emoji = _getLevelEmoji(entry.level);
-    final tag = entry.tag != null ? '[${entry.tag}]' : '';
-    final errorStr = entry.error != null ? '\nError: ${entry.error}' : '';
+    final String emoji = _getLevelEmoji(entry.level);
+    final String tag = entry.tag != null ? '[${entry.tag}]' : '';
+    final String errorStr = entry.error != null ? '\nError: ${entry.error}' : '';
     
     developer.log(
       '$emoji $tag ${entry.message}$errorStr',
@@ -147,7 +147,7 @@ class LoggerService {
 
   Future<void> _saveToFirestore(LogEntry entry) async {
     try {
-      await FirebaseFirestore.instance.collection('app_logs').add({
+      await FirebaseFirestore.instance.collection('app_logs').add(<String, Object?>{
         'level': entry.level.toString(),
         'message': entry.message,
         'data': entry.data,
@@ -163,14 +163,14 @@ class LoggerService {
   // ==================== LOG RETRIEVAL ====================
 
   List<LogEntry> getRecentLogs({LogLevel? minLevel, String? tag}) {
-    var logs = _recentLogs;
+    List<LogEntry> logs = _recentLogs;
     
     if (minLevel != null) {
-      logs = logs.where((log) => log.level.index >= minLevel.index).toList();
+      logs = logs.where((LogEntry log) => log.level.index >= minLevel.index).toList();
     }
     
     if (tag != null) {
-      logs = logs.where((log) => log.tag == tag).toList();
+      logs = logs.where((LogEntry log) => log.tag == tag).toList();
     }
     
     return logs;
@@ -183,7 +183,7 @@ class LoggerService {
     int limit = 100,
   }) async {
     try {
-      Query query = FirebaseFirestore.instance
+      var query = FirebaseFirestore.instance
           .collection('app_logs')
           .orderBy('timestamp', descending: true)
           .limit(limit);
@@ -202,7 +202,7 @@ class LoggerService {
         final data = doc.data();
         return LogEntry(
           level: LogLevel.values.firstWhere(
-            (e) => e.toString() == data['level'],
+            (LogLevel e) => e.toString() == data['level'],
             orElse: () => LogLevel.info,
           ),
           message: data['message'] ?? '',
@@ -214,7 +214,7 @@ class LoggerService {
       }).toList();
     } catch (e) {
       print('Error fetching logs: $e');
-      return [];
+      return <LogEntry>[];
     }
   }
 
@@ -231,7 +231,7 @@ class LoggerService {
   // ==================== USER ACTIONS ====================
 
   void logUserAction(String action, {Map<String, dynamic>? data, String? userId}) {
-    info('User action: $action', data: {
+    info('User action: $action', data: <String, dynamic>{
       'userId': userId,
       'action': action,
       ...?data,
@@ -241,7 +241,7 @@ class LoggerService {
   // ==================== NETWORK LOGGING ====================
 
   void logNetworkRequest(String method, String url, {Map<String, dynamic>? headers, dynamic body}) {
-    debug('Network Request: $method $url', data: {
+    debug('Network Request: $method $url', data: <String, dynamic>{
       'method': method,
       'url': url,
       'headers': headers,
@@ -250,7 +250,7 @@ class LoggerService {
   }
 
   void logNetworkResponse(String method, String url, int statusCode, {dynamic response}) {
-    debug('Network Response: $method $url - $statusCode', data: {
+    debug('Network Response: $method $url - $statusCode', data: <String, dynamic>{
       'method': method,
       'url': url,
       'statusCode': statusCode,
@@ -268,13 +268,6 @@ class LoggerService {
 // ==================== MODEL CLASSES ====================
 
 class LogEntry {
-  final LogLevel level;
-  final String message;
-  final Map<String, dynamic>? data;
-  final String? tag;
-  final String? error;
-  final String? stackTrace;
-  final DateTime timestamp;
 
   LogEntry({
     required this.level,
@@ -285,26 +278,33 @@ class LogEntry {
     this.stackTrace,
     required this.timestamp,
   });
+  final LogLevel level;
+  final String message;
+  final Map<String, dynamic>? data;
+  final String? tag;
+  final String? error;
+  final String? stackTrace;
+  final DateTime timestamp;
 }
 
 class PerformanceTracker {
-  final LoggerService logger;
-  final String operation;
-  final Map<String, dynamic>? data;
-  final DateTime startTime;
-  DateTime? endTime;
 
   PerformanceTracker({
     required this.logger,
     required this.operation,
     this.data,
   }) : startTime = DateTime.now();
+  final LoggerService logger;
+  final String operation;
+  final Map<String, dynamic>? data;
+  final DateTime startTime;
+  DateTime? endTime;
 
   void end({Map<String, dynamic>? resultData}) {
     endTime = DateTime.now();
-    final duration = endTime!.difference(startTime);
+    final Duration duration = endTime!.difference(startTime);
     
-    logger.debug('Performance: $operation completed in ${duration.inMilliseconds}ms', data: {
+    logger.debug('Performance: $operation completed in ${duration.inMilliseconds}ms', data: <String, dynamic>{
       'operation': operation,
       'durationMs': duration.inMilliseconds,
       'startTime': startTime.toIso8601String(),

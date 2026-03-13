@@ -7,8 +7,8 @@ class GiftProvider extends ChangeNotifier {
   final GiftService _giftService = GiftService();
   final PaymentService _paymentService = PaymentService();
   
-  List<GiftModel> _gifts = [];
-  List<GiftModel> _recentGifts = [];
+  List<GiftModel> _gifts = <GiftModel>[];
+  List<GiftModel> _recentGifts = <GiftModel>[];
   bool _isLoading = false;
   String? _error;
 
@@ -42,15 +42,15 @@ class GiftProvider extends ChangeNotifier {
   }
 
   List<GiftModel> getGiftsByCategory(String category) {
-    return _gifts.where((g) => g.category == category).toList();
+    return _gifts.where((GiftModel g) => g.category == category).toList();
   }
 
   List<GiftModel> getVipGifts() {
-    return _gifts.where((g) => g.isVip).toList();
+    return _gifts.where((GiftModel g) => g.isVip).toList();
   }
 
   List<GiftModel> getSvipGifts() {
-    return _gifts.where((g) => g.isSvip).toList();
+    return _gifts.where((GiftModel g) => g.isSvip).toList();
   }
 
   Future<bool> sendGift({

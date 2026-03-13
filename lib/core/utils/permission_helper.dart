@@ -60,7 +60,7 @@ class PermissionHelper {
       builder: (context) => AlertDialog(
         title: Text(title),
         content: Text(message),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),

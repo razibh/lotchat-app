@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 
 class ScreenSharingController {
-  final RtcEngine engine;
-  bool isSharing = false;
   
   ScreenSharingController({required this.engine});
+  final RtcEngine engine;
+  bool isSharing = false;
 
   Future<bool> startScreenSharing() async {
     try {
@@ -46,9 +46,6 @@ class ScreenSharingController {
 }
 
 class ScreenShareView extends StatelessWidget {
-  final RtcEngine engine;
-  final int uid;
-  final bool isLocal;
 
   const ScreenShareView({
     Key? key,
@@ -56,6 +53,9 @@ class ScreenShareView extends StatelessWidget {
     required this.uid,
     this.isLocal = false,
   }) : super(key: key);
+  final RtcEngine engine;
+  final int uid;
+  final bool isLocal;
 
   @override
   Widget build(BuildContext context) {
@@ -80,9 +80,6 @@ class ScreenShareView extends StatelessWidget {
 }
 
 class ScreenSharePanel extends StatelessWidget {
-  final VoidCallback onStartShare;
-  final VoidCallback onStopShare;
-  final bool isSharing;
 
   const ScreenSharePanel({
     Key? key,
@@ -90,6 +87,9 @@ class ScreenSharePanel extends StatelessWidget {
     required this.onStopShare,
     required this.isSharing,
   }) : super(key: key);
+  final VoidCallback onStartShare;
+  final VoidCallback onStopShare;
+  final bool isSharing;
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +101,7 @@ class ScreenSharePanel extends StatelessWidget {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
+        children: <>[
           const Text(
             'Screen Sharing',
             style: TextStyle(
@@ -180,12 +180,12 @@ class ScreenSharePanel extends StatelessWidget {
 }
 
 class ScreenShareIndicator extends StatelessWidget {
-  final bool isActive;
 
   const ScreenShareIndicator({
     Key? key,
     required this.isActive,
   }) : super(key: key);
+  final bool isActive;
 
   @override
   Widget build(BuildContext context) {
@@ -199,7 +199,7 @@ class ScreenShareIndicator extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: const <>[
           Icon(
             Icons.screen_share,
             color: Colors.white,

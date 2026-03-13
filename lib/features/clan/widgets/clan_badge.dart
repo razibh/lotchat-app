@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 class ClanBadge extends StatelessWidget {
-  final int level;
-  final double size;
 
   const ClanBadge({
     Key? key,
     required this.level,
     this.size = 24,
   }) : super(key: key);
+  final int level;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +49,7 @@ class ClanBadge extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
+        children: <>[
           Text(
             icon,
             style: TextStyle(fontSize: size * 0.5),

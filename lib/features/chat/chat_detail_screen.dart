@@ -8,9 +8,6 @@ import '../../widgets/room/gift_panel.dart';
 import '../call/widgets/call_screen.dart';
 
 class ChatDetailScreen extends StatefulWidget {
-  final String userId;
-  final String userName;
-  final String? userAvatar;
 
   const ChatDetailScreen({
     Key? key,
@@ -18,6 +15,9 @@ class ChatDetailScreen extends StatefulWidget {
     required this.userName,
     this.userAvatar,
   }) : super(key: key);
+  final String userId;
+  final String userName;
+  final String? userAvatar;
 
   @override
   State<ChatDetailScreen> createState() => _ChatDetailScreenState();
@@ -26,7 +26,7 @@ class ChatDetailScreen extends StatefulWidget {
 class _ChatDetailScreenState extends State<ChatDetailScreen> 
     with PaginationMixin<Map<String, dynamic>>, ToastMixin {
   
-  final _socketService = ServiceLocator().get<SocketService>();
+  final SocketService _socketService = ServiceLocator().get<SocketService>();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   
@@ -73,9 +73,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
     await Future.delayed(const Duration(seconds: 1));
     
     // Mock data
-    return List.generate(20, (index) {
-      final isMe = index % 3 != 0;
-      return {
+    return List.generate(20, (int index) {
+      final bool isMe = index % 3 != 0;
+      return <String, >{
         'id': 'msg_$index',
         'senderId': isMe ? 'current_user' : widget.userId,
         'senderName': isMe ? 'You' : widget.userName,
@@ -101,7 +101,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
   void _sendMessage() {
     if (_messageController.text.trim().isEmpty) return;
 
-    final message = {
+    final message = <String, >{
       'id': DateTime.now().millisecondsSinceEpoch.toString(),
       'senderId': 'current_user',
       'senderName': 'You',
@@ -127,7 +127,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
   }
 
   void _sendGift(dynamic gift) {
-    final message = {
+    final Map<String, dynamic> message = <String, dynamic>{
       'id': DateTime.now().millisecondsSinceEpoch.toString(),
       'senderId': 'current_user',
       'senderName': 'You',
@@ -158,8 +158,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
   }
 
   String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
+    final DateTime now = DateTime.now();
+    final Duration difference = now.difference(time);
 
     if (difference.inDays > 0) {
       return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
@@ -173,7 +173,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
     return Scaffold(
       appBar: AppBar(
         title: Row(
-          children: [
+          children: <>[
             CircleAvatar(
               backgroundImage: widget.userAvatar != null
                   ? NetworkImage(widget.userAvatar!)
@@ -186,7 +186,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                children: <>[
                   Text(widget.userName),
                   if (_isTyping)
                     const Text(
@@ -201,7 +201,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
             ),
           ],
         ),
-        actions: [
+        actions: <>[
           IconButton(
             icon: const Icon(Icons.call),
             onPressed: () => _startCall(false),
@@ -213,7 +213,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
         ],
       ),
       body: Column(
-        children: [
+        children: <>[
           // Messages List
           Expanded(
             child: items.isEmpty && isLoadingMore
@@ -232,8 +232,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
                         );
                       }
                       
-                      final message = items[items.length - 1 - index];
-                      final isMe = message['senderId'] == 'current_user';
+                      final Map<String, dynamic> message = items[items.length - 1 - index];
+                      final bool isMe = message['senderId'] == 'current_user';
                       
                       return _buildMessageBubble(message, isMe);
                     },
@@ -256,7 +256,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: Colors.white,
-              boxShadow: [
+              boxShadow: <>[
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
                   blurRadius: 10,
@@ -264,7 +264,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
               ],
             ),
             child: Row(
-              children: [
+              children: <>[
                 IconButton(
                   icon: const Icon(Icons.attach_file),
                   onPressed: () {
@@ -320,13 +320,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
   }
 
   Widget _buildMessageBubble(Map<String, dynamic> message, bool isMe) {
-    final isGift = message['type'] == 'gift';
+    final bool isGift = message['type'] == 'gift';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [
+        children: <>[
           if (!isMe)
             CircleAvatar(
               radius: 16,
@@ -352,11 +352,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (isGift) ...[
+                children: <>[
+                  if (isGift) ...<>[
                     Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: [
+                      children: <>[
                         const Icon(Icons.card_giftcard, color: Colors.purple),
                         const SizedBox(width: 8),
                         Text(

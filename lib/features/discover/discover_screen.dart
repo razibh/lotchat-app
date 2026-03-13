@@ -18,9 +18,9 @@ class DiscoverScreen extends StatefulWidget {
 class _DiscoverScreenState extends State<DiscoverScreen> 
     with PaginationMixin<Map<String, dynamic>>, ToastMixin {
   
-  final _recommendationService = ServiceLocator().get<RecommendationService>();
+  final RecommendationService _recommendationService = ServiceLocator().get<RecommendationService>();
   String _selectedTab = 'For You';
-  final List<String> _tabs = ['For You', 'Popular', 'Nearby', 'New'];
+  final List<String> _tabs = <String>['For You', 'Popular', 'Nearby', 'New'];
 
   @override
   void initState() {
@@ -34,9 +34,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     // Fetch posts from service
     await Future.delayed(const Duration(seconds: 1));
     
-    return List.generate(10, (index) {
-      final isImage = index % 3 != 0;
-      return {
+    return List.generate(10, (int index) {
+      final bool isImage = index % 3 != 0;
+      return <String, dynamic>{
         'id': 'post_$index',
         'userId': 'user_$index',
         'username': 'User ${index + 1}',
@@ -56,7 +56,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _likePost(int index) {
     setState(() {
-      final post = items[index];
+      final Map<String, dynamic> post = items[index];
       if (post['isLiked']) {
         post['likes'] = post['likes'] - 1;
       } else {
@@ -77,7 +77,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         height: MediaQuery.of(context).size.height * 0.8,
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: [
+          children: <>[
             const Text(
               'Comments',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -103,7 +103,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             ),
             const Divider(),
             Row(
-              children: [
+              children: <>[
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
@@ -156,7 +156,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                    children: <>[
                       const Icon(Icons.card_giftcard, color: Colors.purple),
                       const SizedBox(height: 4),
                       Text('${100 * (index + 1)}'),
@@ -172,8 +172,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
+    final DateTime now = DateTime.now();
+    final Duration difference = now.difference(time);
 
     if (difference.inDays > 0) {
       return '${difference.inDays}d';
@@ -200,7 +200,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               loadMore();
             });
           },
-          tabs: _tabs.map((tab) => Tab(text: tab)).toList(),
+          tabs: _tabs.map((String tab) => Tab(text: tab)).toList(),
           indicatorColor: Colors.white,
         ),
       ),
@@ -248,7 +248,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: <>[
           // Header
           ListTile(
             leading: GestureDetector(
@@ -306,7 +306,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
-              children: [
+              children: <>[
                 Text('${post['likes']} likes'),
                 const SizedBox(width: 16),
                 Text('${post['comments']} comments'),
@@ -320,7 +320,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           // Actions
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
+            children: <>[
               _buildActionButton(
                 icon: post['isLiked'] ? Icons.favorite : Icons.favorite_border,
                 label: 'Like',
@@ -367,7 +367,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
-          children: [
+          children: <>[
             Icon(icon, color: color, size: 20),
             const SizedBox(width: 4),
             Text(
@@ -396,7 +396,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
+          children: <>[
             const Text(
               'Create Post',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -413,7 +413,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             ),
             const SizedBox(height: 16),
             Row(
-              children: [
+              children: <>[
                 IconButton(
                   icon: const Icon(Icons.photo, color: Colors.green),
                   onPressed: () {},

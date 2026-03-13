@@ -11,30 +11,30 @@ class DateHelper {
 
   // Get start of week (Monday)
   static DateTime startOfWeek(DateTime date) {
-    final daysToSubtract = date.weekday - 1;
+    final int daysToSubtract = date.weekday - 1;
     return DateTime(date.year, date.month, date.day - daysToSubtract);
   }
 
   // Get end of week (Sunday)
   static DateTime endOfWeek(DateTime date) {
-    final daysToAdd = 7 - date.weekday;
+    final int daysToAdd = 7 - date.weekday;
     return DateTime(date.year, date.month, date.day + daysToAdd, 23, 59, 59);
   }
 
   // Get start of month
   static DateTime startOfMonth(DateTime date) {
-    return DateTime(date.year, date.month, 1);
+    return DateTime(date.year, date.month);
   }
 
   // Get end of month
   static DateTime endOfMonth(DateTime date) {
-    final lastDay = DateTime(date.year, date.month + 1, 0);
+    final DateTime lastDay = DateTime(date.year, date.month + 1, 0);
     return DateTime(lastDay.year, lastDay.month, lastDay.day, 23, 59, 59);
   }
 
   // Get start of year
   static DateTime startOfYear(DateTime date) {
-    return DateTime(date.year, 1, 1);
+    return DateTime(date.year, 1);
   }
 
   // Get end of year
@@ -51,26 +51,26 @@ class DateHelper {
 
   // Check if today
   static bool isToday(DateTime date) {
-    final now = DateTime.now();
+    final DateTime now = DateTime.now();
     return isSameDay(date, now);
   }
 
   // Check if yesterday
   static bool isYesterday(DateTime date) {
-    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final DateTime yesterday = DateTime.now().subtract(const Duration(days: 1));
     return isSameDay(date, yesterday);
   }
 
   // Check if tomorrow
   static bool isTomorrow(DateTime date) {
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    final DateTime tomorrow = DateTime.now().add(const Duration(days: 1));
     return isSameDay(date, tomorrow);
   }
 
   // Get age from birthday
   static int getAge(DateTime birthday) {
-    final now = DateTime.now();
-    int age = now.year - birthday.year;
+    final DateTime now = DateTime.now();
+    var age = now.year - birthday.year;
     if (now.month < birthday.month || 
         (now.month == birthday.month && now.day < birthday.day)) {
       age--;

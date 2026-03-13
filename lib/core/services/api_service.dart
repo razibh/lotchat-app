@@ -5,9 +5,9 @@ import '../constants/api_constants.dart';
 import '../constants/app_constants.dart';
 
 class ApiService {
-  static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
   ApiService._internal();
+  static final ApiService _instance = ApiService._internal();
 
   late Dio _dio;
   final String baseUrl = ApiConstants.baseUrl;
@@ -15,9 +15,9 @@ class ApiService {
   Future<void> init() async {
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: Duration(seconds: AppConstants.connectionTimeout),
-      receiveTimeout: Duration(seconds: AppConstants.receiveTimeout),
-      headers: {
+      connectTimeout: const Duration(seconds: AppConstants.connectionTimeout),
+      receiveTimeout: const Duration(seconds: AppConstants.receiveTimeout),
+      headers: <String, String>{
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
@@ -40,7 +40,7 @@ class ApiService {
       onError: (error, handler) async {
         if (error.response?.statusCode == 401) {
           // Token expired - refresh
-          final newToken = await _refreshToken();
+          final String? newToken = await _refreshToken();
           if (newToken != null) {
             error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
             final response = await _dio.fetch(error.requestOptions);
@@ -59,7 +59,7 @@ class ApiService {
       
       final response = await _dio.post(
         ApiConstants.refreshToken,
-        data: {'refresh_token': refreshToken},
+        data: <String, >{'refresh_token': refreshToken},
       );
       
       if (response.statusCode == 200) {
@@ -152,7 +152,7 @@ class ApiService {
     Map<String, dynamic>? data,
   }) async {
     try {
-      final formData = FormData.fromMap({
+      final formData = FormData.fromMap(<String, >{
         'file': await MultipartFile.fromFile(filePath),
         if (data != null) ...data,
       });
@@ -161,7 +161,7 @@ class ApiService {
         endpoint,
         data: formData,
         options: Options(
-          headers: {'Content-Type': 'multipart/form-data'},
+          headers: <String, String>{'Content-Type': 'multipart/form-data'},
         ),
       );
     } on DioException catch (e) {

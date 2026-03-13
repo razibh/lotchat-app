@@ -6,9 +6,9 @@ import '../models/gift_model.dart';
 import '../constants/shared_preference_keys.dart';
 
 class StorageService {
-  static final StorageService _instance = StorageService._internal();
   factory StorageService() => _instance;
   StorageService._internal();
+  static final StorageService _instance = StorageService._internal();
 
   late SharedPreferences _prefs;
   late Box _hiveBox;
@@ -140,7 +140,7 @@ class StorageService {
 
   // Save user
   Future<void> saveUser(UserModel user) async {
-    final userJson = jsonEncode(user.toJson());
+    final String userJson = jsonEncode(user.toJson());
     await setString(PrefKeys.userData, userJson);
     await setString(PrefKeys.userId, user.uid);
     await setString(PrefKeys.userName, user.username);
@@ -152,7 +152,7 @@ class StorageService {
 
   // Get user
   UserModel? getUser() {
-    final userJson = getString(PrefKeys.userData);
+    final String? userJson = getString(PrefKeys.userData);
     if (userJson != null) {
       try {
         final Map<String, dynamic> userMap = jsonDecode(userJson);
@@ -168,7 +168,7 @@ class StorageService {
   Future<void> updateUserCoins(int coins) async {
     await setInt(PrefKeys.userCoins, coins);
     
-    final user = getUser();
+    final UserModel? user = getUser();
     if (user != null) {
       user.coins = coins;
       await saveUser(user);
@@ -179,7 +179,7 @@ class StorageService {
   Future<void> updateUserDiamonds(int diamonds) async {
     await setInt(PrefKeys.userDiamonds, diamonds);
     
-    final user = getUser();
+    final UserModel? user = getUser();
     if (user != null) {
       user.diamonds = diamonds;
       await saveUser(user);
@@ -291,7 +291,7 @@ class StorageService {
   }
 
   Map<String, double>? getLastLocation() {
-    final location = getMap(PrefKeys.lastLocation);
+    final Map<String, dynamic>? location = getMap(PrefKeys.lastLocation);
     if (location != null) {
       return Map<String, double>.from(location);
     }
@@ -307,7 +307,7 @@ class StorageService {
   }
 
   List<Map<String, dynamic>>? getCachedRooms() {
-    final rooms = getList(PrefKeys.cachedRooms);
+    final List<dynamic>? rooms = getList(PrefKeys.cachedRooms);
     if (rooms != null) {
       return rooms.cast<Map<String, dynamic>>();
     }
@@ -320,7 +320,7 @@ class StorageService {
   }
 
   List<Map<String, dynamic>>? getCachedGifts() {
-    final gifts = getList(PrefKeys.cachedGifts);
+    final List<dynamic>? gifts = getList(PrefKeys.cachedGifts);
     if (gifts != null) {
       return gifts.cast<Map<String, dynamic>>();
     }
@@ -333,10 +333,10 @@ class StorageService {
   }
 
   bool isCacheValid({int maxAgeHours = 24}) {
-    final lastSync = getLastSyncTime();
+    final int? lastSync = getLastSyncTime();
     if (lastSync == null) return false;
     
-    final age = DateTime.now().millisecondsSinceEpoch - lastSync;
+    final int age = DateTime.now().millisecondsSinceEpoch - lastSync;
     return age < (maxAgeHours * 60 * 60 * 1000);
   }
 
@@ -402,7 +402,7 @@ class StorageService {
 
   // Verify PIN
   bool verifyPin(String inputPin) {
-    final savedPin = getPinCode();
+    final String? savedPin = getPinCode();
     return savedPin != null && savedPin == inputPin;
   }
 

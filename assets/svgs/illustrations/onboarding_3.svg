@@ -1,0 +1,18 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gift Box -->
+  <rect x="120" y="140" width="60" height="40" rx="5" fill="#F59E0B" fill-opacity="0.3" stroke="#F59E0B" stroke-width="2"/>
+  <rect x="130" y="120" width="40" height="20" rx="5" fill="#F59E0B" fill-opacity="0.3" stroke="#F59E0B" stroke-width="2"/>
+  
+  <!-- Ribbon -->
+  <line x1="150" y1="120" x2="150" y2="180" stroke="#F59E0B" stroke-width="3"/>
+  <line x1="120" y1="150" x2="180" y2="150" stroke="#F59E0B" stroke-width="3"/>
+  
+  <!-- Sparkles -->
+  <circle cx="190" cy="110" r="3" fill="#FFD700"/>
+  <circle cx="110" cy="170" r="3" fill="#FFD700"/>
+  <circle cx="200" cy="160" r="2" fill="#FFD700"/>
+  
+  <!-- Title -->
+  <text x="150" y="240" font-size="20" font-weight="bold" text-anchor="middle" fill="#F59E0B">Send Amazing</text>
+  <text x="150" y="270" font-size="20" font-weight="bold" text-anchor="middle" fill="#F59E0B">Gifts</text>
+</svg>

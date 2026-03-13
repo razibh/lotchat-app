@@ -3,14 +3,14 @@ import '../../../core/models/user_model.dart';
 import '../audio_wave.dart';
 
 class OutgoingCallScreen extends StatefulWidget {
-  final UserModel user;
-  final bool isVideoCall;
 
   const OutgoingCallScreen({
     Key? key,
     required this.user,
     required this.isVideoCall,
   }) : super(key: key);
+  final UserModel user;
+  final bool isVideoCall;
 
   @override
   State<OutgoingCallScreen> createState() => _OutgoingCallScreenState();
@@ -51,8 +51,8 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen>
   }
 
   String _formatDuration(int seconds) {
-    final minutes = seconds ~/ 60;
-    final secs = seconds % 60;
+    final int minutes = seconds ~/ 60;
+    final int secs = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
@@ -62,18 +62,18 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen>
       backgroundColor: Colors.black87,
       body: SafeArea(
         child: Column(
-          children: [
+          children: <>[
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                children: <>[
                   // User Avatar with pulse animation
                   ScaleTransition(
                     scale: _pulseController,
                     child: Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        boxShadow: [
+                        boxShadow: <>[
                           BoxShadow(
                             color: widget.isVideoCall 
                                 ? Colors.red.withOpacity(0.5)
@@ -113,7 +113,7 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen>
                   // Call Type
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                    children: <>[
                       Icon(
                         widget.isVideoCall ? Icons.videocam : Icons.call,
                         color: Colors.white70,
@@ -165,7 +165,7 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen>
               padding: const EdgeInsets.all(32),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
+                children: <>[
                   // Mute Button
                   _buildControlButton(
                     icon: Icons.mic,

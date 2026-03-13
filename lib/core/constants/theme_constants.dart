@@ -121,55 +121,55 @@ class AppGradients {
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
+    colors: <>[Color(0xFF8B5CF6), Color(0xFFEC4899)],
   );
 
   static const LinearGradient darkGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF1a1a2e), Color(0xFF16213e)],
+    colors: <>[Color(0xFF1a1a2e), Color(0xFF16213e)],
   );
 
   static const LinearGradient purpleGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+    colors: <>[Color(0xFF8B5CF6), Color(0xFF6D28D9)],
   );
 
   static const LinearGradient pinkGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFEC4899), Color(0xFFBE185D)],
+    colors: <>[Color(0xFFEC4899), Color(0xFFBE185D)],
   );
 
   static const LinearGradient orangeGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+    colors: <>[Color(0xFFF59E0B), Color(0xFFD97706)],
   );
 
   static const LinearGradient greenGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF10B981), Color(0xFF059669)],
+    colors: <>[Color(0xFF10B981), Color(0xFF059669)],
   );
 
   static const LinearGradient blueGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+    colors: <>[Color(0xFF3B82F6), Color(0xFF1D4ED8)],
   );
 
   static const LinearGradient vipGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)],
+    colors: <>[Color(0xFFFBBF24), Color(0xFFF59E0B)],
   );
 
   static const LinearGradient svipGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
+    colors: <>[Color(0xFF8B5CF6), Color(0xFFEC4899)],
   );
 }
 

@@ -23,7 +23,7 @@ mixin PermissionMixin {
 
   // Check if all permissions are granted
   Future<bool> areAllPermissionsGranted(List<Permission> permissions) async {
-    for (var permission in permissions) {
+    for (final permission in permissions) {
       if (!await isPermissionGranted(permission)) {
         return false;
       }
@@ -42,7 +42,7 @@ mixin PermissionMixin {
       builder: (context) => AlertDialog(
         title: Text(title),
         content: Text(message),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),

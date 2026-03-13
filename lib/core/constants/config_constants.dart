@@ -1,6 +1,6 @@
 class ConfigConstants {
   // Environment
-  static const bool isProduction = bool.fromEnvironment('PRODUCTION', defaultValue: false);
+  static const bool isProduction = bool.fromEnvironment('PRODUCTION');
   static const bool isDevelopment = !isProduction;
   
   // API Configuration

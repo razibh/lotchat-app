@@ -17,12 +17,12 @@ class ThreePattiGame extends StatefulWidget {
 class _ThreePattiGameState extends State<ThreePattiGame> 
     with LoadingMixin, ToastMixin, DialogMixin {
   
-  final _gameService = ServiceLocator().get<GameService>();
-  final _paymentService = ServiceLocator().get<PaymentService>();
+  final GameService _gameService = ServiceLocator().get<GameService>();
+  final PaymentService _paymentService = ServiceLocator().get<PaymentService>();
   
   int _betAmount = 100;
-  List<int> _playerCards = [];
-  List<int> _opponentCards = [];
+  List<int> _playerCards = <int>[];
+  List<int> _opponentCards = <int>[];
   bool _gameStarted = false;
   bool _gameEnded = false;
   int _playerCoins = 10000;
@@ -37,7 +37,7 @@ class _ThreePattiGameState extends State<ThreePattiGame>
     // Load user coins from service
   }
 
-  void _startGame() async {
+  Future<void> _startGame() async {
     if (_playerCoins < _betAmount) {
       showError('Insufficient coins');
       return;
@@ -53,16 +53,16 @@ class _ThreePattiGameState extends State<ThreePattiGame>
 
   List<int> _generateCards() {
     // Generate 3 random cards (0-51)
-    List<int> cards = [];
-    for (int i = 0; i < 3; i++) {
-      cards.add((cards.toSet().length)); // Simplified - should be unique
+    var cards = <int><int>[];
+    for (var i = 0; i < 3; i++) {
+      cards.add(cards.toSet().length); // Simplified - should be unique
     }
     return cards;
   }
 
   Future<void> _playGame() async {
     await runWithLoading(() async {
-      final result = _gameService.playThreePatti(
+      final ThreePattiResult result = _gameService.playThreePatti(
         betAmount: _betAmount,
         playerCards: _playerCards,
         opponentCards: _opponentCards,
@@ -77,7 +77,7 @@ class _ThreePattiGameState extends State<ThreePattiGame>
           _playerCoins -= _betAmount;
           showError('You lost $_betAmount coins');
         } else {
-          showInfo('It\'s a draw!');
+          showInfo("It's a draw!");
         }
       });
 
@@ -87,7 +87,7 @@ class _ThreePattiGameState extends State<ThreePattiGame>
   }
 
   Future<void> showResultDialog(dynamic result) async {
-    await showInfoDialog(
+    showInfoDialog(
       context,
       title: result.won ? '🎉 You Won!' : '😢 You Lost',
       message: result.won 
@@ -108,8 +108,8 @@ class _ThreePattiGameState extends State<ThreePattiGame>
   }
 
   String _getCardSymbol(int card) {
-    final suits = ['♠️', '♥️', '♦️', '♣️'];
-    final ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+    final List<String> suits = <String>['♠️', '♥️', '♦️', '♣️'];
+    final List<String> ranks = <String>['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
     return '${ranks[card ~/ 4]}${suits[card % 4]}';
   }
 
@@ -125,12 +125,12 @@ class _ThreePattiGameState extends State<ThreePattiGame>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.green.shade900, Colors.green.shade700],
+            colors: <>[Colors.green.shade900, Colors.green.shade700],
           ),
         ),
         child: SafeArea(
           child: Column(
-            children: [
+            children: <>[
               // Coins Display
               Container(
                 margin: const EdgeInsets.all(16),
@@ -141,7 +141,7 @@ class _ThreePattiGameState extends State<ThreePattiGame>
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+                  children: <>[
                     const Text(
                       'Your Coins:',
                       style: TextStyle(color: Colors.white, fontSize: 18),
@@ -158,13 +158,13 @@ class _ThreePattiGameState extends State<ThreePattiGame>
                 ),
               ),
 
-              if (!_gameStarted) ...[
+              if (!_gameStarted) ...<>[
                 // Bet Selection
                 Expanded(
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                      children: <>[
                         const Text(
                           'Select Bet Amount',
                           style: TextStyle(
@@ -176,7 +176,7 @@ class _ThreePattiGameState extends State<ThreePattiGame>
                         const SizedBox(height: 20),
                         Wrap(
                           spacing: 10,
-                          children: [100, 500, 1000, 5000, 10000].map((amount) {
+                          children: <int>[100, 500, 1000, 5000, 10000].map((int amount) {
                             return FilterChip(
                               label: Text('$amount'),
                               selected: _betAmount == amount,
@@ -201,15 +201,15 @@ class _ThreePattiGameState extends State<ThreePattiGame>
                     ),
                   ),
                 ),
-              ] else ...[
+              ] else ...<>[
                 // Game Area
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
+                    children: <>[
                       // Opponent Cards
                       Column(
-                        children: [
+                        children: <>[
                           const Text(
                             'Opponent',
                             style: TextStyle(
@@ -220,7 +220,7 @@ class _ThreePattiGameState extends State<ThreePattiGame>
                           const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: _opponentCards.map((card) {
+                            children: _opponentCards.map((int card) {
                               return Container(
                                 width: 80,
                                 height: 100,
@@ -265,10 +265,10 @@ class _ThreePattiGameState extends State<ThreePattiGame>
 
                       // Player Cards
                       Column(
-                        children: [
+                        children: <>[
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: _playerCards.map((card) {
+                            children: _playerCards.map((int card) {
                               return Container(
                                 width: 80,
                                 height: 100,

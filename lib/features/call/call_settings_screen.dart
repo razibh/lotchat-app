@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class CallSettingsScreen extends StatefulWidget {
-  final Map<String, dynamic> initialSettings;
 
   const CallSettingsScreen({
     Key? key,
@@ -17,6 +16,7 @@ class CallSettingsScreen extends StatefulWidget {
       'lowLightMode': false,
     },
   }) : super(key: key);
+  final Map<String, dynamic> initialSettings;
 
   @override
   State<CallSettingsScreen> createState() => _CallSettingsScreenState();
@@ -39,37 +39,37 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
         backgroundColor: Colors.green,
       ),
       body: ListView(
-        children: [
+        children: <>[
           // Audio Settings
           _buildSection(
             title: 'Audio',
             icon: Icons.audio_file,
-            children: [
+            children: <>[
               _buildRadioTile<String>(
                 title: 'Audio Output',
                 value: _settings['audioDevice'],
-                items: const [
-                  {'value': 'speaker', 'label': 'Speaker', 'icon': Icons.volume_up},
-                  {'value': 'earpiece', 'label': 'Earpiece', 'icon': Icons.phone_in_talk},
-                  {'value': 'headphones', 'label': 'Headphones', 'icon': Icons.headset},
-                  {'value': 'bluetooth', 'label': 'Bluetooth', 'icon': Icons.bluetooth_audio},
+                items: const <Map<String, dynamic>>[
+                  <String, dynamic>{'value': 'speaker', 'label': 'Speaker', 'icon': Icons.volume_up},
+                  <String, dynamic>{'value': 'earpiece', 'label': 'Earpiece', 'icon': Icons.phone_in_talk},
+                  <String, dynamic>{'value': 'headphones', 'label': 'Headphones', 'icon': Icons.headset},
+                  <String, dynamic>{'value': 'bluetooth', 'label': 'Bluetooth', 'icon': Icons.bluetooth_audio},
                 ],
-                onChanged: (value) => setState(() => _settings['audioDevice'] = value),
+                onChanged: (String value) => setState(() => _settings['audioDevice'] = value),
               ),
               _buildSwitchTile(
                 title: 'Noise Suppression',
                 value: _settings['noiseSuppression'],
-                onChanged: (value) => setState(() => _settings['noiseSuppression'] = value),
+                onChanged: (bool value) => setState(() => _settings['noiseSuppression'] = value),
               ),
               _buildSwitchTile(
                 title: 'Echo Cancellation',
                 value: _settings['echoCancellation'],
-                onChanged: (value) => setState(() => _settings['echoCancellation'] = value),
+                onChanged: (bool value) => setState(() => _settings['echoCancellation'] = value),
               ),
               _buildSwitchTile(
                 title: 'Auto Gain Control',
                 value: _settings['autoGainControl'],
-                onChanged: (value) => setState(() => _settings['autoGainControl'] = value),
+                onChanged: (bool value) => setState(() => _settings['autoGainControl'] = value),
               ),
             ],
           ),
@@ -78,22 +78,22 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
           _buildSection(
             title: 'Video',
             icon: Icons.videocam,
-            children: [
+            children: <>[
               _buildRadioTile<String>(
                 title: 'Video Quality',
                 value: _settings['videoQuality'],
-                items: const [
-                  {'value': 'low', 'label': 'Low (480p)', 'icon': Icons.hd},
-                  {'value': 'sd', 'label': 'SD (720p)', 'icon': Icons.hd},
-                  {'value': 'hd', 'label': 'HD (1080p)', 'icon': Icons.hd},
-                  {'value': 'fullhd', 'label': 'Full HD (4K)', 'icon': Icons.hd},
+                items: const <Map<String, dynamic>>[
+                  <String, dynamic>{'value': 'low', 'label': 'Low (480p)', 'icon': Icons.hd},
+                  <String, dynamic>{'value': 'sd', 'label': 'SD (720p)', 'icon': Icons.hd},
+                  <String, dynamic>{'value': 'hd', 'label': 'HD (1080p)', 'icon': Icons.hd},
+                  <String, dynamic>{'value': 'fullhd', 'label': 'Full HD (4K)', 'icon': Icons.hd},
                 ],
-                onChanged: (value) => setState(() => _settings['videoQuality'] = value),
+                onChanged: (String value) => setState(() => _settings['videoQuality'] = value),
               ),
               _buildSwitchTile(
                 title: 'Low Light Mode',
                 value: _settings['lowLightMode'],
-                onChanged: (value) => setState(() => _settings['lowLightMode'] = value),
+                onChanged: (bool value) => setState(() => _settings['lowLightMode'] = value),
               ),
             ],
           ),
@@ -102,16 +102,16 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
           _buildSection(
             title: 'Background',
             icon: Icons.wallpaper,
-            children: [
+            children: <>[
               _buildSwitchTile(
                 title: 'Virtual Background',
                 value: _settings['virtualBackground'],
-                onChanged: (value) => setState(() => _settings['virtualBackground'] = value),
+                onChanged: (bool value) => setState(() => _settings['virtualBackground'] = value),
               ),
               _buildSwitchTile(
                 title: 'Background Blur',
                 value: _settings['backgroundBlur'],
-                onChanged: (value) => setState(() => _settings['backgroundBlur'] = value),
+                onChanged: (bool value) => setState(() => _settings['backgroundBlur'] = value),
               ),
               if (_settings['virtualBackground'])
                 _buildBackgroundSelector(),
@@ -122,12 +122,12 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
           _buildSection(
             title: 'Recording',
             icon: Icons.fiber_manual_record,
-            children: [
+            children: <>[
               _buildSwitchTile(
                 title: 'Record Call',
                 subtitle: 'Save call recording to device',
                 value: _settings['recordCall'],
-                onChanged: (value) => setState(() => _settings['recordCall'] = value),
+                onChanged: (bool value) => setState(() => _settings['recordCall'] = value),
               ),
             ],
           ),
@@ -136,7 +136,7 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
           _buildSection(
             title: 'Advanced',
             icon: Icons.settings,
-            children: [
+            children: <>[
               ListTile(
                 leading: const Icon(Icons.network_check),
                 title: const Text('Network Stats'),
@@ -157,7 +157,7 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
-          children: [
+          children: <>[
             Expanded(
               child: OutlinedButton(
                 onPressed: () {
@@ -191,11 +191,11 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <>[
         Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
-            children: [
+            children: <>[
               Icon(icon, size: 20, color: Colors.green),
               const SizedBox(width: 8),
               Text(
@@ -216,9 +216,7 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
 
   Widget _buildSwitchTile({
     required String title,
-    String? subtitle,
-    required bool value,
-    required Function(bool) onChanged,
+    required bool value, required Function(bool) onChanged, String? subtitle,
   }) {
     return SwitchListTile(
       title: Text(title),
@@ -236,7 +234,7 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <>[
         Padding(
           padding: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
           child: Text(
@@ -244,9 +242,9 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
             style: const TextStyle(fontWeight: FontWeight.w500),
           ),
         ),
-        ...items.map((item) => RadioListTile<T>(
+        ...items.map((Map<String, dynamic> item) => RadioListTile<T>(
           title: Row(
-            children: [
+            children: <>[
               Icon(item['icon'], size: 20),
               const SizedBox(width: 8),
               Text(item['label']),
@@ -266,14 +264,14 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: <>[
           const Text('Choose Background'),
           const SizedBox(height: 8),
           SizedBox(
             height: 80,
             child: ListView(
               scrollDirection: Axis.horizontal,
-              children: [
+              children: <>[
                 _buildBackgroundOption('None', null, false),
                 _buildBackgroundOption('Blur', null, true),
                 _buildBackgroundOption('Office', 'assets/backgrounds/office.jpg', false),
@@ -293,7 +291,7 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
       width: 80,
       margin: const EdgeInsets.only(right: 8),
       child: Column(
-        children: [
+        children: <>[
           Container(
             width: 60,
             height: 60,
@@ -340,7 +338,7 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
         title: const Text('Network Statistics'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: const <>[
             ListTile(
               title: Text('Bitrate'),
               trailing: Text('1.2 Mbps'),
@@ -359,7 +357,7 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
             ),
           ],
         ),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),
@@ -376,7 +374,7 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
         title: const Text('Developer Options'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
+          children: <>[
             SwitchListTile(
               title: const Text('Debug Mode'),
               value: false,
@@ -394,7 +392,7 @@ class _CallSettingsScreenState extends State<CallSettingsScreen> {
             ),
           ],
         ),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),

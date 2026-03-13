@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
 class FadeAnimation extends StatefulWidget {
-  final Widget child;
-  final Duration duration;
-  final Duration delay;
-  final Curve curve;
 
   const FadeAnimation({
     Key? key,
@@ -13,6 +9,10 @@ class FadeAnimation extends StatefulWidget {
     this.delay = Duration.zero,
     this.curve = Curves.easeOut,
   }) : super(key: key);
+  final Widget child;
+  final Duration duration;
+  final Duration delay;
+  final Curve curve;
 
   @override
   State<FadeAnimation> createState() => _FadeAnimationState();
@@ -58,11 +58,6 @@ class _FadeAnimationState extends State<FadeAnimation>
 }
 
 class SlideFadeAnimation extends StatelessWidget {
-  final Widget child;
-  final Duration duration;
-  final Duration delay;
-  final Curve curve;
-  final Offset offset;
 
   const SlideFadeAnimation({
     Key? key,
@@ -72,6 +67,11 @@ class SlideFadeAnimation extends StatelessWidget {
     this.curve = Curves.easeOut,
     this.offset = const Offset(0, 0.3),
   }) : super(key: key);
+  final Widget child;
+  final Duration duration;
+  final Duration delay;
+  final Curve curve;
+  final Offset offset;
 
   @override
   Widget build(BuildContext context) {

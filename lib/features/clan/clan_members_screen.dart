@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/di/service_locator.dart';
+import '../../core/models/clan_model.dart';
 import '../../core/services/clan_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../mixins/loading_mixin.dart';
@@ -9,9 +10,9 @@ import '../profile/profile_screen.dart';
 import '../chat/chat_detail_screen.dart';
 
 class ClanMembersScreen extends StatefulWidget {
-  final ClanModel clan;
 
   const ClanMembersScreen({Key? key, required this.clan}) : super(key: key);
+  final ClanModel clan;
 
   @override
   State<ClanMembersScreen> createState() => _ClanMembersScreenState();
@@ -20,8 +21,8 @@ class ClanMembersScreen extends StatefulWidget {
 class _ClanMembersScreenState extends State<ClanMembersScreen> 
     with LoadingMixin, ToastMixin, DialogMixin {
   
-  final _clanService = ServiceLocator().get<ClanService>();
-  final _authService = ServiceLocator().get<AuthService>();
+  final ClanService _clanService = ServiceLocator().get<ClanService>();
+  final AuthService _authService = ServiceLocator().get<AuthService>();
   
   late ClanModel _clan;
   String? _currentUserId;
@@ -60,7 +61,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
     
     // Sort by role (leader first, then co-leader, etc.)
     members.sort((a, b) {
-      final roleOrder = {
+      final roleOrder = <, int>{
         ClanRole.leader: 0,
         ClanRole.coLeader: 1,
         ClanRole.elder: 2,
@@ -88,7 +89,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
 
   Future<void> _changeRole(ClanMember member, ClanRole newRole) async {
     await runWithLoading(() async {
-      final success = await _clanService.changeMemberRole(
+      final bool success = await _clanService.changeMemberRole(
         _clan.id,
         member.userId,
         newRole,
@@ -97,7 +98,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
       if (success) {
         showSuccess('Role updated');
         // Refresh clan
-        final updatedClan = await _clanService.getClan(_clan.id);
+        final ClanModel? updatedClan = await _clanService.getClan(_clan.id);
         if (updatedClan != null) {
           setState(() {
             _clan = updatedClan;
@@ -108,19 +109,19 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
   }
 
   Future<void> _kickMember(ClanMember member) async {
-    final confirmed = await showConfirmDialog(
+    final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Kick Member',
       message: 'Are you sure you want to kick ${member.username}?',
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       await runWithLoading(() async {
-        final success = await _clanService.kickMember(_clan.id, member.userId);
+        final bool success = await _clanService.kickMember(_clan.id, member.userId);
         if (success) {
           showSuccess('${member.username} has been kicked');
           // Refresh clan
-          final updatedClan = await _clanService.getClan(_clan.id);
+          final ClanModel? updatedClan = await _clanService.getClan(_clan.id);
           if (updatedClan != null) {
             setState(() {
               _clan = updatedClan;
@@ -132,14 +133,14 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
   }
 
   void _showMemberOptions(ClanMember member) {
-    final isSelf = member.userId == _currentUserId;
-    final canManageThis = _canManage && !isSelf;
+    final bool isSelf = member.userId == _currentUserId;
+    final bool canManageThis = _canManage && !isSelf;
 
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
         child: Wrap(
-          children: [
+          children: <>[
             ListTile(
               leading: const Icon(Icons.person),
               title: const Text('View Profile'),
@@ -170,7 +171,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
                 );
               },
             ),
-            if (canManageThis) ...[
+            if (canManageThis) ...<>[
               const Divider(),
               if (member.role != ClanRole.leader)
                 ListTile(
@@ -212,7 +213,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
         title: const Text('Promote Member'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
+          children: <>[
             if (member.role == ClanRole.member)
               ListTile(
                 title: const Text('Elder'),
@@ -242,7 +243,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
         title: const Text('Demote Member'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
+          children: <>[
             if (member.role == ClanRole.coLeader)
               ListTile(
                 title: const Text('Elder'),
@@ -302,7 +303,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Column(
-            children: [
+            children: <>[
               // Search Bar
               Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -331,8 +332,8 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  children: ['All', 'Leader', 'Co-Leader', 'Elder', 'Member']
-                      .map((role) => Padding(
+                  children: <String>['All', 'Leader', 'Co-Leader', 'Elder', 'Member']
+                      .map((String role) => Padding(
                             padding: const EdgeInsets.only(right: 8),
                             child: FilterChip(
                               label: Text(role),
@@ -363,13 +364,13 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
               itemCount: filteredMembers.length,
               itemBuilder: (context, index) {
                 final member = filteredMembers[index];
-                final isSelf = member.userId == _currentUserId;
+                final bool isSelf = member.userId == _currentUserId;
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     leading: Stack(
-                      children: [
+                      children: <>[
                         CircleAvatar(
                           radius: 24,
                           backgroundImage: member.avatar != null
@@ -396,14 +397,14 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
                       ],
                     ),
                     title: Row(
-                      children: [
+                      children: <>[
                         Text(
                           member.username,
                           style: TextStyle(
                             fontWeight: isSelf ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
-                        if (isSelf) ...[
+                        if (isSelf) ...<>[
                           const SizedBox(width: 4),
                           const Text(
                             '(You)',
@@ -417,9 +418,9 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                      children: <>[
                         Row(
-                          children: [
+                          children: <>[
                             Text(
                               _getRoleIcon(member.role),
                               style: const TextStyle(fontSize: 12),
@@ -437,7 +438,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
                         ),
                         const SizedBox(height: 4),
                         Row(
-                          children: [
+                          children: <>[
                             const Icon(Icons.flash_on, size: 12, color: Colors.amber),
                             const SizedBox(width: 2),
                             Text('${member.activityPoints} activity'),
@@ -451,7 +452,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: [
+                      children: <>[
                         if (!isSelf)
                           IconButton(
                             icon: const Icon(Icons.message, color: Colors.blue),

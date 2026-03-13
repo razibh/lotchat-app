@@ -18,8 +18,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> 
     with LoadingMixin, ToastMixin, DialogMixin {
   
-  final _authService = ServiceLocator().get<AuthService>();
-  final _storageService = ServiceLocator().get<StorageService>();
+  final AuthService _authService = ServiceLocator().get<AuthService>();
+  final StorageService _storageService = ServiceLocator().get<StorageService>();
   
   bool _notificationsEnabled = true;
   bool _soundEnabled = true;
@@ -44,13 +44,13 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _logout() async {
-    final confirmed = await showConfirmDialog(
+    final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Logout',
       message: 'Are you sure you want to logout?',
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       await runWithLoading(() async {
         await _authService.signOut();
         Navigator.pushAndRemoveUntil(
@@ -64,13 +64,13 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _clearCache() async {
-    final confirmed = await showConfirmDialog(
+    final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Clear Cache',
       message: 'Are you sure you want to clear app cache?',
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       await runWithLoading(() async {
         await _storageService.clearAllData();
         showSuccess('Cache cleared');
@@ -85,8 +85,8 @@ class _SettingsScreenState extends State<SettingsScreen>
         title: const Text('Select Language'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: ['English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Korean', 'Hindi', 'Bengali']
-              .map((lang) => ListTile(
+          children: <String>['English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Korean', 'Hindi', 'Bengali']
+              .map((String lang) => ListTile(
                     title: Text(lang),
                     onTap: () {
                       setState(() {
@@ -112,7 +112,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: [
+        children: <>[
           // Account Section
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
@@ -123,7 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           Card(
             child: Column(
-              children: [
+              children: <>[
                 ListTile(
                   leading: const Icon(Icons.person, color: Colors.blue),
                   title: const Text('Edit Profile'),
@@ -170,7 +170,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           Card(
             child: Column(
-              children: [
+              children: <>[
                 ListTile(
                   leading: const Icon(Icons.brightness_4, color: Colors.purple),
                   title: const Text('Dark Mode'),
@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           Card(
             child: Column(
-              children: [
+              children: <>[
                 ListTile(
                   leading: const Icon(Icons.volume_up, color: Colors.blue),
                   title: const Text('Sound Effects'),
@@ -250,7 +250,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           Card(
             child: Column(
-              children: [
+              children: <>[
                 ListTile(
                   leading: const Icon(Icons.storage, color: Colors.green),
                   title: const Text('Clear Cache'),
@@ -283,7 +283,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           Card(
             child: Column(
-              children: [
+              children: <>[
                 ListTile(
                   leading: const Icon(Icons.info, color: Colors.grey),
                   title: const Text('About LotChat'),
@@ -338,7 +338,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           Card(
             child: Column(
-              children: [
+              children: <>[
                 ListTile(
                   leading: const Icon(Icons.help, color: Colors.purple),
                   title: const Text('Help Center'),

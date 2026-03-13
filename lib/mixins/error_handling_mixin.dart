@@ -20,7 +20,7 @@ mixin ErrorHandlingMixin {
     }
     
     if (error.toString().contains('PERMISSION_DENIED')) {
-      return 'You don\'t have permission to do this.';
+      return "You don't have permission to do this.";
     }
     
     if (error.toString().contains('NOT_FOUND')) {
@@ -40,7 +40,7 @@ mixin ErrorHandlingMixin {
       builder: (context) => AlertDialog(
         title: const Text('Error'),
         content: Text(getUserFriendlyErrorMessage(error)),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),

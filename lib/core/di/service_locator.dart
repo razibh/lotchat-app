@@ -1,4 +1,3 @@
-// lib/core/di/service_locator.dart
 import 'package:get_it/get_it.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -30,11 +29,11 @@ import '../services/pk_service.dart';
 final getIt = GetIt.instance;
 
 class ServiceLocator {
-  static final ServiceLocator _instance = ServiceLocator._internal();
   factory ServiceLocator() => _instance;
   ServiceLocator._internal();
+  static final ServiceLocator _instance = ServiceLocator._internal();
 
-  static const bool _isProduction = bool.fromEnvironment('PRODUCTION', defaultValue: false);
+  static const bool _isProduction = bool.fromEnvironment('PRODUCTION');
 
   Future<void> init() async {
     // Register all services
@@ -51,16 +50,17 @@ class ServiceLocator {
   // Core Services (Singleton)
   Future<void> _registerCoreServices() async {
     // Storage first because others depend on it
-    final storageService = await StorageService().init();
+    final StorageService storageService = StorageService();
+    await storageService.init();
     getIt.registerSingleton<StorageService>(storageService);
     
     // Logger
-    final loggerService = LoggerService();
+    final LoggerService loggerService = LoggerService();
     await loggerService.initialize();
     getIt.registerSingleton<LoggerService>(loggerService);
     
     // Config
-    final configService = ConfigService();
+    final ConfigService configService = ConfigService();
     await configService.initialize();
     getIt.registerSingleton<ConfigService>(configService);
     
@@ -68,7 +68,7 @@ class ServiceLocator {
     getIt.registerSingleton<ErrorService>(ErrorService());
     
     // Cache
-    final cacheService = CacheService();
+    final CacheService cacheService = CacheService();
     await cacheService.init();
     getIt.registerSingleton<CacheService>(cacheService);
   }
@@ -76,11 +76,11 @@ class ServiceLocator {
   // API Services
   void _registerApiServices() {
     // API Service (Lazy)
-    getIt.registerLazySingleton<ApiService>(() => ApiService());
+    getIt.registerLazySingleton<ApiService>(ApiService.new);
     
     // Socket Service
     getIt.registerSingletonAsync<SocketService>(() async {
-      final socket = SocketService();
+      final SocketService socket = SocketService();
       await socket.initSocket();
       return socket;
     });
@@ -94,31 +94,31 @@ class ServiceLocator {
 
   // Business Services
   void _registerBusinessServices() {
-    getIt.registerFactory<GameService>(() => GameService());
-    getIt.registerFactory<CallService>(() => CallService());
-    getIt.registerFactory<PaymentService>(() => PaymentService());
-    getIt.registerFactory<ModerationService>(() => ModerationService());
-    getIt.registerFactory<TranslationService>(() => TranslationService());
-    getIt.registerFactory<RecommendationService>(() => RecommendationService());
+    getIt.registerFactory<GameService>(GameService.new);
+    getIt.registerFactory<CallService>(CallService.new);
+    getIt.registerFactory<PaymentService>(PaymentService.new);
+    getIt.registerFactory<ModerationService>(ModerationService.new);
+    getIt.registerFactory<TranslationService>(TranslationService.new);
+    getIt.registerFactory<RecommendationService>(RecommendationService.new);
   }
 
   // Utility Services
   void _registerUtilityServices() {
-    getIt.registerFactory<NotificationService>(() => NotificationService());
-    getIt.registerFactory<RoomService>(() => RoomService());
-    getIt.registerFactory<GiftService>(() => GiftService());
-    getIt.registerFactory<LeaderboardService>(() => LeaderboardService());
-    getIt.registerFactory<SearchService>(() => SearchService());
+    getIt.registerFactory<NotificationService>(NotificationService.new);
+    getIt.registerFactory<RoomService>(RoomService.new);
+    getIt.registerFactory<GiftService>(GiftService.new);
+    getIt.registerFactory<LeaderboardService>(LeaderboardService.new);
+    getIt.registerFactory<SearchService>(SearchService.new);
   }
 
   // Feature Services
   void _registerFeatureServices() {
-    getIt.registerFactory<AdminService>(() => AdminService());
-    getIt.registerFactory<AgencyService>(() => AgencyService());
-    getIt.registerFactory<SellerService>(() => SellerService());
-    getIt.registerFactory<FriendService>(() => FriendService());
-    getIt.registerFactory<ClanService>(() => ClanService());
-    getIt.registerFactory<PkService>(() => PkService());
+    getIt.registerFactory<AdminService>(AdminService.new);
+    getIt.registerFactory<AgencyService>(AgencyService.new);
+    getIt.registerFactory<SellerService>(SellerService.new);
+    getIt.registerFactory<FriendService>(FriendService.new);
+    getIt.registerFactory<ClanService>(ClanService.new);
+    getIt.registerFactory<PkService>(PkService);
   }
 
   // Initialize async services
@@ -145,7 +145,7 @@ class ServiceLocator {
     try {
       return getIt<T>();
     } catch (e) {
-      throw Exception('Service ${T.toString()} not found: $e');
+      throw Exception('Service ${T} not found: $e');
     }
   }
 

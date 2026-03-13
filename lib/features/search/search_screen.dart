@@ -16,14 +16,14 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMixin {
   
-  final _searchService = ServiceLocator().get<SearchService>();
+  final SearchService _searchService = ServiceLocator().get<SearchService>();
   final _searchController = TextEditingController();
   
-  List<Map<String, dynamic>> _results = [];
+  List<Map<String, dynamic>> _results = <Map<String, dynamic>>[];
   String _selectedFilter = 'All';
   bool _isSearching = false;
 
-  final List<String> _filters = ['All', 'Users', 'Rooms', 'Posts', 'Gifts'];
+  final List<String> _filters = <String>['All', 'Users', 'Rooms', 'Posts', 'Gifts'];
 
   @override
   void dispose() {
@@ -43,9 +43,9 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
       
       // Mock search results
       setState(() {
-        _results = List.generate(20, (index) {
-          final type = _getRandomType(index);
-          return {
+        _results = List.generate(20, (int index) {
+          final String type = _getRandomType(index);
+          return <String, dynamic>{
             'id': 'result_$index',
             'type': type,
             'title': _getTitle(type, index),
@@ -63,7 +63,7 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
 
   String _getRandomType(int index) {
     if (_selectedFilter != 'All') return _selectedFilter;
-    final types = ['Users', 'Rooms', 'Posts', 'Gifts'];
+    final List<String> types = <String>['Users', 'Rooms', 'Posts', 'Gifts'];
     return types[index % types.length];
   }
 
@@ -102,7 +102,7 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
       case 'Users':
         return '${index + 1} mutual friends';
       case 'Rooms':
-        return '${index % 2 == 0 ? 'Live' : 'Recording'}';
+        return index % 2 == 0 ? 'Live' : 'Recording';
       case 'Posts':
         return '${index}h ago';
       case 'Gifts':
@@ -160,7 +160,7 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              children: [
+              children: <>[
                 // Search Bar
                 TextField(
                   controller: _searchController,
@@ -189,7 +189,7 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
                   height: 40,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
-                    children: _filters.map((filter) {
+                    children: _filters.map((String filter) {
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: FilterChip(
@@ -225,7 +225,7 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
                   ? const Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                        children: <>[
                           Icon(Icons.search, size: 80, color: Colors.grey),
                           SizedBox(height: 16),
                           Text(
@@ -249,7 +249,7 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
                   padding: const EdgeInsets.all(16),
                   itemCount: _results.length,
                   itemBuilder: (context, index) {
-                    final result = _results[index];
+                    final Map<String, dynamic> result = _results[index];
                     return Card(
                       margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
@@ -265,7 +265,7 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
+                          children: <>[
                             Text(
                               result['value'],
                               style: TextStyle(
@@ -295,7 +295,6 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
             builder: (context) => ProfileScreen(userId: result['id']),
           ),
         );
-        break;
       case 'Rooms':
         // Navigate to room
         break;

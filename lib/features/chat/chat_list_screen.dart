@@ -19,8 +19,8 @@ class ChatListScreen extends StatefulWidget {
 class _ChatListScreenState extends State<ChatListScreen> 
     with PaginationMixin<Map<String, dynamic>>, ToastMixin {
   
-  final _databaseService = ServiceLocator().get<DatabaseService>();
-  final _socketService = ServiceLocator().get<SocketService>();
+  final DatabaseService _databaseService = ServiceLocator().get<DatabaseService>();
+  final SocketService _socketService = ServiceLocator().get<SocketService>();
   final String _currentUserId = 'current_user_id'; // Get from auth
 
   @override
@@ -42,7 +42,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     await Future.delayed(const Duration(seconds: 1));
     
     // Mock data
-    return List.generate(10, (index) => {
+    return List.generate(10, (int index) => <String, dynamic>{
       'id': 'chat_$index',
       'userId': 'user_$index',
       'name': 'User ${index + 1}',
@@ -56,8 +56,8 @@ class _ChatListScreenState extends State<ChatListScreen>
   }
 
   String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
+    final DateTime now = DateTime.now();
+    final Duration difference = now.difference(time);
 
     if (difference.inDays > 0) {
       return '${difference.inDays}d ago';
@@ -75,7 +75,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Messages'),
-        actions: [
+        actions: <>[
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
@@ -111,7 +111,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                         return buildPaginationLoadingIndicator();
                       }
                       
-                      final chat = items[index];
+                      final Map<String, dynamic> chat = items[index];
                       return _buildChatTile(chat);
                     },
                   ),
@@ -122,7 +122,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   Widget _buildChatTile(Map<String, dynamic> chat) {
     return ListTile(
       leading: Stack(
-        children: [
+        children: <>[
           CircleAvatar(
             backgroundImage: chat['avatar'] != null
                 ? NetworkImage(chat['avatar'])
@@ -148,7 +148,7 @@ class _ChatListScreenState extends State<ChatListScreen>
         ],
       ),
       title: Row(
-        children: [
+        children: <>[
           Expanded(
             child: Text(
               chat['name'],
@@ -165,7 +165,7 @@ class _ChatListScreenState extends State<ChatListScreen>
         ],
       ),
       subtitle: Row(
-        children: [
+        children: <>[
           if (chat['isTyping'])
             const Expanded(
               child: Text(
@@ -225,7 +225,7 @@ class _ChatListScreenState extends State<ChatListScreen>
       context: context,
       builder: (context) => SafeArea(
         child: Wrap(
-          children: [
+          children: <>[
             ListTile(
               leading: const Icon(Icons.person),
               title: const Text('View Profile'),

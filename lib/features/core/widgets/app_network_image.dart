@@ -1,0 +1,173 @@
+import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
+class AppNetworkImage extends StatelessWidget {
+
+  const AppNetworkImage({
+    Key? key,
+    required this.imageUrl,
+    this.width,
+    this.height,
+    this.fit = BoxFit.cover,
+    this.placeholder,
+    this.errorWidget,
+    this.borderRadius,
+    this.backgroundColor,
+  }) : super(key: key);
+  final String imageUrl;
+  final double? width;
+  final double? height;
+  final BoxFit fit;
+  final Widget? placeholder;
+  final Widget? errorWidget;
+  final BorderRadius? borderRadius;
+  final Color? backgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: borderRadius ?? BorderRadius.zero,
+      child: Container(
+        width: width,
+        height: height,
+        color: backgroundColor ?? Colors.grey.shade200,
+        child: CachedNetworkImage(
+          imageUrl: imageUrl,
+          width: width,
+          height: height,
+          fit: fit,
+          placeholder: (context, url) => placeholder ??
+              Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+              ),
+          errorWidget: (context, url, error) => errorWidget ??
+              Container(
+                color: Colors.grey.shade300,
+                child: Center(
+                  child: Icon(
+                    Icons.broken_image,
+                    color: Colors.grey.shade600,
+                    size: 30,
+                  ),
+                ),
+              ),
+        ),
+      ),
+    );
+  }
+}
+
+class AppAvatar extends StatelessWidget {
+
+  const AppAvatar({
+    Key? key,
+    this.imageUrl,
+    this.name,
+    this.radius = 20,
+    this.isOnline = false,
+  }) : super(key: key);
+  final String? imageUrl;
+  final String? name;
+  final double radius;
+  final bool isOnline;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: <>[
+        CircleAvatar(
+          radius: radius,
+          backgroundImage: imageUrl != null
+              ? CachedNetworkImageProvider(imageUrl!)
+              : null,
+          backgroundColor: Colors.grey.shade300,
+          child: imageUrl == null && name != null
+              ? Text(
+                  name![0].toUpperCase(),
+                  style: TextStyle(
+                    fontSize: radius * 0.6,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
+              : null,
+        ),
+        if (isOnline)
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              width: radius * 0.4,
+              height: radius * 0.4,
+              decoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white,
+                  width: 2,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class AppCachedImage extends StatelessWidget {
+
+  const AppCachedImage({
+    Key? key,
+    required this.imageUrl,
+    this.width,
+    this.height,
+    this.fit = BoxFit.cover,
+    this.fadeInDuration = const Duration(milliseconds: 300),
+    this.memCacheHeight = false,
+    this.memCacheWidth = false,
+  }) : super(key: key);
+  final String imageUrl;
+  final double? width;
+  final double? height;
+  final BoxFit fit;
+  final Duration fadeInDuration;
+  final bool memCacheHeight;
+  final bool memCacheWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      width: width,
+      height: height,
+      fit: fit,
+      fadeInDuration: fadeInDuration,
+      memCacheHeight: memCacheHeight ? height?.toInt() : null,
+      memCacheWidth: memCacheWidth ? width?.toInt() : null,
+      placeholder: (context, url) => Container(
+        width: width,
+        height: height,
+        color: Colors.grey.shade200,
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      errorWidget: (context, url, error) => Container(
+        width: width,
+        height: height,
+        color: Colors.grey.shade300,
+        child: const Center(
+          child: Icon(Icons.error, color: Colors.grey),
+        ),
+      ),
+    );
+  }
+}

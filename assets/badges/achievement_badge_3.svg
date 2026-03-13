@@ -1,0 +1,17 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="60" cy="60" r="50" fill="url(#legend_gradient)" stroke="url(#legend_stroke)" stroke-width="4"/>
+  <circle cx="60" cy="60" r="40" fill="white" fill-opacity="0.1"/>
+  <text x="60" y="65" font-size="24" font-weight="bold" text-anchor="middle" fill="white" font-family="Arial">LEGEND</text>
+  <text x="60" y="90" font-size="30" font-weight="bold" text-anchor="middle" fill="white" font-family="Arial">👑</text>
+  <defs>
+    <linearGradient id="legend_gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#000428"/>
+      <stop offset="100%" stop-color="#004e92"/>
+    </linearGradient>
+    <linearGradient id="legend_stroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="50%" stop-color="#FFA500"/>
+      <stop offset="100%" stop-color="#FF4500"/>
+    </linearGradient>
+  </defs>
+</svg>

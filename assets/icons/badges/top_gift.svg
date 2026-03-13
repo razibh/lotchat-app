@@ -1,0 +1,11 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="32" cy="32" r="24" fill="url(#topGiftGradient)"/>
+  <path d="M32 16 L36 24 L44 26 L38 32 L40 40 L32 36 L24 40 L26 32 L20 26 L28 24 L32 16Z" fill="white" fill-opacity="0.3"/>
+  <text x="32" y="44" font-size="8" text-anchor="middle" fill="white">TOP GIFT</text>
+  <defs>
+    <linearGradient id="topGiftGradient" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD700"/>
+      <stop offset="1" stop-color="#FFA500"/>
+    </linearGradient>
+  </defs>
+</svg>

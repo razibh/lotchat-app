@@ -42,14 +42,14 @@ mixin ConnectivityMixin {
       builder: (context) => AlertDialog(
         title: const Text('No Internet'),
         content: const Text('Please check your internet connection.'),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
           ),
           TextButton(
             onPressed: () async {
-              final connected = await checkConnection();
+              final bool connected = await checkConnection();
               if (connected) {
                 Navigator.pop(context);
               }

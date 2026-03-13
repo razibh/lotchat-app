@@ -19,7 +19,7 @@ class GamesHomeScreen extends StatelessWidget {
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
         childAspectRatio: 0.9,
-        children: [
+        children: <>[
           _buildGameCard(
             context,
             'Roulette',
@@ -110,10 +110,10 @@ class GamesHomeScreen extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [color, color.withOpacity(0.7)],
+              colors: <>[color, color.withOpacity(0.7)],
             ),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
+            boxShadow: <>[
               BoxShadow(
                 color: color.withOpacity(0.3),
                 blurRadius: 10,
@@ -123,7 +123,7 @@ class GamesHomeScreen extends StatelessWidget {
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+            children: <>[
               Text(
                 emoji,
                 style: const TextStyle(fontSize: 50),

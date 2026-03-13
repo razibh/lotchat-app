@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 class BeautyFilterPanel extends StatefulWidget {
-  final Function(Map<String, double>) onFilterChanged;
-  final Map<String, double> initialFilters;
 
   const BeautyFilterPanel({
     Key? key,
@@ -15,6 +13,8 @@ class BeautyFilterPanel extends StatefulWidget {
       'bigEyes': 0.0,
     },
   }) : super(key: key);
+  final Function(Map<String, double>) onFilterChanged;
+  final Map<String, double> initialFilters;
 
   @override
   State<BeautyFilterPanel> createState() => _BeautyFilterPanelState();
@@ -43,7 +43,7 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [
+        boxShadow: <>[
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
@@ -54,10 +54,10 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: <>[
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
+            children: <>[
               const Text(
                 'Beauty Filters',
                 style: TextStyle(
@@ -103,8 +103,8 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
             key: 'thinFace',
             icon: Icons.face_retouching_natural,
             color: Colors.purple,
-            min: -1.0,
-            max: 1.0,
+            min: -1,
+            max: 1,
           ),
           
           // Big Eyes
@@ -113,8 +113,7 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
             key: 'bigEyes',
             icon: Icons.visibility,
             color: Colors.green,
-            min: -1.0,
-            max: 1.0,
+            min: -1,
           ),
           
           const SizedBox(height: 16),
@@ -124,7 +123,7 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
             child: TextButton.icon(
               onPressed: () {
                 setState(() {
-                  _filters = {
+                  _filters = <String, double>{
                     'smoothness': 0.5,
                     'brightness': 0.5,
                     'whiteness': 0.5,
@@ -154,7 +153,7 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        children: [
+        children: <>[
           Container(
             width: 40,
             height: 40,
@@ -168,7 +167,7 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: <>[
                 Text(
                   label,
                   style: const TextStyle(
@@ -208,29 +207,29 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
 
 // Preset Beauty Filters
 class BeautyFilterPresets {
-  static const Map<String, Map<String, double>> presets = {
-    'Natural': {
+  static const Map<String, Map<String, double>> presets = <String, Map<String, double>>{
+    'Natural': <String, double>{
       'smoothness': 0.3,
       'brightness': 0.5,
       'whiteness': 0.4,
       'thinFace': 0.0,
       'bigEyes': 0.0,
     },
-    'Glowing': {
+    'Glowing': <String, double>{
       'smoothness': 0.6,
       'brightness': 0.7,
       'whiteness': 0.6,
       'thinFace': 0.1,
       'bigEyes': 0.1,
     },
-    'Vintage': {
+    'Vintage': <String, double>{
       'smoothness': 0.4,
       'brightness': 0.4,
       'whiteness': 0.3,
       'thinFace': 0.0,
       'bigEyes': 0.0,
     },
-    'Kawaii': {
+    'Kawaii': <String, double>{
       'smoothness': 0.8,
       'brightness': 0.8,
       'whiteness': 0.8,

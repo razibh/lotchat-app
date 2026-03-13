@@ -9,13 +9,13 @@ class PaymentService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
   // Coin packages
-  static const List<CoinPackage> coinPackages = [
-    CoinPackage(id: 'pkg1', coins: 10000, price: 1.0, popular: false),
-    CoinPackage(id: 'pkg2', coins: 20000, price: 2.0, popular: true),
-    CoinPackage(id: 'pkg3', coins: 50000, price: 5.0, popular: false),
-    CoinPackage(id: 'pkg4', coins: 100000, price: 10.0, popular: false),
-    CoinPackage(id: 'pkg5', coins: 200000, price: 20.0, popular: false),
-    CoinPackage(id: 'pkg6', coins: 500000, price: 50.0, popular: true),
+  static const List<CoinPackage> coinPackages = <CoinPackage>[
+    CoinPackage(id: 'pkg1', coins: 10000, price: 1, popular: false),
+    CoinPackage(id: 'pkg2', coins: 20000, price: 2, popular: true),
+    CoinPackage(id: 'pkg3', coins: 50000, price: 5, popular: false),
+    CoinPackage(id: 'pkg4', coins: 100000, price: 10, popular: false),
+    CoinPackage(id: 'pkg5', coins: 200000, price: 20, popular: false),
+    CoinPackage(id: 'pkg6', coins: 500000, price: 50, popular: true),
   ];
 
   // ==================== STRIPE PAYMENT ====================
@@ -28,7 +28,7 @@ class PaymentService {
       if (user == null) throw Exception('User not logged in');
 
       // Create payment intent on your backend
-      final paymentIntent = await _createStripePaymentIntent(
+      final Map<String, dynamic> paymentIntent = await _createStripePaymentIntent(
         amount: (package.price * 100).toInt(), // Convert to cents
         currency: 'usd',
         paymentMethodId: paymentMethodId,
@@ -75,7 +75,7 @@ class PaymentService {
   }) async {
     // Call your backend to create payment intent
     // This is just a mock implementation
-    return {
+    return <String, dynamic>{
       'client_secret': 'mock_client_secret',
       'id': 'mock_payment_id',
     };
@@ -92,12 +92,12 @@ class PaymentService {
       final user = _auth.currentUser;
       if (user == null) throw Exception('User not logged in');
 
-      var options = {
+      final options = <String, Object>{
         'key': 'YOUR_RAZORPAY_KEY',
         'amount': (package.price * 100).toInt(), // in paise
         'name': 'LotChat',
         'description': '${package.coins} Coins',
-        'prefill': {
+        'prefill': <String, >{
           'contact': user.phoneNumber,
           'email': user.email,
         },
@@ -146,7 +146,7 @@ class PaymentService {
       
       if (!sellerDoc.exists) throw Exception('Seller not found');
       
-      final sellerData = sellerDoc.data()!;
+      final sellerData = sellerDoc.data();
       final sellerCoins = sellerData['coinBalance'] ?? 0;
       
       if (sellerCoins < package.coins) {
@@ -158,19 +158,19 @@ class PaymentService {
         // Deduct from seller
         transaction.update(
           _firestore.collection('sellers').doc(sellerId),
-          {'coinBalance': sellerCoins - package.coins},
+          <String, >{'coinBalance': sellerCoins - package.coins},
         );
         
         // Add to user
         transaction.update(
           _firestore.collection('users').doc(user.uid),
-          {'coins': FieldValue.increment(package.coins)},
+          <String, >{'coins': FieldValue.increment(package.coins)},
         );
         
         // Record sale
         transaction.set(
           _firestore.collection('coin_sales').doc(),
-          {
+          <String, >{
             'sellerId': sellerId,
             'userId': user.uid,
             'package': package.toJson(),
@@ -213,12 +213,12 @@ class PaymentService {
       await _firestore.runTransaction((transaction) async {
         transaction.update(
           _firestore.collection('users').doc(userId),
-          {'coins': FieldValue.increment(amount)},
+          <String, >{'coins': FieldValue.increment(amount)},
         );
         
         transaction.set(
           _firestore.collection('admin_transactions').doc(),
-          {
+          <String, >{
             'adminId': admin.uid,
             'userId': userId,
             'amount': amount,
@@ -240,7 +240,7 @@ class PaymentService {
     await _firestore
         .collection('users')
         .doc(userId)
-        .update({
+        .update(<String, >{
           'coins': FieldValue.increment(coins),
         });
   }
@@ -251,7 +251,7 @@ class PaymentService {
     required String paymentMethod,
     required String transactionId,
   }) async {
-    await _firestore.collection('transactions').add({
+    await _firestore.collection('transactions').add(<String, >{
       'userId': userId,
       'package': package.toJson(),
       'amount': package.price,
@@ -266,7 +266,7 @@ class PaymentService {
   // Get purchase history
   Stream<List<PurchaseRecord>> getPurchaseHistory() {
     final user = _auth.currentUser;
-    if (user == null) return Stream.empty();
+    if (user == null) return const Stream.empty();
     
     return _firestore
         .collection('transactions')
@@ -283,10 +283,6 @@ class PaymentService {
 // ==================== MODEL CLASSES ====================
 
 class CoinPackage {
-  final String id;
-  final int coins;
-  final double price;
-  final bool popular;
   
   CoinPackage({
     required this.id,
@@ -295,27 +291,26 @@ class CoinPackage {
     required this.popular,
   });
   
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'coins': coins,
-    'price': price,
-    'popular': popular,
-  };
-  
   factory CoinPackage.fromJson(Map<String, dynamic> json) => CoinPackage(
     id: json['id'],
     coins: json['coins'],
     price: json['price'],
     popular: json['popular'],
   );
+  final String id;
+  final int coins;
+  final double price;
+  final bool popular;
+  
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'coins': coins,
+    'price': price,
+    'popular': popular,
+  };
 }
 
 class PurchaseRecord {
-  final String id;
-  final int coins;
-  final double amount;
-  final String paymentMethod;
-  final DateTime timestamp;
   
   PurchaseRecord({
     required this.id,
@@ -334,4 +329,9 @@ class PurchaseRecord {
       timestamp: (json['timestamp'] as Timestamp).toDate(),
     );
   }
+  final String id;
+  final int coins;
+  final double amount;
+  final String paymentMethod;
+  final DateTime timestamp;
 }

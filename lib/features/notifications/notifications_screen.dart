@@ -15,7 +15,7 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> 
     with PaginationMixin<Map<String, dynamic>> {
   
-  final _notificationService = ServiceLocator().get<NotificationService>();
+  final NotificationService _notificationService = ServiceLocator().get<NotificationService>();
   String _selectedFilter = 'All';
 
   @override
@@ -29,9 +29,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   Future<List<Map<String, dynamic>>> fetchPage(int page) async {
     await Future.delayed(const Duration(seconds: 1));
     
-    return List.generate(20, (index) {
-      final type = index % 5;
-      return {
+    return List.generate(20, (int index) {
+      final int type = index % 5;
+      return <String, dynamic>{
         'id': 'notif_$index',
         'type': _getNotificationType(type),
         'icon': _getNotificationIcon(type),
@@ -40,7 +40,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         'body': _getNotificationBody(type, index),
         'time': DateTime.now().subtract(Duration(minutes: index * 30)),
         'isRead': index % 3 == 0,
-        'data': {},
+        'data': <dynamic, dynamic>{},
       };
     });
   }
@@ -101,8 +101,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   }
 
   String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
+    final DateTime now = DateTime.now();
+    final Duration difference = now.difference(time);
 
     if (difference.inDays > 0) {
       return '${difference.inDays}d ago';
@@ -117,7 +117,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
   void _markAsRead(String id) {
     setState(() {
-      final index = items.indexWhere((n) => n['id'] == id);
+      final int index = items.indexWhere((Map<String, dynamic> n) => n['id'] == id);
       if (index != -1) {
         items[index]['isRead'] = true;
       }
@@ -126,7 +126,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
   void _markAllAsRead() {
     setState(() {
-      for (var notif in items) {
+      for (Map<String, dynamic> notif in items) {
         notif['isRead'] = true;
       }
     });
@@ -140,7 +140,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
   List<Map<String, dynamic>> get _filteredNotifications {
     if (_selectedFilter == 'All') return items;
-    return items.where((n) => n['type'] == _selectedFilter.toLowerCase()).toList();
+    return items.where((Map<String, dynamic> n) => n['type'] == _selectedFilter.toLowerCase()).toList();
   }
 
   @override
@@ -149,7 +149,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       appBar: AppBar(
         title: const Text('Notifications'),
         backgroundColor: Colors.purple,
-        actions: [
+        actions: <>[
           IconButton(
             icon: const Icon(Icons.done_all),
             onPressed: _markAllAsRead,
@@ -166,8 +166,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: ListView(
               scrollDirection: Axis.horizontal,
-              children: ['All', 'Gift', 'Like', 'Comment', 'Friend', 'System']
-                  .map((filter) => Padding(
+              children: <String>['All', 'Gift', 'Like', 'Comment', 'Friend', 'System']
+                  .map((String filter) => Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: FilterChip(
                           label: Text(filter),
@@ -192,7 +192,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       body: _filteredNotifications.isEmpty
           ? const EmptyStateWidget(
               title: 'No Notifications',
-              message: 'You\'re all caught up!',
+              message: "You're all caught up!",
               icon: Icons.notifications_off,
             )
           : ListView.builder(
@@ -203,7 +203,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   return buildPaginationLoadingIndicator();
                 }
                 
-                final notif = _filteredNotifications[index];
+                final Map<String, dynamic> notif = _filteredNotifications[index];
                 return FadeAnimation(
                   child: Dismissible(
                     key: Key(notif['id']),
@@ -216,7 +216,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                     ),
                     onDismissed: (direction) {
                       setState(() {
-                        items.removeWhere((n) => n['id'] == notif['id']);
+                        items.removeWhere((Map<String, dynamic> n) => n['id'] == notif['id']);
                       });
                     },
                     child: ListTile(

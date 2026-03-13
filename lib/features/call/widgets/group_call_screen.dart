@@ -12,9 +12,6 @@ import '../beauty_filter_panel.dart';
 import '../audio_wave.dart';
 
 class GroupCallScreen extends StatefulWidget {
-  final List<UserModel> participants;
-  final bool isVideoCall;
-  final String roomId;
 
   const GroupCallScreen({
     Key? key,
@@ -22,14 +19,17 @@ class GroupCallScreen extends StatefulWidget {
     required this.isVideoCall,
     required this.roomId,
   }) : super(key: key);
+  final List<UserModel> participants;
+  final bool isVideoCall;
+  final String roomId;
 
   @override
   State<GroupCallScreen> createState() => _GroupCallScreenState();
 }
 
 class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, ToastMixin {
-  final _callService = ServiceLocator().get<CallService>();
-  final _socketService = ServiceLocator().get<SocketService>();
+  final CallService _callService = ServiceLocator().get<CallService>();
+  final SocketService _socketService = ServiceLocator().get<SocketService>();
   
   late List<Participant> _participants;
   bool _isMicMuted = false;
@@ -100,14 +100,14 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
 
     _socketService.on('user-left', (data) {
       setState(() {
-        _participants.removeWhere((p) => p.userId == data['userId']);
+        _participants.removeWhere((Object? p) => p.userId == data['userId']);
       });
     });
 
     _socketService.on('audio-level', (data) {
       setState(() {
         final participant = _participants.firstWhere(
-          (p) => p.userId == data['userId'],
+          (Object? p) => p.userId == data['userId'],
           orElse: () => Participant(userId: '', name: ''),
         );
         if (participant.userId.isNotEmpty) {
@@ -120,7 +120,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
     _socketService.on('mute-state-changed', (data) {
       setState(() {
         final participant = _participants.firstWhere(
-          (p) => p.userId == data['userId'],
+          (Object? p) => p.userId == data['userId'],
           orElse: () => Participant(userId: '', name: ''),
         );
         if (participant.userId.isNotEmpty) {
@@ -147,7 +147,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
     });
     _callService.toggleMic(_isMicMuted);
     
-    _socketService.emit('mute-state-changed', {
+    _socketService.emit('mute-state-changed', <String, Object>{
       'userId': 'local',
       'isMuted': _isMicMuted,
     });
@@ -175,7 +175,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
     _callService.switchCamera();
   }
 
-  void _endCall() async {
+  Future<void> _endCall() async {
     await _callService.endCall();
     Navigator.pop(context);
   }
@@ -196,7 +196,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
         _pinnedUserId = userId;
       }
       
-      for (var p in _participants) {
+      for (final p in _participants) {
         p.isPinned = p.userId == _pinnedUserId;
       }
     });
@@ -207,14 +207,14 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
   }
 
   void _showRaiseHand() {
-    _socketService.emit('raise-hand', {
+    _socketService.emit('raise-hand', <String, String>{
       'userId': 'local',
     });
     showInfo('Hand raised');
   }
 
   void _showReaction(String reaction) {
-    _socketService.emit('reaction', {
+    _socketService.emit('reaction', <String, String>{
       'userId': 'local',
       'reaction': reaction,
     });
@@ -225,16 +225,16 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
-        children: [
+        children: <>[
           // Main content
           Column(
-            children: [
+            children: <>[
               // Header
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 color: Colors.black54,
                 child: Row(
-                  children: [
+                  children: <>[
                     const Icon(Icons.group, color: Colors.white),
                     const SizedBox(width: 8),
                     Text(
@@ -282,7 +282,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
             top: 60,
             right: 16,
             child: Column(
-              children: [
+              children: <>[
                 _buildFloatingButton(
                   icon: Icons.group_add,
                   onPressed: _showAddParticipant,
@@ -329,12 +329,12 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
                 width: 300,
                 color: Colors.white,
                 child: Column(
-                  children: [
+                  children: <>[
                     Container(
                       padding: const EdgeInsets.all(16),
                       color: Colors.green,
                       child: Row(
-                        children: [
+                        children: <>[
                           const Text(
                             'Chat',
                             style: TextStyle(
@@ -373,7 +373,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
                     Padding(
                       padding: const EdgeInsets.all(8),
                       child: Row(
-                        children: [
+                        children: <>[
                           Expanded(
                             child: TextField(
                               decoration: InputDecoration(
@@ -446,12 +446,12 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
 
   Widget _buildPinnedView() {
     final pinnedUser = _participants.firstWhere(
-      (p) => p.userId == _pinnedUserId,
+      (Object? p) => p.userId == _pinnedUserId,
       orElse: () => _participants.first,
     );
 
     return Column(
-      children: [
+      children: <>[
         Expanded(
           flex: 3,
           child: Container(
@@ -464,7 +464,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                children: <>[
                   CircleAvatar(
                     radius: 50,
                     backgroundImage: pinnedUser.avatar != null
@@ -499,7 +499,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
         Expanded(
           flex: 1,
           child: ParticipantGrid(
-            participants: _participants.where((p) => p.userId != _pinnedUserId).toList(),
+            participants: _participants.where((Object? p) => p.userId != _pinnedUserId).toList(),
             localUserId: 'local',
             onParticipantTap: _onParticipantTap,
             onMuteParticipant: _onMuteParticipant,

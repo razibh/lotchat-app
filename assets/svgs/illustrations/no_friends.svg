@@ -1,0 +1,16 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Two Empty Profiles -->
+  <circle cx="120" cy="130" r="25" stroke="#9CA3AF" stroke-width="2" fill="none"/>
+  <circle cx="180" cy="130" r="25" stroke="#9CA3AF" stroke-width="2" fill="none"/>
+  <path d="M95 180 Q120 160 145 180" stroke="#9CA3AF" stroke-width="2" fill="none"/>
+  <path d="M155 180 Q180 160 205 180" stroke="#9CA3AF" stroke-width="2" fill="none"/>
+  
+  <!-- Plus Sign -->
+  <circle cx="150" cy="190" r="15" stroke="#8B5CF6" stroke-width="2" fill="none"/>
+  <line x1="150" y1="185" x2="150" y2="195" stroke="#8B5CF6" stroke-width="2"/>
+  <line x1="145" y1="190" x2="155" y2="190" stroke="#8B5CF6" stroke-width="2"/>
+  
+  <!-- Text -->
+  <text x="150" y="240" font-size="18" font-weight="bold" text-anchor="middle" fill="#9CA3AF">No Friends Yet</text>
+  <text x="150" y="265" font-size="14" text-anchor="middle" fill="#8B5CF6">Add some friends</text>
+</svg>

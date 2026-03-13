@@ -2,11 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/models/user_model.dart';
 
 class ParticipantGrid extends StatelessWidget {
-  final List<Participant> participants;
-  final String? localUserId;
-  final Function(String userId)? onParticipantTap;
-  final Function(String userId)? onMuteParticipant;
-  final Function(String userId)? onPinParticipant;
 
   const ParticipantGrid({
     Key? key,
@@ -16,6 +11,11 @@ class ParticipantGrid extends StatelessWidget {
     this.onMuteParticipant,
     this.onPinParticipant,
   }) : super(key: key);
+  final List<Participant> participants;
+  final String? localUserId;
+  final Function(String userId)? onParticipantTap;
+  final Function(String userId)? onMuteParticipant;
+  final Function(String userId)? onPinParticipant;
 
   @override
   Widget build(BuildContext context) {
@@ -26,8 +26,8 @@ class ParticipantGrid extends StatelessWidget {
     }
 
     // Determine grid layout based on participant count
-    int crossAxisCount = _getCrossAxisCount(participants.length);
-    double childAspectRatio = _getAspectRatio(participants.length);
+    var crossAxisCount = _getCrossAxisCount(participants.length);
+    final var childAspectRatio = _getAspectRatio(participants.length);
 
     return GridView.builder(
       padding: const EdgeInsets.all(8),
@@ -39,8 +39,8 @@ class ParticipantGrid extends StatelessWidget {
       ),
       itemCount: participants.length,
       itemBuilder: (context, index) {
-        final participant = participants[index];
-        final isLocal = participant.userId == localUserId;
+        final Participant participant = participants[index];
+        final bool isLocal = participant.userId == localUserId;
         
         return ParticipantTile(
           participant: participant,
@@ -68,11 +68,6 @@ class ParticipantGrid extends StatelessWidget {
 }
 
 class ParticipantTile extends StatelessWidget {
-  final Participant participant;
-  final bool isLocal;
-  final VoidCallback? onTap;
-  final VoidCallback? onMute;
-  final VoidCallback? onPin;
 
   const ParticipantTile({
     Key? key,
@@ -82,6 +77,11 @@ class ParticipantTile extends StatelessWidget {
     this.onMute,
     this.onPin,
   }) : super(key: key);
+  final Participant participant;
+  final bool isLocal;
+  final VoidCallback? onTap;
+  final VoidCallback? onMute;
+  final VoidCallback? onPin;
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +89,7 @@ class ParticipantTile extends StatelessWidget {
       onTap: onTap,
       child: Stack(
         fit: StackFit.expand,
-        children: [
+        children: <>[
           // Video or Avatar
           Container(
             decoration: BoxDecoration(
@@ -104,7 +104,7 @@ class ParticipantTile extends StatelessWidget {
                 : Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                      children: <>[
                         CircleAvatar(
                           radius: 30,
                           backgroundImage: participant.avatar != null
@@ -143,7 +143,7 @@ class ParticipantTile extends StatelessWidget {
             top: 8,
             left: 8,
             child: Row(
-              children: [
+              children: <>[
                 // Mute indicator
                 if (participant.isMuted)
                   Container(
@@ -193,7 +193,7 @@ class ParticipantTile extends StatelessWidget {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [
+                children: <>[
                   Expanded(
                     child: Text(
                       participant.name,
@@ -265,7 +265,7 @@ class ParticipantTile extends StatelessWidget {
       context: context,
       builder: (context) => SafeArea(
         child: Wrap(
-          children: [
+          children: <>[
             ListTile(
               leading: Icon(
                 participant.isMuted ? Icons.mic : Icons.mic_off,
@@ -296,14 +296,6 @@ class ParticipantTile extends StatelessWidget {
 }
 
 class Participant {
-  final String userId;
-  final String name;
-  final String? avatar;
-  final bool hasVideo;
-  final bool isMuted;
-  final bool isSpeaking;
-  final bool isPinned;
-  final double audioLevel;
 
   Participant({
     required this.userId,
@@ -315,13 +307,21 @@ class Participant {
     this.isPinned = false,
     this.audioLevel = 0.0,
   });
+  final String userId;
+  final String name;
+  final String? avatar;
+  final bool hasVideo;
+  final bool isMuted;
+  final bool isSpeaking;
+  final bool isPinned;
+  final double audioLevel;
 }
 
 class AudioLevelPainter extends CustomPainter {
-  final double level;
-  final Color color;
 
   AudioLevelPainter({required this.level, required this.color});
+  final double level;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -330,11 +330,11 @@ class AudioLevelPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final barWidth = size.width / 3;
-    final barSpacing = 2;
+    const int barSpacing = 2;
 
-    for (int i = 0; i < 3; i++) {
+    for (var i = 0; i < 3; i++) {
       final barHeight = size.height * (0.3 + (level * 0.7) * (i + 1) / 3);
-      final left = i * (barWidth + barSpacing);
+      final double left = i * (barWidth + barSpacing);
       final top = size.height - barHeight;
       
       canvas.drawRect(

@@ -12,7 +12,7 @@ class ApiModule implements InjectionModule {
   @override
   Future<void> register(GetIt getIt) async {
     getIt.registerSingletonAsync<ApiService>(() async {
-      final api = ApiService();
+      final ApiService api = ApiService();
       await api.init();
       return api;
     });
@@ -49,7 +49,7 @@ class SocketModule implements InjectionModule {
 
 // Module loader
 class ModuleLoader {
-  static final List<InjectionModule> modules = [
+  static final List<InjectionModule> modules = <InjectionModule>[
     ApiModule(),
     AuthModule(),
     DatabaseModule(),
@@ -57,7 +57,7 @@ class ModuleLoader {
   ];
 
   static Future<void> loadAll(GetIt getIt) async {
-    for (var module in modules) {
+    for (InjectionModule module in modules) {
       await module.register(getIt);
     }
   }

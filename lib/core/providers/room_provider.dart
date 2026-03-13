@@ -8,7 +8,7 @@ class RoomProvider extends ChangeNotifier {
   final RoomService _roomService = RoomService();
   final SocketService _socketService = SocketService();
   
-  List<RoomModel> _rooms = [];
+  List<RoomModel> _rooms = <RoomModel>[];
   RoomModel? _currentRoom;
   bool _isLoading = false;
   String? _error;

@@ -38,7 +38,7 @@ class AgencyService {
 
   // ==================== MEMBER MANAGEMENT ====================
   Future<void> addMember(String agencyId, String userId) async {
-    final agency = await getAgency(agencyId);
+    final Agency? agency = await getAgency(agencyId);
     if (agency == null) throw Exception('Agency not found');
     
     final currentUser = _auth.currentUser;
@@ -52,13 +52,13 @@ class AgencyService {
     await _firestore.runTransaction((transaction) async {
       final agencyRef = _firestore.collection('agencies').doc(agencyId);
       
-      transaction.update(agencyRef, {
-        'members': FieldValue.arrayUnion([userId]),
+      transaction.update(agencyRef, <String, >{
+        'members': FieldValue.arrayUnion(<String>[userId]),
       });
       
       transaction.update(
         _firestore.collection('users').doc(userId),
-        {
+        <String, Object>{
           'agencyId': agencyId,
           'role': UserRole.agency.index,
         },
@@ -67,7 +67,7 @@ class AgencyService {
   }
 
   Future<void> removeMember(String agencyId, String userId) async {
-    final agency = await getAgency(agencyId);
+    final Agency? agency = await getAgency(agencyId);
     if (agency == null) throw Exception('Agency not found');
     
     final currentUser = _auth.currentUser;
@@ -81,13 +81,13 @@ class AgencyService {
     await _firestore.runTransaction((transaction) async {
       final agencyRef = _firestore.collection('agencies').doc(agencyId);
       
-      transaction.update(agencyRef, {
-        'members': FieldValue.arrayRemove([userId]),
+      transaction.update(agencyRef, <String, >{
+        'members': FieldValue.arrayRemove(<String>[userId]),
       });
       
       transaction.update(
         _firestore.collection('users').doc(userId),
-        {
+        <String, int?>{
           'agencyId': null,
           'role': UserRole.user.index,
         },
@@ -97,7 +97,7 @@ class AgencyService {
 
   // ==================== CO-OWNER MANAGEMENT ====================
   Future<void> addCoOwner(String agencyId, String userId) async {
-    final agency = await getAgency(agencyId);
+    final Agency? agency = await getAgency(agencyId);
     if (agency == null) throw Exception('Agency not found');
     
     final currentUser = _auth.currentUser;
@@ -111,13 +111,13 @@ class AgencyService {
     await _firestore
         .collection('agencies')
         .doc(agencyId)
-        .update({
-          'coOwners': FieldValue.arrayUnion([userId]),
+        .update(<String, >{
+          'coOwners': FieldValue.arrayUnion(<String>[userId]),
         });
   }
 
   Future<void> removeCoOwner(String agencyId, String userId) async {
-    final agency = await getAgency(agencyId);
+    final Agency? agency = await getAgency(agencyId);
     if (agency == null) throw Exception('Agency not found');
     
     final currentUser = _auth.currentUser;
@@ -131,8 +131,8 @@ class AgencyService {
     await _firestore
         .collection('agencies')
         .doc(agencyId)
-        .update({
-          'coOwners': FieldValue.arrayRemove([userId]),
+        .update(<String, >{
+          'coOwners': FieldValue.arrayRemove(<String>[userId]),
         });
   }
 
@@ -149,17 +149,17 @@ class AgencyService {
       
       if (!agencyDoc.exists) return;
       
-      final data = agencyDoc.data()!;
+      final data = agencyDoc.data();
       final commissionRate = data['commissionRate'] ?? 0.1; // Default 10%
       
-      final agencyCommission = (amount * commissionRate).round();
-      final userEarnings = amount - agencyCommission;
+      final int agencyCommission = (amount * commissionRate).round();
+      final int userEarnings = amount - agencyCommission;
       
       // Update agency earnings
-      final memberEarnings = Map<String, int>.from(data['memberEarnings'] ?? {});
+      final Map<String, int> memberEarnings = Map<String, int>.from(data['memberEarnings'] ?? <dynamic, dynamic>{});
       memberEarnings[userId] = (memberEarnings[userId] ?? 0) + userEarnings;
       
-      transaction.update(agencyRef, {
+      transaction.update(agencyRef, <String, >{
         'totalEarnings': FieldValue.increment(agencyCommission),
         'memberEarnings': memberEarnings,
       });
@@ -167,7 +167,7 @@ class AgencyService {
       // Record transaction
       transaction.set(
         _firestore.collection('agency_transactions').doc(),
-        {
+        <String, >{
           'agencyId': agencyId,
           'userId': userId,
           'amount': amount,
@@ -187,27 +187,27 @@ class AgencyService {
     required int amount,
   }) async {
     try {
-      final agency = await getAgency(agencyId);
+      final Agency? agency = await getAgency(agencyId);
       if (agency == null) throw Exception('Agency not found');
       
-      final userEarnings = agency.memberEarnings[userId] ?? 0;
+      final int userEarnings = agency.memberEarnings[userId] ?? 0;
       if (userEarnings < amount) throw Exception('Insufficient earnings');
       
       await _firestore.runTransaction((transaction) async {
         final agencyRef = _firestore.collection('agencies').doc(agencyId);
         
         // Update member earnings
-        final updatedEarnings = Map<String, int>.from(agency.memberEarnings);
+        final Map<String, int> updatedEarnings = Map<String, int>.from(agency.memberEarnings);
         updatedEarnings[userId] = userEarnings - amount;
         
-        transaction.update(agencyRef, {
+        transaction.update(agencyRef, <String, Map<String, int>>{
           'memberEarnings': updatedEarnings,
         });
         
         // Record withdrawal
         transaction.set(
           _firestore.collection('withdrawals').doc(),
-          {
+          <String, >{
             'agencyId': agencyId,
             'userId': userId,
             'amount': amount,
@@ -226,11 +226,11 @@ class AgencyService {
 
   // ==================== GET AGENCY MEMBERS ====================
   Future<List<UserModel>> getAgencyMembers(String agencyId) async {
-    final agency = await getAgency(agencyId);
-    if (agency == null) return [];
+    final Agency? agency = await getAgency(agencyId);
+    if (agency == null) return <UserModel>[];
     
-    final members = <UserModel>[];
-    for (var memberId in agency.members) {
+    final List<UserModel> members = <UserModel>[];
+    for (String memberId in agency.members) {
       final userDoc = await _firestore.collection('users').doc(memberId).get();
       if (userDoc.exists) {
         members.add(UserModel.fromJson(userDoc.data()!));
@@ -247,29 +247,29 @@ class AgencyService {
         .doc(agencyId)
         .snapshots()
         .map((doc) {
-          if (!doc.exists) return [];
+          if (!doc.exists) return <dynamic>[];
           
-          final data = doc.data()!;
-          final memberEarnings = Map<String, int>.from(data['memberEarnings'] ?? {});
+          final data = doc.data();
+          final Map<String, int> memberEarnings = Map<String, int>.from(data['memberEarnings'] ?? <dynamic, dynamic>{});
           
-          List<AgencyMemberRank> ranks = [];
-          memberEarnings.forEach((userId, earnings) {
+          var ranks = <AgencyMemberRank><AgencyMemberRank>[];
+          memberEarnings.forEach((String userId, int earnings) {
             ranks.add(AgencyMemberRank(userId: userId, earnings: earnings));
           });
           
-          ranks.sort((a, b) => b.earnings.compareTo(a.earnings));
+          ranks.sort((AgencyMemberRank a, AgencyMemberRank b) => b.earnings.compareTo(a.earnings));
           return ranks;
         });
   }
 
   // ==================== AGENCY STATS ====================
   Future<AgencyStats> getAgencyStats(String agencyId) async {
-    final agency = await getAgency(agencyId);
+    final Agency? agency = await getAgency(agencyId);
     if (agency == null) throw Exception('Agency not found');
     
     // Get today's earnings
-    final today = DateTime.now();
-    final startOfDay = DateTime(today.year, today.month, today.day);
+    final DateTime today = DateTime.now();
+    final DateTime startOfDay = DateTime(today.year, today.month, today.day);
     
     final todayTransactions = await _firestore
         .collection('agency_transactions')
@@ -283,7 +283,7 @@ class AgencyService {
     );
     
     // Get this month's earnings
-    final startOfMonth = DateTime(today.year, today.month, 1);
+    final DateTime startOfMonth = DateTime(today.year, today.month);
     
     final monthTransactions = await _firestore
         .collection('agency_transactions')
@@ -320,16 +320,6 @@ class AgencyService {
 // ==================== MODEL CLASSES ====================
 
 class Agency {
-  final String id;
-  final String name;
-  final String ownerId;
-  final List<String> coOwners;
-  final List<String> members;
-  final double commissionRate;
-  final int totalEarnings;
-  final Map<String, int> memberEarnings;
-  final DateTime createdAt;
-  final String status;
   
   Agency({
     required this.id,
@@ -358,21 +348,26 @@ class Agency {
       status: json['status'] ?? 'active',
     );
   }
+  final String id;
+  final String name;
+  final String ownerId;
+  final List<String> coOwners;
+  final List<String> members;
+  final double commissionRate;
+  final int totalEarnings;
+  final Map<String, int> memberEarnings;
+  final DateTime createdAt;
+  final String status;
 }
 
 class AgencyMemberRank {
-  final String userId;
-  final int earnings;
   
   AgencyMemberRank({required this.userId, required this.earnings});
+  final String userId;
+  final int earnings;
 }
 
 class AgencyStats {
-  final int totalEarnings;
-  final int todayEarnings;
-  final int monthEarnings;
-  final int memberCount;
-  final int activeMembers;
   
   AgencyStats({
     required this.totalEarnings,
@@ -381,4 +376,9 @@ class AgencyStats {
     required this.memberCount,
     required this.activeMembers,
   });
+  final int totalEarnings;
+  final int todayEarnings;
+  final int monthEarnings;
+  final int memberCount;
+  final int activeMembers;
 }

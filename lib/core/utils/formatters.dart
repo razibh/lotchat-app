@@ -10,10 +10,10 @@ class Formatters {
   // Format coin amount (e.g., 1.2M, 500K)
   static String formatCoinAmount(int amount) {
     if (amount >= 1000000) {
-      final millions = amount / 1000000;
+      final double millions = amount / 1000000;
       return '${millions.toStringAsFixed(1)}M';
     } else if (amount >= 1000) {
-      final thousands = amount / 1000;
+      final double thousands = amount / 1000;
       return '${thousands.toStringAsFixed(1)}K';
     } else {
       return amount.toString();
@@ -22,8 +22,8 @@ class Formatters {
 
   // Format date (e.g., Today, Yesterday, 2 days ago)
   static String formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
+    final DateTime now = DateTime.now();
+    final Duration difference = now.difference(date);
 
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
@@ -45,9 +45,9 @@ class Formatters {
   // Format duration (e.g., 1:30:45)
   static String formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = twoDigits(duration.inHours);
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    final String hours = twoDigits(duration.inHours);
+    final String minutes = twoDigits(duration.inMinutes.remainder(60));
+    final String seconds = twoDigits(duration.inSeconds.remainder(60));
 
     if (duration.inHours > 0) {
       return '$hours:$minutes:$seconds';
@@ -59,7 +59,7 @@ class Formatters {
   // Format phone number (e.g., +1 (555) 123-4567)
   static String formatPhoneNumber(String phone) {
     // Remove all non-digits
-    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    final String digits = phone.replaceAll(RegExp(r'\D'), '');
     
     if (digits.length == 10) {
       return '(${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}';

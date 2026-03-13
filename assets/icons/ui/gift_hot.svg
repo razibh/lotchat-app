@@ -1,0 +1,6 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="24" cy="24" r="18" fill="#EF4444" fill-opacity="0.2" stroke="#EF4444" stroke-width="2"/>
+  <text x="24" y="32" font-size="16" font-weight="bold" text-anchor="middle" fill="#EF4444">HOT</text>
+  <circle cx="16" cy="18" r="2" fill="#EF4444"/>
+  <circle cx="32" cy="18" r="2" fill="#EF4444"/>
+</svg>

@@ -16,7 +16,7 @@ class CallService {
   Function(String channelId, int uid, int elapsed)? onJoinChannelSuccess;
   
   Future<void> initialize() async {
-    await [Permission.microphone, Permission.camera].request();
+    await <>[Permission.microphone, Permission.camera].request();
     
     _engine = createAgoraRtcEngine();
     await _engine.initialize(RtcEngineContext(appId: appId));
@@ -154,7 +154,7 @@ class CallService {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return;
     
-    await FirebaseFirestore.instance.collection('calls').add({
+    await FirebaseFirestore.instance.collection('calls').add(<String, >{
       'callId': channelId,
       'callerId': currentUser.uid,
       'callerName': currentUser.displayName,
@@ -179,7 +179,7 @@ class CallService {
         .get();
     
     if (query.docs.isNotEmpty) {
-      await query.docs.first.reference.update({
+      await query.docs.first.reference.update(<String, >{
         'endTime': FieldValue.serverTimestamp(),
         'status': 'ended',
       });
@@ -189,7 +189,7 @@ class CallService {
   // Get call history
   Stream<List<CallRecord>> getCallHistory() {
     final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return Stream.empty();
+    if (currentUser == null) return const Stream.empty();
     
     return FirebaseFirestore.instance
         .collection('calls')
@@ -224,17 +224,6 @@ enum CallState {
 }
 
 class CallRecord {
-  final String callId;
-  final String callerId;
-  final String callerName;
-  final String? callerAvatar;
-  final String receiverId;
-  final CallType callType;
-  final String channelId;
-  final String roomId;
-  final DateTime startTime;
-  final DateTime? endTime;
-  final String status;
   
   CallRecord({
     required this.callId,
@@ -265,4 +254,15 @@ class CallRecord {
       status: json['status'] ?? '',
     );
   }
+  final String callId;
+  final String callerId;
+  final String callerName;
+  final String? callerAvatar;
+  final String receiverId;
+  final CallType callType;
+  final String channelId;
+  final String roomId;
+  final DateTime startTime;
+  final DateTime? endTime;
+  final String status;
 }

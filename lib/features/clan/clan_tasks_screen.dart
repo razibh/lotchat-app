@@ -9,9 +9,9 @@ import '../../widgets/animation/fade_animation.dart';
 import 'widgets/clan_progress_bar.dart';
 
 class ClanTasksScreen extends StatefulWidget {
-  final String clanId;
 
   const ClanTasksScreen({Key? key, required this.clanId}) : super(key: key);
+  final String clanId;
 
   @override
   State<ClanTasksScreen> createState() => _ClanTasksScreenState();
@@ -20,12 +20,12 @@ class ClanTasksScreen extends StatefulWidget {
 class _ClanTasksScreenState extends State<ClanTasksScreen> 
     with LoadingMixin, ToastMixin {
   
-  final _clanService = ServiceLocator().get<ClanService>();
-  final _authService = ServiceLocator().get<AuthService>();
+  final ClanService _clanService = ServiceLocator().get<ClanService>();
+  final AuthService _authService = ServiceLocator().get<AuthService>();
   
-  List<ClanTask> _dailyTasks = [];
-  List<ClanTask> _weeklyTasks = [];
-  Map<String, int> _userProgress = {};
+  List<ClanTask> _dailyTasks = <ClanTask>[];
+  List<ClanTask> _weeklyTasks = <ClanTask>[];
+  final Map<String, int> _userProgress = <String, int>{};
   String? _currentUserId;
   int _clanCoins = 0;
 
@@ -48,7 +48,7 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
       await Future.delayed(const Duration(seconds: 1));
       
       // Mock tasks
-      _dailyTasks = [
+      _dailyTasks = <ClanTask>[
         ClanTask(
           id: 'dt1',
           title: 'Send 5 Gifts',
@@ -111,7 +111,7 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
         ),
       ];
 
-      _weeklyTasks = [
+      _weeklyTasks = <ClanTask>[
         ClanTask(
           id: 'wt1',
           title: 'Win Clan Wars',
@@ -160,12 +160,12 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
       
       setState(() {
         if (task.type == 'daily') {
-          final index = _dailyTasks.indexWhere((t) => t.id == task.id);
+          final int index = _dailyTasks.indexWhere((ClanTask t) => t.id == task.id);
           if (index != -1) {
             _dailyTasks[index] = task.copyWith(progress: task.target);
           }
         } else {
-          final index = _weeklyTasks.indexWhere((t) => t.id == task.id);
+          final int index = _weeklyTasks.indexWhere((ClanTask t) => t.id == task.id);
           if (index != -1) {
             _weeklyTasks[index] = task.copyWith(progress: task.target);
           }
@@ -192,7 +192,7 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
       appBar: AppBar(
         title: const Text('Clan Tasks'),
         backgroundColor: Colors.deepPurple,
-        actions: [
+        actions: <>[
           Container(
             margin: const EdgeInsets.all(8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -201,7 +201,7 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
-              children: [
+              children: <>[
                 const Icon(Icons.monetization_on, color: Colors.white, size: 16),
                 const SizedBox(width: 4),
                 Text(
@@ -222,7 +222,7 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                children: <>[
                   // Daily Tasks
                   const Text(
                     'Daily Tasks',
@@ -237,8 +237,8 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
                     style: TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 16),
-                  ...List.generate(_dailyTasks.length, (index) {
-                    final task = _dailyTasks[index];
+                  ...List.generate(_dailyTasks.length, (int index) {
+                    final ClanTask task = _dailyTasks[index];
                     return FadeAnimation(
                       delay: Duration(milliseconds: index * 100),
                       child: _buildTaskCard(task),
@@ -261,8 +261,8 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
                     style: TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 16),
-                  ...List.generate(_weeklyTasks.length, (index) {
-                    final task = _weeklyTasks[index];
+                  ...List.generate(_weeklyTasks.length, (int index) {
+                    final ClanTask task = _weeklyTasks[index];
                     return FadeAnimation(
                       delay: Duration(milliseconds: (index + _dailyTasks.length) * 100),
                       child: _buildTaskCard(task),
@@ -275,17 +275,17 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
   }
 
   Widget _buildTaskCard(ClanTask task) {
-    final isCompleted = task.progress >= task.target;
-    final progress = task.progress / task.target;
+    final bool isCompleted = task.progress >= task.target;
+    final double progress = task.progress / task.target;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: [
+          children: <>[
             Row(
-              children: [
+              children: <>[
                 Container(
                   width: 50,
                   height: 50,
@@ -299,7 +299,7 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                    children: <>[
                       Text(
                         task.title,
                         style: const TextStyle(
@@ -321,7 +321,7 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
-                    children: [
+                    children: <>[
                       const Icon(Icons.flash_on, size: 14, color: Colors.amber),
                       const SizedBox(width: 2),
                       Text('+${task.xpReward}'),
@@ -332,7 +332,7 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
             ),
             const SizedBox(height: 12),
             Row(
-              children: [
+              children: <>[
                 Expanded(
                   child: ClanProgressBar(
                     progress: progress,
@@ -353,9 +353,9 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+              children: <>[
                 Row(
-                  children: [
+                  children: <>[
                     const Icon(Icons.monetization_on, size: 16, color: Colors.amber),
                     const SizedBox(width: 4),
                     Text('+${task.coinReward} coins'),
@@ -377,7 +377,7 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Row(
-                      children: [
+                      children: <>[
                         Icon(Icons.check_circle, color: Colors.green, size: 16),
                         SizedBox(width: 4),
                         Text('Completed'),
@@ -394,16 +394,6 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
 }
 
 class ClanTask {
-  final String id;
-  final String title;
-  final String description;
-  final String type;
-  final int xpReward;
-  final int coinReward;
-  final int progress;
-  final int target;
-  final IconData icon;
-  final Color color;
 
   ClanTask({
     required this.id,
@@ -417,6 +407,16 @@ class ClanTask {
     required this.icon,
     required this.color,
   });
+  final String id;
+  final String title;
+  final String description;
+  final String type;
+  final int xpReward;
+  final int coinReward;
+  final int progress;
+  final int target;
+  final IconData icon;
+  final Color color;
 
   ClanTask copyWith({int? progress}) {
     return ClanTask(

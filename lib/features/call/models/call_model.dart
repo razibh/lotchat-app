@@ -3,21 +3,6 @@ enum CallStatus { ringing, connected, ended, missed }
 enum CallDirection { incoming, outgoing }
 
 class CallModel {
-  final String id;
-  final String callerId;
-  final String callerName;
-  final String? callerAvatar;
-  final String receiverId;
-  final String receiverName;
-  final String? receiverAvatar;
-  final CallType type;
-  final CallDirection direction;
-  final CallStatus status;
-  final DateTime startTime;
-  final DateTime? endTime;
-  final int duration; // in seconds
-  final String? channelId;
-  final bool isVideoEnabled;
 
   CallModel({
     required this.id,
@@ -36,24 +21,6 @@ class CallModel {
     this.channelId,
     required this.isVideoEnabled,
   });
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'callerId': callerId,
-    'callerName': callerName,
-    'callerAvatar': callerAvatar,
-    'receiverId': receiverId,
-    'receiverName': receiverName,
-    'receiverAvatar': receiverAvatar,
-    'type': type.index,
-    'direction': direction.index,
-    'status': status.index,
-    'startTime': startTime.toIso8601String(),
-    'endTime': endTime?.toIso8601String(),
-    'duration': duration,
-    'channelId': channelId,
-    'isVideoEnabled': isVideoEnabled,
-  };
 
   factory CallModel.fromJson(Map<String, dynamic> json) {
     return CallModel(
@@ -74,4 +41,37 @@ class CallModel {
       isVideoEnabled: json['isVideoEnabled'],
     );
   }
+  final String id;
+  final String callerId;
+  final String callerName;
+  final String? callerAvatar;
+  final String receiverId;
+  final String receiverName;
+  final String? receiverAvatar;
+  final CallType type;
+  final CallDirection direction;
+  final CallStatus status;
+  final DateTime startTime;
+  final DateTime? endTime;
+  final int duration; // in seconds
+  final String? channelId;
+  final bool isVideoEnabled;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'callerId': callerId,
+    'callerName': callerName,
+    'callerAvatar': callerAvatar,
+    'receiverId': receiverId,
+    'receiverName': receiverName,
+    'receiverAvatar': receiverAvatar,
+    'type': type.index,
+    'direction': direction.index,
+    'status': status.index,
+    'startTime': startTime.toIso8601String(),
+    'endTime': endTime?.toIso8601String(),
+    'duration': duration,
+    'channelId': channelId,
+    'isVideoEnabled': isVideoEnabled,
+  };
 }

@@ -3,9 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class CacheService {
-  static final CacheService _instance = CacheService._internal();
   factory CacheService() => _instance;
   CacheService._internal();
+  static final CacheService _instance = CacheService._internal();
 
   late SharedPreferences _prefs;
   late DefaultCacheManager _cacheManager;
@@ -28,7 +28,7 @@ class CacheService {
     required dynamic value,
     required Duration expiry,
   }) async {
-    final data = {
+    final Map<String, dynamic> data = <String, dynamic>{
       'value': value,
       'expiry': DateTime.now().add(expiry).millisecondsSinceEpoch,
     };
@@ -42,7 +42,7 @@ class CacheService {
 
     try {
       final data = jsonDecode(jsonString);
-      final expiry = data['expiry'] as int;
+      final int expiry = data['expiry'] as int;
       
       if (DateTime.now().millisecondsSinceEpoch > expiry) {
         // Expired - remove and return null
@@ -173,7 +173,7 @@ class CacheService {
 
   // Cache multiple images
   Future<void> cacheImages(List<String> urls) async {
-    for (var url in urls) {
+    for (String url in urls) {
       await _cacheManager.downloadFile(url);
     }
   }
@@ -211,7 +211,7 @@ class CacheService {
   Future<void> invalidateAll() async {
     // Clear SharedPreferences
     final keys = _prefs.getKeys();
-    for (var key in keys) {
+    for (final key in keys) {
       if (key.startsWith('user_') || 
           key.startsWith('room_') || 
           key.startsWith('gift_') || 
@@ -228,10 +228,10 @@ class CacheService {
 
   // Get cache size
   Future<int> getCacheSize() async {
-    int totalSize = 0;
+    var totalSize = 0;
     
     final keys = _prefs.getKeys();
-    for (var key in keys) {
+    for (final key in keys) {
       final value = _prefs.getString(key);
       if (value != null) {
         totalSize += value.length * 2; // Approximate size in bytes
@@ -256,13 +256,13 @@ class CacheService {
   // Clean expired cache
   Future<void> cleanExpired() async {
     final keys = _prefs.getKeys();
-    for (var key in keys) {
+    for (final key in keys) {
       final value = _prefs.getString(key);
       if (value != null) {
         try {
           final data = jsonDecode(value);
           if (data is Map && data.containsKey('expiry')) {
-            final expiry = data['expiry'] as int;
+            final int expiry = data['expiry'] as int;
             if (DateTime.now().millisecondsSinceEpoch > expiry) {
               await _prefs.remove(key);
             }

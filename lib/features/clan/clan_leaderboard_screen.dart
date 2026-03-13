@@ -18,19 +18,19 @@ class ClanLeaderboardScreen extends StatefulWidget {
 class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen> 
     with LoadingMixin, ToastMixin {
   
-  final _clanService = ServiceLocator().get<ClanService>();
-  final _authService = ServiceLocator().get<AuthService>();
+  final ClanService _clanService = ServiceLocator().get<ClanService>();
+  final AuthService _authService = ServiceLocator().get<AuthService>();
   
-  List<ClanLeaderboardEntry> _clans = [];
-  List<ClanMemberLeaderboardEntry> _members = [];
+  List<ClanLeaderboardEntry> _clans = <ClanLeaderboardEntry>[];
+  List<ClanMemberLeaderboardEntry> _members = <ClanMemberLeaderboardEntry>[];
   String _selectedTab = 'Clans';
   String _selectedPeriod = 'All Time';
-  bool _isLoading = true;
+  final bool _isLoading = true;
   String? _userClanId;
 
-  final List<String> _tabs = ['Clans', 'Members'];
-  final List<String> _periods = ['Daily', 'Weekly', 'Monthly', 'All Time'];
-  final List<String> _categories = ['Level', 'Activity', 'Wars', 'Donations'];
+  final List<String> _tabs = <String>['Clans', 'Members'];
+  final List<String> _periods = <String>['Daily', 'Weekly', 'Monthly', 'All Time'];
+  final List<String> _categories = <String>['Level', 'Activity', 'Wars', 'Donations'];
 
   @override
   void initState() {
@@ -62,13 +62,12 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
 
   void _loadClanLeaderboard() {
     // Mock data - in real app, fetch from service
-    _clans = List.generate(100, (index) {
-      final isUserClan = _userClanId == 'clan_${index + 1}';
+    _clans = List.generate(100, (int index) {
+      final bool isUserClan = _userClanId == 'clan_${index + 1}';
       return ClanLeaderboardEntry(
         rank: index + 1,
         clanId: 'clan_${index + 1}',
         clanName: '${_getClanName(index)} Clan',
-        emblem: null,
         level: 50 - index,
         members: 50 - (index % 10),
         activityPoints: 100000 - (index * 800),
@@ -81,13 +80,12 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
   }
 
   void _loadMemberLeaderboard() {
-    _members = List.generate(100, (index) {
-      final isUser = index == 42; // Mock user position
+    _members = List.generate(100, (int index) {
+      final bool isUser = index == 42; // Mock user position
       return ClanMemberLeaderboardEntry(
         rank: index + 1,
         userId: 'user_${index + 1}',
         username: 'Player ${index + 1}',
-        avatar: null,
         clanName: '${_getClanName(index % 10)} Clan',
         activityPoints: 50000 - (index * 450),
         donations: 25000 - (index * 200),
@@ -99,7 +97,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
   }
 
   String _getClanName(int index) {
-    final names = ['Dragon', 'Phoenix', 'Wolf', 'Tiger', 'Lion', 'Eagle', 'Shark', 'Bear', 'Falcon', 'Cobra'];
+    final List<String> names = <String>['Dragon', 'Phoenix', 'Wolf', 'Tiger', 'Lion', 'Eagle', 'Shark', 'Bear', 'Falcon', 'Cobra'];
     return names[index % names.length];
   }
 
@@ -180,7 +178,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
+        children: <>[
           Icon(
             change > 0 ? Icons.arrow_upward : Icons.arrow_downward,
             color: change > 0 ? Colors.green : Colors.red,
@@ -209,14 +207,14 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Column(
-            children: [
+            children: <>[
               // Tab Bar
               Container(
                 height: 50,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
-                  children: _tabs.map((tab) {
-                    final isSelected = _selectedTab == tab;
+                  children: _tabs.map((String tab) {
+                    final bool isSelected = _selectedTab == tab;
                     return Expanded(
                       child: GestureDetector(
                         onTap: () {
@@ -253,7 +251,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  children: _periods.map((period) {
+                  children: _periods.map((String period) {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: FilterChip(
@@ -278,7 +276,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
             ],
           ),
         ),
-        actions: [
+        actions: <>[
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: _showInfoDialog,
@@ -303,7 +301,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
     }
 
     return Column(
-      children: [
+      children: <>[
         // Top 3 Podium
         if (_clans.length >= 3)
           Container(
@@ -311,7 +309,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
             padding: const EdgeInsets.all(16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
+              children: <>[
                 // 2nd Place
                 Expanded(
                   child: _buildPodiumItem(
@@ -346,7 +344,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: _clans.length,
             itemBuilder: (context, index) {
-              final clan = _clans[index];
+              final ClanLeaderboardEntry clan = _clans[index];
               
               return FadeAnimation(
                 delay: Duration(milliseconds: index * 50),
@@ -362,7 +360,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                   child: ListTile(
                     leading: _buildRankBadge(clan.rank),
                     title: Row(
-                      children: [
+                      children: <>[
                         Expanded(
                           child: Text(
                             clan.clanName,
@@ -391,9 +389,9 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                      children: <>[
                         Row(
-                          children: [
+                          children: <>[
                             Icon(Icons.people, size: 12, color: Colors.grey.shade600),
                             const SizedBox(width: 2),
                             Text('${clan.members} members'),
@@ -405,7 +403,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                         ),
                         const SizedBox(height: 4),
                         Row(
-                          children: [
+                          children: <>[
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
@@ -413,7 +411,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Row(
-                                children: [
+                                children: <>[
                                   const Icon(Icons.flash_on, size: 10, color: Colors.blue),
                                   const SizedBox(width: 2),
                                   Text(
@@ -431,7 +429,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Row(
-                                children: [
+                                children: <>[
                                   const Icon(Icons.monetization_on, size: 10, color: Colors.green),
                                   const SizedBox(width: 2),
                                   Text(
@@ -448,10 +446,10 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
+                      children: <>[
                         Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: [
+                          children: <>[
                             const Icon(Icons.star, color: Colors.amber, size: 16),
                             const SizedBox(width: 2),
                             Text(
@@ -504,7 +502,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
       padding: const EdgeInsets.all(16),
       itemCount: _members.length,
       itemBuilder: (context, index) {
-        final member = _members[index];
+        final ClanMemberLeaderboardEntry member = _members[index];
         
         return FadeAnimation(
           delay: Duration(milliseconds: index * 50),
@@ -519,7 +517,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
             ),
             child: ListTile(
               leading: Stack(
-                children: [
+                children: <>[
                   CircleAvatar(
                     radius: 24,
                     backgroundImage: member.avatar != null
@@ -555,7 +553,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                 ],
               ),
               title: Row(
-                children: [
+                children: <>[
                   Expanded(
                     child: Text(
                       member.username,
@@ -584,7 +582,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                children: <>[
                   Text(
                     member.clanName,
                     style: const TextStyle(
@@ -594,7 +592,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                   ),
                   const SizedBox(height: 4),
                   Row(
-                    children: [
+                    children: <>[
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
@@ -602,7 +600,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
-                          children: [
+                          children: <>[
                             const Icon(Icons.flash_on, size: 10, color: Colors.blue),
                             const SizedBox(width: 2),
                             Text(
@@ -620,7 +618,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
-                          children: [
+                          children: <>[
                             const Icon(Icons.monetization_on, size: 10, color: Colors.green),
                             const SizedBox(width: 2),
                             Text(
@@ -638,7 +636,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
-                          children: [
+                          children: <>[
                             const Icon(Icons.emoji_events, size: 10, color: Colors.orange),
                             const SizedBox(width: 2),
                             Text(
@@ -684,7 +682,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
         margin: const EdgeInsets.symmetric(horizontal: 4),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
-          children: [
+          children: <>[
             // Clan Emblem
             Container(
               width: 60,
@@ -762,7 +760,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: const <>[
             Text('Rankings are based on:'),
             SizedBox(height: 8),
             Text('• Clan Level - Total XP earned'),
@@ -776,7 +774,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
             Text('• Monthly - 1st of each month'),
           ],
         ),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),
@@ -789,17 +787,6 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
 
 // Model Classes
 class ClanLeaderboardEntry {
-  final int rank;
-  final String clanId;
-  final String clanName;
-  final String? emblem;
-  final int level;
-  final int members;
-  final int activityPoints;
-  final int warWins;
-  final int donations;
-  final bool isUserClan;
-  final int change;
 
   ClanLeaderboardEntry({
     required this.rank,
@@ -814,19 +801,20 @@ class ClanLeaderboardEntry {
     required this.isUserClan,
     required this.change,
   });
+  final int rank;
+  final String clanId;
+  final String clanName;
+  final String? emblem;
+  final int level;
+  final int members;
+  final int activityPoints;
+  final int warWins;
+  final int donations;
+  final bool isUserClan;
+  final int change;
 }
 
 class ClanMemberLeaderboardEntry {
-  final int rank;
-  final String userId;
-  final String username;
-  final String? avatar;
-  final String clanName;
-  final int activityPoints;
-  final int donations;
-  final int warPoints;
-  final bool isUser;
-  final int change;
 
   ClanMemberLeaderboardEntry({
     required this.rank,
@@ -840,4 +828,14 @@ class ClanMemberLeaderboardEntry {
     required this.isUser,
     required this.change,
   });
+  final int rank;
+  final String userId;
+  final String username;
+  final String? avatar;
+  final String clanName;
+  final int activityPoints;
+  final int donations;
+  final int warPoints;
+  final bool isUser;
+  final int change;
 }

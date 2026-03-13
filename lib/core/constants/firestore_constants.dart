@@ -37,7 +37,7 @@ class FirestoreConstants {
   static const String isBanned = 'isBanned';
   
   // Indexes
-  static const List<String> userIndexes = ['username', 'email', 'country', 'tier'];
-  static const List<String> roomIndexes = ['name', 'hostId', 'category', 'viewerCount'];
-  static const List<String> giftIndexes = ['name', 'category', 'price'];
+  static const List<String> userIndexes = <String>['username', 'email', 'country', 'tier'];
+  static const List<String> roomIndexes = <String>['name', 'hostId', 'category', 'viewerCount'];
+  static const List<String> giftIndexes = <String>['name', 'category', 'price'];
 }

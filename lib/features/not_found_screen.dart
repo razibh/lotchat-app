@@ -9,7 +9,7 @@ class NotFoundScreen extends StatelessWidget {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          children: <>[
             const Icon(
               Icons.error_outline,
               size: 80,

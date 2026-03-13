@@ -16,8 +16,8 @@ class CallHistoryScreen extends StatefulWidget {
 class _CallHistoryScreenState extends State<CallHistoryScreen> 
     with PaginationMixin<Map<String, dynamic>> {
   
-  final _callService = ServiceLocator().get<CallService>();
-  final _logger = ServiceLocator().get<LoggerService>();
+  final CallService _callService = ServiceLocator().get<CallService>();
+  final LoggerService _logger = ServiceLocator().get<LoggerService>();
 
   @override
   void initState() {
@@ -31,10 +31,10 @@ class _CallHistoryScreenState extends State<CallHistoryScreen>
     // Fetch from service
     await Future.delayed(const Duration(seconds: 1));
     
-    return List.generate(20, (index) {
-      final callType = index % 2 == 0 ? 'video' : 'audio';
-      final callStatus = index % 3;
-      return {
+    return List.generate(20, (int index) {
+      final String callType = index % 2 == 0 ? 'video' : 'audio';
+      final int callStatus = index % 3;
+      return <String, dynamic>{
         'id': 'call_$index',
         'userId': 'user_$index',
         'name': 'User ${index + 1}',
@@ -74,14 +74,14 @@ class _CallHistoryScreenState extends State<CallHistoryScreen>
   }
 
   String _formatDuration(int seconds) {
-    final minutes = seconds ~/ 60;
-    final secs = seconds % 60;
+    final int minutes = seconds ~/ 60;
+    final int secs = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
   String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
+    final DateTime now = DateTime.now();
+    final Duration difference = now.difference(date);
 
     if (difference.inDays == 0) {
       return 'Today';
@@ -98,7 +98,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen>
       appBar: AppBar(
         title: const Text('Call History'),
         backgroundColor: Colors.teal,
-        actions: [
+        actions: <>[
           IconButton(
             icon: const Icon(Icons.delete_sweep),
             onPressed: () {
@@ -123,10 +123,10 @@ class _CallHistoryScreenState extends State<CallHistoryScreen>
                       return buildPaginationLoadingIndicator();
                     }
                     
-                    final call = items[index];
+                    final Map<String, dynamic> call = items[index];
                     return ListTile(
                       leading: Stack(
-                        children: [
+                        children: <>[
                           CircleAvatar(
                             backgroundImage: call['avatar'] != null
                                 ? NetworkImage(call['avatar'])
@@ -157,7 +157,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen>
                       ),
                       title: Text(call['name']),
                       subtitle: Row(
-                        children: [
+                        children: <>[
                           Icon(
                             _getStatusIcon(call['status']),
                             size: 12,
@@ -174,7 +174,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen>
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
+                        children: <>[
                           Text(
                             _formatDate(call['timestamp']),
                             style: const TextStyle(

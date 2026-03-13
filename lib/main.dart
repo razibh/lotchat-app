@@ -1,76 +1,141 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'core/di/service_locator.dart';
-import 'core/providers/theme_provider.dart';
-import 'core/providers/user_provider.dart';
-import 'core/providers/room_provider.dart';
-import 'core/providers/gift_provider.dart';
-import 'core/providers/game_provider.dart';
-import 'core/route_generator.dart';
-import 'core/constants/theme_constants.dart';
-import 'core/services/notification_service.dart';
-import 'core/services/socket_service.dart';
-import 'firebase_options.dart';
+import '../../../core/services/api_service.dart';
+import '../../../core/services/storage_service.dart';
+import '../../../core/models/user_models.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize SharedPreferences
-  await SharedPreferences.getInstance();
-  
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
-  // Initialize all services
-  await ServiceLocator().init();
-  
-  // Initialize notifications
-  await NotificationService().initialize();
-  
-  // Initialize socket
-  await SocketService().initSocket();
-  
-  runApp(const MyApp());
-}
+class AuthProvider extends ChangeNotifier {
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  AuthProvider() {
+    initialize();
+  }
+  final ApiService _apiService = ApiService();
+  final StorageService _storageService = StorageService();
+  
+  User? _currentUser;
+  bool _isLoading = false;
+  String? _error;
+  bool _isInitialized = false;
 
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(create: (_) => RoomProvider()),
-        ChangeNotifierProvider(create: (_) => GiftProvider()),
-        ChangeNotifierProvider(create: (_) => GameProvider()),
-      ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return MaterialApp(
-            title: 'LotChat',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: themeProvider.themeMode,
-            initialRoute: RouteGenerator.splash,
-            onGenerateRoute: RouteGenerator.generateRoute,
-            builder: (context, child) {
-              return MediaQuery(
-                data: MediaQuery.of(context).copyWith(
-                  textScaler: const TextScaler.linear(1.0),
-                ),
-                child: child!,
-              );
-            },
-          );
-        },
-      ),
-    );
+  User? get currentUser => _currentUser;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  bool get isLoggedIn => _currentUser != null;
+  bool get isInitialized => _isInitialized;
+
+  // Role checks
+  bool get isHost => _currentUser?.role == UserRole.host;
+  bool get isAgency => _currentUser?.role == UserRole.agency;
+  bool get isCountryManager => _currentUser?.role == UserRole.countryManager;
+  bool get isCoinSeller => _currentUser?.role == UserRole.coinSeller;
+  bool get isAdmin => _currentUser?.role == UserRole.admin;
+
+  Future<void> initialize() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _loadSavedUser();
+      _isInitialized = true;
+    } catch (e) {
+      debugPrint('Error initializing auth: $e');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> _loadSavedUser() async {
+    try {
+      final userJson = await _storageService.getUser();
+      if (userJson != null) {
+        _currentUser = User.fromJson(userJson);
+      }
+    } catch (e) {
+      debugPrint('Error loading user: $e');
+    }
+  }
+
+  Future<bool> login(String email, String password) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      // Demo login for testing
+      await Future.delayed(const Duration(seconds: 1));
+      
+      if (email == 'admin@test.com' && password == 'admin123') {
+        _currentUser = User.admin(
+          id: '1',
+          email: email,
+          name: 'Admin User',
+        );
+      } else if (email == 'manager@test.com' && password == 'manager123') {
+        _currentUser = User.countryManager(
+          id: '2',
+          email: email,
+          name: 'Country Manager',
+          countryId: 'bd',
+        );
+      } else if (email == 'agency@test.com' && password == 'agency123') {
+        _currentUser = User.agency(
+          id: '3',
+          email: email,
+          name: 'Agency Owner',
+          countryId: 'bd',
+          agencyId: 'ag_001',
+        );
+      } else if (email == 'seller@test.com' && password == 'seller123') {
+        _currentUser = User.coinSeller(
+          id: '4',
+          email: email,
+          name: 'Coin Seller',
+          countryId: 'bd',
+          sellerId: 'seller_001',
+        );
+      } else if (email == 'host@test.com' && password == 'host123') {
+        _currentUser = User.host(
+          id: '5',
+          email: email,
+          name: 'Live Host',
+          countryId: 'bd',
+          agencyId: 'ag_001',
+        );
+      } else {
+        _error = 'Invalid email or password';
+        return false;
+      }
+
+      // Save user to storage
+      await _storageService.saveUser(_currentUser!.toJson());
+      
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> logout() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _storageService.clearUser();
+      _currentUser = null;
+    } catch (e) {
+      debugPrint('Error logging out: $e');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  bool hasPermission(List<UserRole> allowedRoles) {
+    if (_currentUser == null) return false;
+    return allowedRoles.contains(_currentUser!.role);
   }
 }

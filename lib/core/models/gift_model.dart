@@ -1,15 +1,4 @@
 class GiftModel {
-  String id;
-  String name;
-  int price;
-  String category;
-  String animationPath;
-  String soundPath;
-  String previewImage;
-  bool isVip;
-  bool isSvip;
-  int tier;
-  Map<String, dynamic> effects;
   
   GiftModel({
     required this.id,
@@ -24,9 +13,20 @@ class GiftModel {
     this.tier = 0,
     this.effects = const {},
   });
+  String id;
+  String name;
+  int price;
+  String category;
+  String animationPath;
+  String soundPath;
+  String previewImage;
+  bool isVip;
+  bool isSvip;
+  int tier;
+  Map<String, dynamic> effects;
   
   static List<GiftModel> getGifts() {
-    return [
+    return <GiftModel>[
       // Normal Gifts (100+)
       GiftModel(
         id: 'g1',
@@ -59,7 +59,7 @@ class GiftModel {
         previewImage: 'assets/gifts/preview/vip_car.png',
         isVip: true,
         tier: 1,
-        effects: {'fullscreen': true, 'duration': 5},
+        effects: <String, dynamic>{'fullscreen': true, 'duration': 5},
       ),
       
       // SVIP Gifts
@@ -73,7 +73,7 @@ class GiftModel {
         previewImage: 'assets/gifts/preview/svip_yacht.png',
         isSvip: true,
         tier: 1,
-        effects: {'fullscreen': true, 'duration': 10, 'confetti': true},
+        effects: <String, dynamic>{'fullscreen': true, 'duration': 10, 'confetti': true},
       ),
     ];
   }

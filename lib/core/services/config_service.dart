@@ -2,18 +2,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 
 class ConfigService {
-  static final ConfigService _instance = ConfigService._internal();
   factory ConfigService() => _instance;
   ConfigService._internal();
+  static final ConfigService _instance = ConfigService._internal();
 
   late FirebaseRemoteConfig _remoteConfig;
   late SharedPreferences _prefs;
 
   // Local config cache
-  final Map<String, dynamic> _localConfig = {};
+  final Map<String, dynamic> _localConfig = <String, dynamic>{};
 
   // Default values
-  static const Map<String, dynamic> _defaultConfig = {
+  static const Map<String, dynamic> _defaultConfig = <String, dynamic>{
     // App settings
     'app_name': 'LotChat',
     'app_version': '1.0.0',
@@ -107,7 +107,7 @@ class ConfigService {
 
   void _loadLocalConfig() {
     final keys = _prefs.getKeys();
-    for (var key in keys) {
+    for (final key in keys) {
       if (key.startsWith('config_')) {
         final configKey = key.substring(7);
         _localConfig[configKey] = _prefs.get(key);
@@ -170,7 +170,7 @@ class ConfigService {
 
   void clearLocalOverrides() {
     final keys = _prefs.getKeys().where((k) => k.startsWith('config_'));
-    for (var key in keys) {
+    for (final key in keys) {
       _prefs.remove(key);
     }
     _localConfig.clear();
@@ -180,7 +180,7 @@ class ConfigService {
 
   // Get config for specific user tier
   Map<String, dynamic> getConfigForTier(String tier) {
-    final config = <String, dynamic>{};
+    final Map<String, dynamic> config = <String, dynamic>{};
     
     // Tier-specific limits
     config['max_gifts_per_minute'] = get<int>('max_gifts_per_minute') * _getTierMultiplier(tier);
@@ -204,15 +204,15 @@ class ConfigService {
   // ==================== VERSION CHECK ====================
 
   bool isAppVersionSupported(String currentVersion) {
-    final minVersion = get<String>('min_app_version');
+    final String minVersion = get<String>('min_app_version');
     return _compareVersions(currentVersion, minVersion) >= 0;
   }
 
   int _compareVersions(String v1, String v2) {
-    final parts1 = v1.split('.').map(int.parse).toList();
-    final parts2 = v2.split('.').map(int.parse).toList();
+    final List<int> parts1 = v1.split('.').map(int.parse).toList();
+    final List<int> parts2 = v2.split('.').map(int.parse).toList();
     
-    for (int i = 0; i < parts1.length; i++) {
+    for (var i = 0; i < parts1.length; i++) {
       if (i >= parts2.length) return 1;
       if (parts1[i] > parts2[i]) return 1;
       if (parts1[i] < parts2[i]) return -1;
@@ -230,13 +230,13 @@ class ConfigService {
   // ==================== GET ALL CONFIG ====================
 
   Map<String, dynamic> getAllConfig() {
-    final config = <String, dynamic>{};
+    final Map<String, dynamic> config = <String, dynamic>{};
     
     // Add default values
     config.addAll(_defaultConfig);
     
     // Override with remote values
-    for (var key in _defaultConfig.keys) {
+    for (String key in _defaultConfig.keys) {
       try {
         final value = _remoteConfig.getValue(key);
         if (value.source == ValueSource.remote) {

@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 
 class AudioWave extends StatefulWidget {
-  final bool isActive;
-  final Color color;
-  final double height;
-  final double width;
-  final int barCount;
-  final Duration animationDuration;
 
   const AudioWave({
     Key? key,
@@ -17,6 +11,12 @@ class AudioWave extends StatefulWidget {
     this.barCount = 5,
     this.animationDuration = const Duration(milliseconds: 300),
   }) : super(key: key);
+  final bool isActive;
+  final Color color;
+  final double height;
+  final double width;
+  final int barCount;
+  final Duration animationDuration;
 
   @override
   State<AudioWave> createState() => _AudioWaveState();
@@ -24,7 +24,7 @@ class AudioWave extends StatefulWidget {
 
 class _AudioWaveState extends State<AudioWave> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  final List<double> _heights = [];
+  final List<double> _heights = <double>[];
 
   @override
   void initState() {
@@ -35,7 +35,7 @@ class _AudioWaveState extends State<AudioWave> with SingleTickerProviderStateMix
     )..repeat(reverse: true);
     
     // Initialize random heights
-    for (int i = 0; i < widget.barCount; i++) {
+    for (var i = 0; i < widget.barCount; i++) {
       _heights.add(0.3 + (i * 0.1));
     }
   }
@@ -54,7 +54,7 @@ class _AudioWaveState extends State<AudioWave> with SingleTickerProviderStateMix
         width: widget.width,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.barCount, (index) {
+          children: List.generate(widget.barCount, (int index) {
             return Container(
               width: 4,
               height: 4,
@@ -77,8 +77,8 @@ class _AudioWaveState extends State<AudioWave> with SingleTickerProviderStateMix
           width: widget.width,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(widget.barCount, (index) {
-              final double scale = 0.5 + (index * 0.1) + (_controller.value * 0.5);
+            children: List.generate(widget.barCount, (int index) {
+              final scale = 0.5 + (index * 0.1) + (_controller.value * 0.5);
               return Container(
                 width: 4,
                 height: 8 * scale,
@@ -97,10 +97,6 @@ class _AudioWaveState extends State<AudioWave> with SingleTickerProviderStateMix
 }
 
 class CircularAudioWave extends StatefulWidget {
-  final bool isActive;
-  final Color color;
-  final double radius;
-  final int ringCount;
 
   const CircularAudioWave({
     Key? key,
@@ -109,6 +105,10 @@ class CircularAudioWave extends StatefulWidget {
     this.radius = 50,
     this.ringCount = 3,
   }) : super(key: key);
+  final bool isActive;
+  final Color color;
+  final double radius;
+  final int ringCount;
 
   @override
   State<CircularAudioWave> createState() => _CircularAudioWaveState();
@@ -173,25 +173,25 @@ class _CircularAudioWaveState extends State<CircularAudioWave> with SingleTicker
 }
 
 class CircularWavePainter extends CustomPainter {
-  final Color color;
-  final double progress;
-  final int ringCount;
 
   CircularWavePainter({
     required this.color,
     required this.progress,
     required this.ringCount,
   });
+  final Color color;
+  final double progress;
+  final int ringCount;
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final maxRadius = size.width / 2;
 
-    for (int i = 0; i < ringCount; i++) {
-      final ringProgress = (progress + i / ringCount) % 1.0;
+    for (var i = 0; i < ringCount; i++) {
+      final double ringProgress = (progress + i / ringCount) % 1.0;
       final radius = maxRadius * (0.3 + ringProgress * 0.7);
-      final opacity = (1.0 - ringProgress).clamp(0.0, 1.0);
+      final double opacity = (1.0 - ringProgress).clamp(0.0, 1.0);
 
       final paint = Paint()
         ..color = color.withOpacity(opacity * 0.3)

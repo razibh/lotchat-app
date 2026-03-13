@@ -1,0 +1,29 @@
+<svg width="350" height="350" viewBox="0 0 350 350" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="175" cy="175" r="160" stroke="url(#svip5Gradient)" stroke-width="25" fill="none"/>
+  <circle cx="175" cy="175" r="130" stroke="url(#svip5Gradient)" stroke-width="2" stroke-dasharray="20 10" fill="none"/>
+  <circle cx="175" cy="175" r="100" stroke="url(#svip5Gradient)" stroke-width="3" fill="none"/>
+  
+  <!-- Royal Elements -->
+  <path d="M175 30 L185 50 L205 50 L190 65 L200 85 L175 70 L150 85 L160 65 L145 50 L165 50 L175 30Z" fill="url(#svip5Gradient)"/>
+  <path d="M175 320 L185 300 L205 300 L190 285 L200 265 L175 280 L150 265 L160 285 L145 300 L165 300 L175 320Z" fill="url(#svip5Gradient)"/>
+  
+  <!-- Floating Gems -->
+  <circle cx="100" cy="100" r="12" fill="#FFD700"/>
+  <circle cx="250" cy="100" r="12" fill="#FF69B4"/>
+  <circle cx="100" cy="250" r="12" fill="#8B5CF6"/>
+  <circle cx="250" cy="250" r="12" fill="#FFD700"/>
+  
+  <!-- Center Diamond -->
+  <path d="M175 150 L200 175 L175 200 L150 175 L175 150Z" fill="#FFD700"/>
+  
+  <text x="175" y="300" font-size="36" font-weight="bold" text-anchor="middle" fill="url(#svip5Gradient)" font-family="Arial">SVIP 5</text>
+  
+  <defs>
+    <linearGradient id="svip5Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="33%" stop-color="#EC4899"/>
+      <stop offset="66%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+</svg>

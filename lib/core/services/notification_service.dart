@@ -3,9 +3,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationService {
-  static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
+  static final NotificationService _instance = NotificationService._internal();
 
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications = 
@@ -24,13 +24,13 @@ class NotificationService {
     print('FCM Token: $token');
 
     // Initialize local notifications
-    const AndroidInitializationSettings androidSettings = 
+    const androidSettings = 
         AndroidInitializationSettings('@mipmap/ic_launcher');
     
-    const DarwinInitializationSettings iosSettings = 
+    const iosSettings = 
         DarwinInitializationSettings();
     
-    const InitializationSettings initSettings = InitializationSettings(
+    const initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
     );
@@ -84,7 +84,7 @@ class NotificationService {
     required String body,
     String? payload,
   }) async {
-    const AndroidNotificationDetails androidDetails = 
+    const androidDetails = 
         AndroidNotificationDetails(
       'lotchat_channel',
       'LotChat Notifications',
@@ -93,10 +93,10 @@ class NotificationService {
       priority: Priority.high,
     );
 
-    const DarwinNotificationDetails iosDetails = 
+    const iosDetails = 
         DarwinNotificationDetails();
 
-    const NotificationDetails details = NotificationDetails(
+    const details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
@@ -153,12 +153,6 @@ enum NotificationType {
 }
 
 class NotificationData {
-  final String id;
-  final NotificationType type;
-  final String title;
-  final String body;
-  final Map<String, dynamic> data;
-  final DateTime timestamp;
 
   NotificationData({
     required this.id,
@@ -182,8 +176,14 @@ class NotificationData {
       timestamp: DateTime.parse(json['timestamp'] ?? DateTime.now().toIso8601String()),
     );
   }
+  final String id;
+  final NotificationType type;
+  final String title;
+  final String body;
+  final Map<String, dynamic> data;
+  final DateTime timestamp;
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson() => <String, dynamic>{
     'id': id,
     'type': type.toString().split('.').last,
     'title': title,

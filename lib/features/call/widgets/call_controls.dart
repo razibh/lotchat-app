@@ -1,17 +1,6 @@
 import 'package:flutter/material.dart';
 
 class CallControls extends StatelessWidget {
-  final bool isVideoCall;
-  final bool isMicMuted;
-  final bool isSpeakerOn;
-  final bool isCameraOn;
-  final bool isFrontCamera;
-  final VoidCallback onToggleMic;
-  final VoidCallback onToggleSpeaker;
-  final VoidCallback onToggleCamera;
-  final VoidCallback onFlipCamera;
-  final VoidCallback onToggleScreenShare;
-  final VoidCallback onEndCall;
 
   const CallControls({
     Key? key,
@@ -27,6 +16,17 @@ class CallControls extends StatelessWidget {
     required this.onToggleScreenShare,
     required this.onEndCall,
   }) : super(key: key);
+  final bool isVideoCall;
+  final bool isMicMuted;
+  final bool isSpeakerOn;
+  final bool isCameraOn;
+  final bool isFrontCamera;
+  final VoidCallback onToggleMic;
+  final VoidCallback onToggleSpeaker;
+  final VoidCallback onToggleCamera;
+  final VoidCallback onFlipCamera;
+  final VoidCallback onToggleScreenShare;
+  final VoidCallback onEndCall;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,7 @@ class CallControls extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
+        children: <>[
           // Mic Button
           _buildControlButton(
             icon: isMicMuted ? Icons.mic_off : Icons.mic,

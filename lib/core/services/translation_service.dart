@@ -4,17 +4,17 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
 
 class TranslationService {
-  static final TranslationService _instance = TranslationService._internal();
   factory TranslationService() => _instance;
   TranslationService._internal();
+  static final TranslationService _instance = TranslationService._internal();
 
   late stt.SpeechToText _speech;
   late FlutterTts _tts;
   bool _isListening = false;
-  String _currentLocale = 'en-US';
+  final String _currentLocale = 'en-US';
 
   // Supported languages
-  static const Map<String, String> supportedLanguages = {
+  static const Map<String, String> supportedLanguages = <String, String>{
     'en': 'English',
     'es': 'Spanish',
     'fr': 'French',
@@ -41,7 +41,7 @@ class TranslationService {
 
   // ==================== SPEECH TO TEXT ====================
   Future<bool> initSpeech() async {
-    bool available = await _speech.initialize(
+    final bool available = await _speech.initialize(
       onError: (error) => print('Speech error: $error'),
       onStatus: (status) => print('Speech status: $status'),
     );
@@ -54,14 +54,14 @@ class TranslationService {
     String? locale,
   }) async {
     if (!_isListening) {
-      bool available = await initSpeech();
+      var available = await initSpeech();
       if (available) {
         _isListening = true;
         await _speech.listen(
           onResult: (result) {
             onResult(result.recognizedWords);
           },
-          listenFor: Duration(seconds: 30),
+          listenFor: const Duration(seconds: 30),
           localeId: locale ?? _currentLocale,
         );
       } else {
@@ -100,16 +100,16 @@ class TranslationService {
   }) async {
     try {
       // Using Google Translate API (you'll need API key)
-      final apiKey = 'YOUR_GOOGLE_TRANSLATE_API_KEY';
-      final url = 'https://translation.googleapis.com/language/translate/v2';
+      const String apiKey = 'YOUR_GOOGLE_TRANSLATE_API_KEY';
+      const String url = 'https://translation.googleapis.com/language/translate/v2';
       
       final response = await http.post(
         Uri.parse(url),
-        headers: {
+        headers: <String, String>{
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': apiKey,
         },
-        body: jsonEncode({
+        body: jsonEncode(<String, String>{
           'q': text,
           'source': fromLanguage,
           'target': toLanguage,
@@ -135,9 +135,9 @@ class TranslationService {
     required String fromLanguage,
     required String toLanguage,
   }) async* {
-    await for (var text in inputStream) {
+    await for (String text in inputStream) {
       if (text.isNotEmpty) {
-        final translated = await translateText(
+        final String? translated = await translateText(
           text: text,
           fromLanguage: fromLanguage,
           toLanguage: toLanguage,
@@ -157,10 +157,10 @@ class TranslationService {
     // Listen to speech
     String? recognizedText;
     await listen(
-      onResult: (text) {
+      onResult: (String text) {
         recognizedText = text;
       },
-      onError: (error) {
+      onError: (String error) {
         print('Error listening: $error');
       },
       locale: fromLanguage,
@@ -169,7 +169,7 @@ class TranslationService {
     if (recognizedText == null) return null;
 
     // Translate text
-    final translatedText = await translateText(
+    final String? translatedText = await translateText(
       text: recognizedText!,
       fromLanguage: fromLanguage,
       toLanguage: toLanguage,
@@ -187,16 +187,16 @@ class TranslationService {
   // ==================== LANGUAGE DETECTION ====================
   Future<String?> detectLanguage(String text) async {
     try {
-      final apiKey = 'YOUR_GOOGLE_TRANSLATE_API_KEY';
-      final url = 'https://translation.googleapis.com/language/translate/v2/detect';
+      const String apiKey = 'YOUR_GOOGLE_TRANSLATE_API_KEY';
+      const String url = 'https://translation.googleapis.com/language/translate/v2/detect';
       
       final response = await http.post(
         Uri.parse(url),
-        headers: {
+        headers: <String, String>{
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': apiKey,
         },
-        body: jsonEncode({
+        body: jsonEncode(<String, String>{
           'q': text,
         }),
       );

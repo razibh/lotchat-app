@@ -18,13 +18,13 @@ class GiftManagement extends StatefulWidget {
 class _GiftManagementState extends State<GiftManagement> 
     with LoadingMixin, ToastMixin, DialogMixin {
   
-  final _adminService = ServiceLocator().get<AdminService>();
+  final AdminService _adminService = ServiceLocator().get<AdminService>();
   
-  List<GiftModel> _gifts = [];
+  List<GiftModel> _gifts = <GiftModel>[];
   String _selectedCategory = 'All';
   bool _isLoading = true;
 
-  final List<String> _categories = ['All', 'Cute', 'Luxury', 'VIP', 'SVIP', 'Special'];
+  final List<String> _categories = <String>['All', 'Cute', 'Luxury', 'VIP', 'SVIP', 'Special'];
 
   @override
   void initState() {
@@ -50,7 +50,7 @@ class _GiftManagementState extends State<GiftManagement>
     if (_selectedCategory == 'All') {
       return _gifts;
     }
-    return _gifts.where((g) => g.category == _selectedCategory).toList();
+    return _gifts.where((GiftModel g) => g.category == _selectedCategory).toList();
   }
 
   Future<void> _addGift() async {
@@ -78,13 +78,13 @@ class _GiftManagementState extends State<GiftManagement>
   }
 
   Future<void> _deleteGift(GiftModel gift) async {
-    final confirmed = await showConfirmDialog(
+    final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Delete Gift',
       message: 'Are you sure you want to delete ${gift.name}?',
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       await runWithLoading(() async {
         try {
           await _adminService.deleteGift(gift.id);
@@ -113,7 +113,7 @@ class _GiftManagementState extends State<GiftManagement>
       appBar: AppBar(
         title: const Text('Gift Management'),
         backgroundColor: Colors.purple,
-        actions: [
+        actions: <>[
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: _addGift,
@@ -128,7 +128,7 @@ class _GiftManagementState extends State<GiftManagement>
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
               itemBuilder: (context, index) {
-                final category = _categories[index];
+                final String category = _categories[index];
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: FilterChip(
@@ -163,7 +163,7 @@ class _GiftManagementState extends State<GiftManagement>
               ),
               itemCount: _filteredGifts.length,
               itemBuilder: (context, index) {
-                final gift = _filteredGifts[index];
+                final GiftModel gift = _filteredGifts[index];
                 return _buildGiftCard(gift);
               },
             ),
@@ -174,7 +174,7 @@ class _GiftManagementState extends State<GiftManagement>
     return Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+        children: <>[
           // Gift Preview
           Expanded(
             flex: 3,
@@ -200,9 +200,9 @@ class _GiftManagementState extends State<GiftManagement>
               padding: const EdgeInsets.all(8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                children: <>[
                   Row(
-                    children: [
+                    children: <>[
                       Expanded(
                         child: Text(
                           gift.name,
@@ -231,7 +231,7 @@ class _GiftManagementState extends State<GiftManagement>
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Colors.purple, Colors.pink],
+                              colors: <>[Colors.purple, Colors.pink],
                             ),
                             borderRadius: BorderRadius.circular(4),
                           ),
@@ -261,7 +261,7 @@ class _GiftManagementState extends State<GiftManagement>
                   // Actions
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
+                    children: <>[
                       IconButton(
                         icon: const Icon(Icons.edit, size: 16),
                         onPressed: () => _editGift(gift),
@@ -339,11 +339,11 @@ class _AddGiftDialogState extends State<AddGiftDialog> {
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: <>[
               CustomTextField(
                 controller: _nameController,
                 label: 'Gift Name',
-                validator: (value) {
+                validator: (String? value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter gift name';
                   }
@@ -355,7 +355,7 @@ class _AddGiftDialogState extends State<AddGiftDialog> {
                 controller: _priceController,
                 label: 'Price (coins)',
                 keyboardType: TextInputType.number,
-                validator: (value) {
+                validator: (String? value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter price';
                   }
@@ -369,7 +369,7 @@ class _AddGiftDialogState extends State<AddGiftDialog> {
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
                 decoration: const InputDecoration(labelText: 'Category'),
-                items: ['Cute', 'Luxury', 'VIP', 'SVIP', 'Special'].map((cat) {
+                items: <String>['Cute', 'Luxury', 'VIP', 'SVIP', 'Special'].map((String cat) {
                   return DropdownMenuItem(
                     value: cat,
                     child: Text(cat),
@@ -406,7 +406,7 @@ class _AddGiftDialogState extends State<AddGiftDialog> {
           ),
         ),
       ),
-      actions: [
+      actions: <>[
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
@@ -426,9 +426,9 @@ class _AddGiftDialogState extends State<AddGiftDialog> {
 
 // Edit Gift Dialog
 class EditGiftDialog extends StatefulWidget {
-  final GiftModel gift;
 
   const EditGiftDialog({Key? key, required this.gift}) : super(key: key);
+  final GiftModel gift;
 
   @override
   State<EditGiftDialog> createState() => _EditGiftDialogState();
@@ -458,7 +458,7 @@ class _EditGiftDialogState extends State<EditGiftDialog> {
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
+          children: <>[
             CustomTextField(
               controller: _nameController,
               label: 'Gift Name',
@@ -473,7 +473,7 @@ class _EditGiftDialogState extends State<EditGiftDialog> {
             DropdownButtonFormField<String>(
               value: _selectedCategory,
               decoration: const InputDecoration(labelText: 'Category'),
-              items: ['Cute', 'Luxury', 'VIP', 'SVIP', 'Special'].map((cat) {
+              items: <String>['Cute', 'Luxury', 'VIP', 'SVIP', 'Special'].map((String cat) {
                 return DropdownMenuItem(
                   value: cat,
                   child: Text(cat),
@@ -509,7 +509,7 @@ class _EditGiftDialogState extends State<EditGiftDialog> {
           ],
         ),
       ),
-      actions: [
+      actions: <>[
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),

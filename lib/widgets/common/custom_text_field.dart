@@ -1,20 +1,6 @@
 import 'package:flutter/material.dart';
 
 class CustomTextField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final String? hintText;
-  final IconData? prefixIcon;
-  final Widget? suffixIcon;
-  final bool obscureText;
-  final TextInputType keyboardType;
-  final String? Function(String?)? validator;
-  final void Function(String)? onChanged;
-  final void Function(String)? onSubmitted;
-  final int maxLines;
-  final int? maxLength;
-  final bool enabled;
-  final FocusNode? focusNode;
 
   const CustomTextField({
     Key? key,
@@ -33,6 +19,20 @@ class CustomTextField extends StatelessWidget {
     this.enabled = true,
     this.focusNode,
   }) : super(key: key);
+  final TextEditingController controller;
+  final String label;
+  final String? hintText;
+  final IconData? prefixIcon;
+  final Widget? suffixIcon;
+  final bool obscureText;
+  final TextInputType keyboardType;
+  final String? Function(String?)? validator;
+  final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
+  final int maxLines;
+  final int? maxLength;
+  final bool enabled;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {

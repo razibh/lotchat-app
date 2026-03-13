@@ -9,9 +9,9 @@ import '../../core/models/room_model.dart';
 import '../../core/models/gift_model.dart';
 
 class RoomScreen extends StatefulWidget {
-  final RoomModel room;
 
   const RoomScreen({super.key, required this.room});
+  final RoomModel room;
 
   @override
   State<RoomScreen> createState() => _RoomScreenState();
@@ -23,18 +23,18 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool showGiftPanel = false;
   bool isMicOn = true;
-  List<GiftAnimation> activeGifts = [];
+  List<GiftAnimation> activeGifts = <GiftAnimation>[];
 
   @override
   void initState() {
     super.initState();
     _pulseController = AnimationController(
       vsync: this,
-      duration: Duration(seconds: 1),
+      duration: const Duration(seconds: 1),
     )..repeat(reverse: true);
 
     _confettiController = ConfettiController(
-      duration: Duration(seconds: 3),
+      duration: const Duration(seconds: 3),
     );
   }
 
@@ -42,14 +42,14 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
-        children: [
+        children: <>[
           // Background Gradient
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFF1a1a2e), Color(0xFF16213e)],
+                colors: <>[Color(0xFF1a1a2e), Color(0xFF16213e)],
               ),
             ),
           ),
@@ -57,11 +57,11 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
           // Main Content
           SafeArea(
             child: Column(
-              children: [
+              children: <>[
                 _buildRoomHeader(),
                 Expanded(
                   child: Row(
-                    children: [
+                    children: <>[
                       // Left side - Seats
                       Expanded(
                         flex: 3,
@@ -81,7 +81,7 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
           ),
 
           // Gift Animations Overlay
-          ...activeGifts.map((gift) => _buildGiftAnimation(gift)).toList(),
+          ...activeGifts.map(_buildGiftAnimation),
 
           // Gift Panel
           if (showGiftPanel)
@@ -104,7 +104,7 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
             confettiController: _confettiController,
             blastDirectionality: BlastDirectionality.explosive,
             shouldLoop: false,
-            colors: [Colors.purple, Colors.pink, Colors.amber, Colors.green],
+            colors: <>[Colors.purple, Colors.pink, Colors.amber, Colors.green],
           ),
         ],
       ),
@@ -118,7 +118,7 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
         color: Colors.black.withOpacity(0.3),
       ),
       child: Row(
-        children: [
+        children: <>[
           CircleAvatar(
             backgroundImage: NetworkImage(widget.room.hostAvatar),
             radius: 20,
@@ -127,7 +127,7 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: <>[
                 Text(
                   widget.room.name,
                   style: TextStyle(
@@ -137,7 +137,7 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 Row(
-                  children: [
+                  children: <>[
                     Icon(Icons.people, color: Colors.white70, size: 16),
                     SizedBox(width: 4),
                     Text(
@@ -171,12 +171,12 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.purple, Colors.pink],
+            colors: <>[Colors.purple, Colors.pink],
           ),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
-          children: [
+          children: <>[
             ScaleTransition(
               scale: _pulseController,
               child: Icon(Icons.games, color: Colors.white, size: 16),
@@ -221,7 +221,7 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
-        children: [
+        children: <>[
           // Chat messages
           Expanded(
             child: ChatWidget(roomId: widget.room.id),
@@ -231,7 +231,7 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
           Padding(
             padding: EdgeInsets.all(12),
             child: Row(
-              children: [
+              children: <>[
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
@@ -275,7 +275,7 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
+        children: <>[
           _buildControlButton(
             icon: isMicOn ? Icons.mic : Icons.mic_off,
             onTap: () {
@@ -327,7 +327,7 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _sendGift(GiftModel gift) async {
+  Future<void> _sendGift(GiftModel gift) async {
     // Play sound
     await _audioPlayer.play(AssetSource(gift.soundPath));
 
@@ -345,9 +345,9 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
     }
 
     // Remove animation after duration
-    Future.delayed(Duration(seconds: 5), () {
+    Future.delayed(const Duration(seconds: 5), () {
       setState(() {
-        activeGifts.removeWhere((g) => g.gift.id == gift.id);
+        activeGifts.removeWhere((GiftAnimation g) => g.gift.id == gift.id);
       });
     });
   }
@@ -375,7 +375,7 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
-            children: [
+            children: <>[
               Padding(
                 padding: EdgeInsets.all(16),
                 child: Text(
@@ -391,7 +391,7 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
                 child: GridView.count(
                   crossAxisCount: 4,
                   padding: EdgeInsets.all(16),
-                  children: [
+                  children: <>[
                     _buildGameItem('Roulette', Icons.casino),
                     _buildGameItem('3 Patti', Icons.playing_cards),
                     _buildGameItem('Ludo', Icons.sports_esports),
@@ -417,13 +417,13 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
         Navigator.pushNamed(context, '/game', arguments: name);
       },
       child: Column(
-        children: [
+        children: <>[
           Container(
             width: 60,
             height: 60,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.purple, Colors.pink],
+                colors: <>[Colors.purple, Colors.pink],
               ),
               shape: BoxShape.circle,
             ),
@@ -450,8 +450,8 @@ class _RoomScreenState extends State<RoomScreen> with TickerProviderStateMixin {
 }
 
 class GiftAnimation {
-  final GiftModel gift;
-  final String id;
 
   GiftAnimation({required this.gift, required this.id});
+  final GiftModel gift;
+  final String id;
 }

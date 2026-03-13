@@ -1,0 +1,13 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="95" stroke="url(#goldGradient)" stroke-width="10" fill="none"/>
+  <circle cx="100" cy="100" r="82" stroke="url(#goldGradient)" stroke-width="2" fill="none"/>
+  <path d="M100 20 L120 45 L150 45 L130 70 L140 100 L100 80 L60 100 L70 70 L50 45 L80 45 L100 20Z" fill="url(#goldGradient)" fill-opacity="0.3"/>
+  <path d="M100 180 L120 155 L150 155 L130 130 L140 100 L100 120 L60 100 L70 130 L50 155 L80 155 L100 180Z" fill="url(#goldGradient)" fill-opacity="0.3"/>
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="50%" stop-color="#FFA500"/>
+      <stop offset="100%" stop-color="#FF8C00"/>
+    </linearGradient>
+  </defs>
+</svg>

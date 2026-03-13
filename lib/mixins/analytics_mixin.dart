@@ -53,7 +53,7 @@ mixin AnalyticsMixin {
 
   // Track gift send
   Future<void> trackGiftSend(String giftId, int coins) {
-    return trackEvent('gift_send', parameters: {
+    return trackEvent('gift_send', parameters: <String, dynamic>{
       'gift_id': giftId,
       'coins': coins,
     });
@@ -61,7 +61,7 @@ mixin AnalyticsMixin {
 
   // Track game play
   Future<void> trackGamePlay(String gameName, bool won, int bet) {
-    return trackEvent('game_play', parameters: {
+    return trackEvent('game_play', parameters: <String, dynamic>{
       'game_name': gameName,
       'won': won,
       'bet': bet,

@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../../core/di/service_locator.dart';
+import '../../core/models/clan_model.dart';
 import '../../core/services/clan_service.dart';
 import '../../core/utils/image_picker_helper.dart';
 import '../../mixins/loading_mixin.dart';
@@ -18,7 +21,7 @@ class CreateClanScreen extends StatefulWidget {
 class _CreateClanScreenState extends State<CreateClanScreen> 
     with LoadingMixin, ToastMixin, FormMixin {
   
-  final _clanService = ServiceLocator().get<ClanService>();
+  final ClanService _clanService = ServiceLocator().get<ClanService>();
   
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -26,10 +29,10 @@ class _CreateClanScreenState extends State<CreateClanScreen>
   
   String? _emblemPath;
   ClanJoinType _joinType = ClanJoinType.open;
-  List<String> _selectedTags = [];
+  final List<String> _selectedTags = <String>[];
   int _maxMembers = 50;
 
-  final List<String> _availableTags = [
+  final List<String> _availableTags = <String>[
     'Gaming',
     'Social',
     'Competitive',
@@ -51,7 +54,7 @@ class _CreateClanScreenState extends State<CreateClanScreen>
   }
 
   Future<void> _pickEmblem() async {
-    final file = await ImagePickerHelper.pickImageFromGallery();
+    final File? file = await ImagePickerHelper.pickImageFromGallery();
     if (file != null) {
       setState(() {
         _emblemPath = file.path;
@@ -64,7 +67,7 @@ class _CreateClanScreenState extends State<CreateClanScreen>
 
     await runWithLoading(() async {
       try {
-        final clan = await _clanService.createClan(
+        final ClanModel? clan = await _clanService.createClan(
           name: _nameController.text,
           description: _descriptionController.text.isNotEmpty
               ? _descriptionController.text
@@ -102,7 +105,7 @@ class _CreateClanScreenState extends State<CreateClanScreen>
           key: formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            children: <>[
               // Emblem
               Center(
                 child: GestureDetector(
@@ -141,7 +144,7 @@ class _CreateClanScreenState extends State<CreateClanScreen>
                 controller: _nameController,
                 label: 'Clan Name',
                 prefixIcon: Icons.groups,
-                validator: (value) {
+                validator: (String? value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a clan name';
                   }
@@ -207,7 +210,7 @@ class _CreateClanScreenState extends State<CreateClanScreen>
               ),
               const SizedBox(height: 8),
               Row(
-                children: [10, 25, 50, 100, 200].map((max) {
+                children: <int>[10, 25, 50, 100, 200].map((int max) {
                   return Expanded(
                     child: Padding(
                       padding: const EdgeInsets.only(right: 8),
@@ -242,8 +245,8 @@ class _CreateClanScreenState extends State<CreateClanScreen>
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: _availableTags.map((tag) {
-                  final isSelected = _selectedTags.contains(tag);
+                children: _availableTags.map((String tag) {
+                  final bool isSelected = _selectedTags.contains(tag);
                   return FilterChip(
                     label: Text(tag),
                     selected: isSelected,
@@ -288,7 +291,7 @@ class _CreateClanScreenState extends State<CreateClanScreen>
       groupValue: _joinType,
       onChanged: (value) {
         setState(() {
-          _joinType = value!;
+          _joinType = value;
         });
       },
       activeColor: Colors.deepPurple,

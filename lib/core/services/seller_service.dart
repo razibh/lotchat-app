@@ -34,7 +34,7 @@ class SellerService {
     final currentUser = _auth.currentUser;
     if (currentUser == null) throw Exception('Not logged in');
     
-    final seller = await getSeller(sellerId);
+    final Seller? seller = await getSeller(sellerId);
     if (seller == null) throw Exception('Seller not found');
     
     // Check if current user is the seller
@@ -45,8 +45,8 @@ class SellerService {
     await _firestore
         .collection('sellers')
         .doc(sellerId)
-        .update({
-          'packages': packages.map((p) => p.toJson()).toList(),
+        .update(<String, List<Map<String, dynamic>>>{
+          'packages': packages.map((CoinPackage p) => p.toJson()).toList(),
         });
   }
 
@@ -57,7 +57,7 @@ class SellerService {
     required CoinPackage package,
   }) async {
     try {
-      final seller = await getSeller(sellerId);
+      final Seller? seller = await getSeller(sellerId);
       if (seller == null) throw Exception('Seller not found');
       
       if (!seller.isActive) throw Exception('Seller is not active');
@@ -70,7 +70,7 @@ class SellerService {
         // Deduct from seller
         transaction.update(
           _firestore.collection('sellers').doc(sellerId),
-          {
+          <String, >{
             'coinBalance': FieldValue.increment(-package.coins),
             'totalCoinsSold': FieldValue.increment(package.coins),
             'totalEarnings': FieldValue.increment(package.price),
@@ -80,7 +80,7 @@ class SellerService {
         // Add to buyer
         transaction.update(
           _firestore.collection('users').doc(buyerId),
-          {
+          <String, >{
             'coins': FieldValue.increment(package.coins),
           },
         );
@@ -88,7 +88,7 @@ class SellerService {
         // Record sale
         transaction.set(
           _firestore.collection('coin_sales').doc(),
-          {
+          <String, >{
             'sellerId': sellerId,
             'buyerId': buyerId,
             'package': package.toJson(),
@@ -109,12 +109,12 @@ class SellerService {
 
   // ==================== SELLER STATS ====================
   Future<SellerStats> getSellerStats(String sellerId) async {
-    final seller = await getSeller(sellerId);
+    final Seller? seller = await getSeller(sellerId);
     if (seller == null) throw Exception('Seller not found');
     
     // Get today's sales
-    final today = DateTime.now();
-    final startOfDay = DateTime(today.year, today.month, today.day);
+    final DateTime today = DateTime.now();
+    final DateTime startOfDay = DateTime(today.year, today.month, today.day);
     
     final todaySales = await _firestore
         .collection('coin_sales')
@@ -133,7 +133,7 @@ class SellerService {
     );
     
     // Get this month's sales
-    final startOfMonth = DateTime(today.year, today.month, 1);
+    final DateTime startOfMonth = DateTime(today.year, today.month);
     
     final monthSales = await _firestore
         .collection('coin_sales')
@@ -212,10 +212,10 @@ class SellerService {
     final currentUser = _auth.currentUser;
     if (currentUser == null) throw Exception('Not logged in');
     
-    final seller = await getSeller(currentUser.uid);
+    final Seller? seller = await getSeller(currentUser.uid);
     if (seller == null) throw Exception('Seller not found');
     
-    await _firestore.collection('restock_requests').add({
+    await _firestore.collection('restock_requests').add(<String, >{
       'sellerId': currentUser.uid,
       'sellerName': seller.name,
       'amount': amount,
@@ -232,7 +232,7 @@ class SellerService {
     await _firestore
         .collection('sellers')
         .doc(currentUser.uid)
-        .update({
+        .update(<String, double>{
           'commissionRate': rate,
         });
   }
@@ -245,7 +245,7 @@ class SellerService {
     await _firestore
         .collection('sellers')
         .doc(currentUser.uid)
-        .update({
+        .update(<String, bool>{
           'isActive': isActive,
         });
   }
@@ -254,16 +254,6 @@ class SellerService {
 // ==================== MODEL CLASSES ====================
 
 class Seller {
-  final String id;
-  final String userId;
-  final String name;
-  final double commissionRate;
-  final int coinBalance;
-  final int totalCoinsSold;
-  final double totalEarnings;
-  final List<CoinPackage> packages;
-  final bool isActive;
-  final DateTime createdAt;
   
   Seller({
     required this.id,
@@ -294,13 +284,19 @@ class Seller {
       createdAt: (json['createdAt'] as Timestamp).toDate(),
     );
   }
+  final String id;
+  final String userId;
+  final String name;
+  final double commissionRate;
+  final int coinBalance;
+  final int totalCoinsSold;
+  final double totalEarnings;
+  final List<CoinPackage> packages;
+  final bool isActive;
+  final DateTime createdAt;
 }
 
 class CoinPackage {
-  final String id;
-  final int coins;
-  final double price;
-  final bool popular;
   
   CoinPackage({
     required this.id,
@@ -308,13 +304,6 @@ class CoinPackage {
     required this.price,
     this.popular = false,
   });
-  
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'coins': coins,
-    'price': price,
-    'popular': popular,
-  };
   
   factory CoinPackage.fromJson(Map<String, dynamic> json) {
     return CoinPackage(
@@ -324,16 +313,20 @@ class CoinPackage {
       popular: json['popular'] ?? false,
     );
   }
+  final String id;
+  final int coins;
+  final double price;
+  final bool popular;
+  
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'coins': coins,
+    'price': price,
+    'popular': popular,
+  };
 }
 
 class CoinSale {
-  final String id;
-  final String sellerId;
-  final String buyerId;
-  final CoinPackage package;
-  final double amount;
-  final int coins;
-  final DateTime timestamp;
   
   CoinSale({
     required this.id,
@@ -356,17 +349,16 @@ class CoinSale {
       timestamp: (json['timestamp'] as Timestamp).toDate(),
     );
   }
+  final String id;
+  final String sellerId;
+  final String buyerId;
+  final CoinPackage package;
+  final double amount;
+  final int coins;
+  final DateTime timestamp;
 }
 
 class SellerStats {
-  final int totalCoinsSold;
-  final double totalEarnings;
-  final int coinBalance;
-  final int todayCoins;
-  final double todayEarnings;
-  final int monthCoins;
-  final double monthEarnings;
-  final int totalSales;
   
   SellerStats({
     required this.totalCoinsSold,
@@ -378,13 +370,17 @@ class SellerStats {
     required this.monthEarnings,
     required this.totalSales,
   });
+  final int totalCoinsSold;
+  final double totalEarnings;
+  final int coinBalance;
+  final int todayCoins;
+  final double todayEarnings;
+  final int monthCoins;
+  final double monthEarnings;
+  final int totalSales;
 }
 
 class SellerRank {
-  final String sellerId;
-  final String name;
-  final int totalCoinsSold;
-  final double totalEarnings;
   
   SellerRank({
     required this.sellerId,
@@ -392,4 +388,8 @@ class SellerRank {
     required this.totalCoinsSold,
     required this.totalEarnings,
   });
+  final String sellerId;
+  final String name;
+  final int totalCoinsSold;
+  final double totalEarnings;
 }

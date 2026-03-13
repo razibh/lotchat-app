@@ -18,7 +18,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> 
     with LoadingMixin, ToastMixin, FormMixin {
   
-  final _authService = ServiceLocator().get<AuthService>();
+  final AuthService _authService = ServiceLocator().get<AuthService>();
   final _emailController = TextEditingController();
   bool _emailSent = false;
 
@@ -57,7 +57,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
             key: formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+              children: <>[
                 const SizedBox(height: 40),
                 
                 // Icon
@@ -89,7 +89,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                 
                 // Description
                 const Text(
-                  'Enter your email address and we\'ll send you a link to reset your password.',
+                  "Enter your email address and we'll send you a link to reset your password.",
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey,
@@ -99,7 +99,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                 const SizedBox(height: 32),
                 
                 // Email Field
-                if (!_emailSent) ...[
+                if (!_emailSent) ...<>[
                   CustomTextField(
                     controller: _emailController,
                     label: 'Email',
@@ -115,7 +115,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                     onPressed: _sendResetEmail,
                     isLoading: isButtonLoading,
                   ),
-                ] else ...[
+                ] else ...<>[
                   // Success Message
                   Container(
                     padding: const EdgeInsets.all(20),
@@ -124,7 +124,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(
-                      children: [
+                      children: <>[
                         const Icon(
                           Icons.check_circle,
                           color: Colors.green,
@@ -140,7 +140,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'We\'ve sent a password reset link to\n${_emailController.text}',
+                          "We've sent a password reset link to\n${_emailController.text}",
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: Colors.grey),
                         ),

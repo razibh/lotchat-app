@@ -5,9 +5,9 @@ import '../../widgets/badge_widget.dart';
 import '../../widgets/frame_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final String userId;
   
   const ProfileScreen({super.key, required this.userId});
+  final String userId;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -32,9 +32,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         username: 'JohnDoe',
         email: 'john@example.com',
         phone: '+1234567890',
-        photoURL: null,
         bio: 'Live life to the fullest!',
-        interests: ['Music', 'Travel', 'Gaming'],
+        interests: <String>['Music', 'Travel', 'Gaming'],
         country: 'USA',
         region: 'New York',
         coins: 15000,
@@ -55,21 +54,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     
     return Scaffold(
       body: CustomScrollView(
-        slivers: [
+        slivers: <>[
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
-                children: [
+                children: <>[
                   // Cover Image
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.purple, Colors.pink],
+                        colors: <>[Colors.purple, Colors.pink],
                       ),
                     ),
                   ),
@@ -85,14 +84,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [Colors.transparent, Colors.black54],
+                          colors: <>[Colors.transparent, Colors.black54],
                         ),
                       ),
                       child: Row(
-                        children: [
+                        children: <>[
                           // Profile Picture with Frame
                           Stack(
-                            children: [
+                            children: <>[
                               FrameWidget(
                                 tier: user!.tier,
                                 size: 80,
@@ -135,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
+                              children: <>[
                                 Text(
                                   user!.username,
                                   style: TextStyle(
@@ -146,7 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 SizedBox(height: 4),
                                 Row(
-                                  children: [
+                                  children: <>[
                                     BadgeWidget(tier: user!.tier),
                                     SizedBox(width: 8),
                                     Text(
@@ -184,7 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                children: <>[
                   // Stats Row
                   _buildStatsRow(),
                   SizedBox(height: 24),
@@ -222,7 +221,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildStatsRow() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
+      children: <>[
         _buildStatItem('Coins', '${user!.coins}', Icons.monetization_on),
         _buildStatItem('Diamonds', '${user!.diamonds}', Icons.diamond),
         _buildStatItem('Followers', '12.5K', Icons.people),
@@ -233,7 +232,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   
   Widget _buildStatItem(String label, String value, IconData icon) {
     return Column(
-      children: [
+      children: <>[
         Icon(icon, color: Colors.purple),
         SizedBox(height: 4),
         Text(
@@ -249,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (isEditing) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: <>[
           Text('Bio', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 8),
           TextField(
@@ -271,7 +270,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <>[
         Text('Bio', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         SizedBox(height: 8),
         Text(
@@ -286,13 +285,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (isEditing) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: <>[
           Text('Interests', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 8),
           Wrap(
             spacing: 8,
-            children: ['Music', 'Travel', 'Gaming', 'Sports', 'Art', 'Food'].map((interest) {
-              final isSelected = user!.interests.contains(interest);
+            children: <String>['Music', 'Travel', 'Gaming', 'Sports', 'Art', 'Food'].map((String interest) {
+              final bool isSelected = user!.interests.contains(interest);
               return FilterChip(
                 label: Text(interest),
                 selected: isSelected,
@@ -314,12 +313,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <>[
         Text('Interests', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         SizedBox(height: 8),
         Wrap(
           spacing: 8,
-          children: user!.interests.map((interest) {
+          children: user!.interests.map((String interest) {
             return Chip(
               label: Text(interest),
               backgroundColor: Colors.purple.withOpacity(0.1),
@@ -333,7 +332,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildBadgesCollection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <>[
         Text('Badges', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         SizedBox(height: 8),
         Container(
@@ -346,7 +345,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 80,
                 margin: EdgeInsets.only(right: 12),
                 child: Column(
-                  children: [
+                  children: <>[
                     Container(
                       width: 60,
                       height: 60,
@@ -374,10 +373,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildFriendRequests() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <>[
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
+          children: <>[
             Text(
               'Friend Requests',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -399,7 +398,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 200,
                 margin: EdgeInsets.only(right: 12),
                 child: Row(
-                  children: [
+                  children: <>[
                     CircleAvatar(
                       radius: 25,
                       child: Text('U${index + 1}'),
@@ -409,7 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                        children: <>[
                           Text('User ${index + 1}'),
                           Text('@user${index + 1}'),
                         ],
@@ -436,7 +435,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildRecentActivity() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <>[
         Text(
           'Recent Activity',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -466,7 +465,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Container(
         padding: EdgeInsets.all(16),
         child: Row(
-          children: [
+          children: <>[
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
@@ -498,7 +497,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: EdgeInsets.all(16),
       child: Row(
-        children: [
+        children: <>[
           Expanded(
             child: ElevatedButton(
               onPressed: () {
@@ -523,7 +522,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
   
   Future<void> _changeProfilePicture() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    final image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       // Upload image and update user
       setState(() {

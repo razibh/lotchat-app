@@ -1,0 +1,11 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M24 12 L34 24 L24 36 L14 24 L24 12Z" fill="url(#diamondGradient)"/>
+  <path d="M24 18 L29 24 L24 30 L19 24 L24 18Z" fill="white" fill-opacity="0.5"/>
+  <defs>
+    <linearGradient id="diamondGradient" x1="14" y1="12" x2="34" y2="36" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E0E0E0"/>
+      <stop offset="0.5" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E0E0E0"/>
+    </linearGradient>
+  </defs>
+</svg>

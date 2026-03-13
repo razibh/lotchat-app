@@ -93,7 +93,7 @@ class DatabaseService {
   }
 
   Stream<List<RoomModel>> streamActiveRooms(String country) {
-    Query query = _firestore
+    var query = _firestore
         .collection(FirestoreConstants.rooms)
         .where('isActive', isEqualTo: true);
     
@@ -130,7 +130,7 @@ class DatabaseService {
       final senderCoins = senderDoc.data()!['coins'] ?? 0;
       if (senderCoins < amount) throw Exception('Insufficient coins');
       
-      transaction.update(senderRef, {
+      transaction.update(senderRef, <String, dynamic>{
         'coins': senderCoins - amount,
       });
 
@@ -142,7 +142,7 @@ class DatabaseService {
       final receiverDoc = await transaction.get(receiverRef);
       if (receiverDoc.exists) {
         final receiverDiamonds = receiverDoc.data()!['diamonds'] ?? 0;
-        transaction.update(receiverRef, {
+        transaction.update(receiverRef, <String, dynamic>{
           'diamonds': receiverDiamonds + (amount ~/ 2), // 50% conversion
         });
       }
@@ -152,7 +152,7 @@ class DatabaseService {
           .collection(FirestoreConstants.transactions)
           .doc();
       
-      transaction.set(giftTransactionRef, {
+      transaction.set(giftTransactionRef, <String, >{
         'senderId': senderId,
         'receiverId': receiverId,
         'giftId': giftId,
@@ -181,7 +181,7 @@ class DatabaseService {
     await _firestore
         .collection(FirestoreConstants.friendRequests)
         .doc()
-        .set({
+        .set(<String, >{
       'fromId': fromId,
       'toId': toId,
       'status': 'pending',
@@ -198,22 +198,22 @@ class DatabaseService {
       final requestDoc = await transaction.get(requestRef);
       if (!requestDoc.exists) return;
       
-      final data = requestDoc.data()!;
+      final data = requestDoc.data();
       final fromId = data['fromId'];
       final toId = data['toId'];
 
       // Update request status
-      transaction.update(requestRef, {'status': 'accepted'});
+      transaction.update(requestRef, <String, String>{'status': 'accepted'});
 
       // Add to friends lists
       transaction.update(
         _firestore.collection(FirestoreConstants.users).doc(fromId),
-        {'friends': FieldValue.arrayUnion([toId])},
+        <String, >{'friends': FieldValue.arrayUnion(<dynamic>[toId])},
       );
       
       transaction.update(
         _firestore.collection(FirestoreConstants.users).doc(toId),
-        {'friends': FieldValue.arrayUnion([fromId])},
+        <String, >{'friends': FieldValue.arrayUnion(<dynamic>[fromId])},
       );
     });
   }
@@ -231,14 +231,14 @@ class DatabaseService {
       
       final currentCoins = userDoc.data()!['coins'] ?? 0;
       
-      transaction.update(userRef, {
+      transaction.update(userRef, <String, dynamic>{
         'coins': currentCoins + amount,
       });
 
       // Record transaction
       transaction.set(
         _firestore.collection(FirestoreConstants.transactions).doc(),
-        {
+        <String, >{
           'userId': userId,
           'amount': amount,
           'type': 'credit',
@@ -258,7 +258,7 @@ class DatabaseService {
     String? description,
     List<String>? evidence,
   }) async {
-    await _firestore.collection(FirestoreConstants.reports).add({
+    await _firestore.collection(FirestoreConstants.reports).add(<String, >{
       'reporterId': reporterId,
       'reportedUserId': reportedUserId,
       'reason': reason,
@@ -272,13 +272,13 @@ class DatabaseService {
   // ==================== SEARCH OPERATIONS ====================
 
   Future<List<UserModel>> searchUsers(String query) async {
-    if (query.isEmpty) return [];
+    if (query.isEmpty) return <UserModel>[];
     
     // Search by username
     final usernameQuery = await _firestore
         .collection(FirestoreConstants.users)
         .where('username', isGreaterThanOrEqualTo: query)
-        .where('username', isLessThanOrEqualTo: query + '\uf8ff')
+        .where('username', isLessThanOrEqualTo: '$query\uf8ff')
         .limit(20)
         .get();
     
@@ -288,15 +288,15 @@ class DatabaseService {
         .where('uid', isEqualTo: query)
         .get();
     
-    final results = <UserModel>[];
+    final List<UserModel> results = <UserModel>[];
     
-    for (var doc in usernameQuery.docs) {
+    for (final doc in usernameQuery.docs) {
       results.add(UserModel.fromJson(doc.data()));
     }
     
-    for (var doc in idQuery.docs) {
-      final user = UserModel.fromJson(doc.data());
-      if (!results.any((u) => u.uid == user.uid)) {
+    for (final doc in idQuery.docs) {
+      final UserModel user = UserModel.fromJson(doc.data());
+      if (!results.any((UserModel u) => u.uid == user.uid)) {
         results.add(user);
       }
     }
@@ -309,7 +309,7 @@ class DatabaseService {
   Future<void> batchWrite(List<Future<void>> operations) async {
     final batch = _firestore.batch();
     
-    for (var op in operations) {
+    for (Future<void> op in operations) {
       // Add operations to batch
     }
     

@@ -3,28 +3,6 @@ enum ClanJoinType { open, approval, invite }
 enum ClanWarStatus { preparing, active, ended }
 
 class ClanModel {
-  final String id;
-  final String name;
-  final String? description;
-  final String? rules;
-  final String? emblem; // Logo URL
-  final String leaderId;
-  final List<ClanMember> members;
-  final int level;
-  final int xp;
-  final int xpToNextLevel;
-  final int clanCoins;
-  final int memberCount;
-  final int maxMembers;
-  final ClanJoinType joinType;
-  final List<String> tags;
-  final Map<String, dynamic> settings;
-  final DateTime createdAt;
-  final DateTime? lastActive;
-  final bool isActive;
-  final int warWins;
-  final int warLosses;
-  final int warDraws;
 
   ClanModel({
     required this.id,
@@ -81,15 +59,37 @@ class ClanModel {
       warDraws: json['warDraws'] ?? 0,
     );
   }
+  final String id;
+  final String name;
+  final String? description;
+  final String? rules;
+  final String? emblem; // Logo URL
+  final String leaderId;
+  final List<ClanMember> members;
+  final int level;
+  final int xp;
+  final int xpToNextLevel;
+  final int clanCoins;
+  final int memberCount;
+  final int maxMembers;
+  final ClanJoinType joinType;
+  final List<String> tags;
+  final Map<String, dynamic> settings;
+  final DateTime createdAt;
+  final DateTime? lastActive;
+  final bool isActive;
+  final int warWins;
+  final int warLosses;
+  final int warDraws;
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson() => <String, dynamic>{
     'id': id,
     'name': name,
     'description': description,
     'rules': rules,
     'emblem': emblem,
     'leaderId': leaderId,
-    'members': members.map((m) => m.toJson()).toList(),
+    'members': members.map((ClanMember m) => m.toJson()).toList(),
     'level': level,
     'xp': xp,
     'xpToNextLevel': xpToNextLevel,
@@ -112,42 +112,32 @@ class ClanModel {
   double get xpProgress => xp / xpToNextLevel;
   
   bool isLeader(String userId) => leaderId == userId;
-  bool isCoLeader(String userId) => members.any((m) => m.userId == userId && m.role == ClanRole.coLeader);
-  bool isElder(String userId) => members.any((m) => m.userId == userId && m.role == ClanRole.elder);
+  bool isCoLeader(String userId) => members.any((ClanMember m) => m.userId == userId && m.role == ClanRole.coLeader);
+  bool isElder(String userId) => members.any((ClanMember m) => m.userId == userId && m.role == ClanRole.elder);
   bool canManage(String userId) => isLeader(userId) || isCoLeader(userId);
   
   ClanMember? getMember(String userId) {
     try {
-      return members.firstWhere((m) => m.userId == userId);
+      return members.firstWhere((ClanMember m) => m.userId == userId);
     } catch (e) {
       return null;
     }
   }
 
   int get memberCountByRole(ClanRole role) {
-    return members.where((m) => m.role == role).length;
+    return members.where((ClanMember m) => m.role == role).length;
   }
 
   List<ClanMember> getMembersByRole(ClanRole role) {
-    return members.where((m) => m.role == role).toList();
+    return members.where((ClanMember m) => m.role == role).toList();
   }
 
   int get totalActivity {
-    return members.fold(0, (sum, m) => sum + m.activityPoints);
+    return members.fold(0, (int sum, ClanMember m) => sum + m.activityPoints);
   }
 }
 
 class ClanMember {
-  final String userId;
-  final String username;
-  final String? avatar;
-  final ClanRole role;
-  final DateTime joinedAt;
-  final int activityPoints;
-  final int donations;
-  final int lastActive;
-  final int warPoints;
-  final Map<String, dynamic> stats;
 
   ClanMember({
     required this.userId,
@@ -176,8 +166,18 @@ class ClanMember {
       stats: json['stats'] ?? {},
     );
   }
+  final String userId;
+  final String username;
+  final String? avatar;
+  final ClanRole role;
+  final DateTime joinedAt;
+  final int activityPoints;
+  final int donations;
+  final int lastActive;
+  final int warPoints;
+  final Map<String, dynamic> stats;
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson() => <String, dynamic>{
     'userId': userId,
     'username': username,
     'avatar': avatar,

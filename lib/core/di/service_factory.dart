@@ -4,8 +4,8 @@ import 'package:get_it/get_it.dart';
 typedef ServiceCreator<T> = T Function();
 
 class ServiceFactory {
-  final Map<Type, ServiceCreator> _factories = {};
-  final Map<Type, dynamic> _singletons = {};
+  final Map<Type, ServiceCreator> _factories = <Type, ServiceCreator<dynamic>>{};
+  final Map<Type, dynamic> _singletons = <Type, dynamic>{};
   final GetIt _getIt = GetIt.instance;
 
   // Register a factory (creates new instance each time)
@@ -41,7 +41,7 @@ class ServiceFactory {
       return _getIt<T>();
     }
 
-    throw Exception('Service ${T.toString()} not registered');
+    throw Exception('Service ${T} not registered');
   }
 
   // Create new instance (ignores singleton)
@@ -49,7 +49,7 @@ class ServiceFactory {
     if (_factories.containsKey(T)) {
       return _factories[T]!() as T;
     }
-    throw Exception('Factory for ${T.toString()} not found');
+    throw Exception('Factory for ${T} not found');
   }
 
   // Check if service exists

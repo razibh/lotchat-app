@@ -1,16 +1,6 @@
 import 'package:flutter/material.dart';
 
 class CustomButton extends StatelessWidget {
-  final String text;
-  final VoidCallback? onPressed;
-  final bool isLoading;
-  final bool isFullWidth;
-  final Color? color;
-  final Color? textColor;
-  final double height;
-  final double borderRadius;
-  final IconData? icon;
-  final bool isOutlined;
 
   const CustomButton({
     Key? key,
@@ -25,6 +15,16 @@ class CustomButton extends StatelessWidget {
     this.icon,
     this.isOutlined = false,
   }) : super(key: key);
+  final String text;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final bool isFullWidth;
+  final Color? color;
+  final Color? textColor;
+  final double height;
+  final double borderRadius;
+  final IconData? icon;
+  final bool isOutlined;
 
   @override
   Widget build(BuildContext context) {

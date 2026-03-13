@@ -1,0 +1,36 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="150" cy="150" r="140" stroke="url(#vip10Gradient)" stroke-width="20" fill="none"/>
+  <circle cx="150" cy="150" r="115" stroke="url(#vip10Gradient)" stroke-width="4" stroke-dasharray="20 10" fill="none"/>
+  
+  <!-- Crown at Top -->
+  <path d="M120 50 L150 20 L180 50 L200 40 L190 70 L150 90 L110 70 L100 40 L120 50Z" fill="url(#vip10Gradient)"/>
+  
+  <!-- Diamond Decorations -->
+  <path d="M70 100 L90 80 L110 100 L90 120 L70 100Z" fill="#FFD700"/>
+  <path d="M230 100 L250 80 L270 100 L250 120 L230 100Z" fill="#FFD700"/>
+  <path d="M70 200 L90 180 L110 200 L90 220 L70 200Z" fill="#FFD700"/>
+  <path d="M230 200 L250 180 L270 200 L250 220 L230 200Z" fill="#FFD700"/>
+  
+  <!-- 10 Stars -->
+  <circle cx="80" cy="80" r="4" fill="#FFD700"/>
+  <circle cx="220" cy="80" r="4" fill="#FFD700"/>
+  <circle cx="80" cy="220" r="4" fill="#FFD700"/>
+  <circle cx="220" cy="220" r="4" fill="#FFD700"/>
+  <circle cx="120" cy="120" r="4" fill="#FFD700"/>
+  <circle cx="180" cy="120" r="4" fill="#FFD700"/>
+  <circle cx="120" cy="180" r="4" fill="#FFD700"/>
+  <circle cx="180" cy="180" r="4" fill="#FFD700"/>
+  <circle cx="150" cy="100" r="4" fill="#FFD700"/>
+  <circle cx="150" cy="200" r="4" fill="#FFD700"/>
+  
+  <text x="150" y="270" font-size="30" font-weight="bold" text-anchor="middle" fill="url(#vip10Gradient)" font-family="Arial">VIP 10</text>
+  
+  <defs>
+    <linearGradient id="vip10Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="33%" stop-color="#FFA500"/>
+      <stop offset="66%" stop-color="#FF4500"/>
+      <stop offset="100%" stop-color="#FF1493"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -4,14 +4,14 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../core/models/user_model.dart';
 
 class CallScreen extends StatefulWidget {
-  final UserModel user;
-  final bool isVideoCall;
   
   const CallScreen({
     super.key,
     required this.user,
     required this.isVideoCall,
   });
+  final UserModel user;
+  final bool isVideoCall;
 
   @override
   State<CallScreen> createState() => _CallScreenState();
@@ -31,7 +31,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     super.initState();
     _pulseController = AnimationController(
       vsync: this,
-      duration: Duration(seconds: 1),
+      duration: const Duration(seconds: 1),
     )..repeat(reverse: true);
     
     _initAgora();
@@ -39,7 +39,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   }
   
   Future<void> _initAgora() async {
-    await [Permission.microphone, Permission.camera].request();
+    await <>[Permission.microphone, Permission.camera].request();
     
     _engine = createAgoraRtcEngine();
     await _engine.initialize(RtcEngineContext(
@@ -70,7 +70,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   }
   
   void _startCallTimer() {
-    Future.delayed(Duration(seconds: 1), () {
+    Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
         setState(() {
           callDuration++;
@@ -81,9 +81,9 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   }
   
   String _formatDuration(int seconds) {
-    final hours = seconds ~/ 3600;
-    final minutes = (seconds % 3600) ~/ 60;
-    final secs = seconds % 60;
+    final int hours = seconds ~/ 3600;
+    final int minutes = (seconds % 3600) ~/ 60;
+    final int secs = seconds % 60;
     
     if (hours > 0) {
       return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
@@ -95,7 +95,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
-        children: [
+        children: <>[
           // Remote Video
           Container(
             color: Colors.black,
@@ -142,7 +142,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
             left: 20,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: <>[
                 Text(
                   widget.user.username,
                   style: TextStyle(
@@ -166,7 +166,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
             right: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
+              children: <>[
                 _buildControlButton(
                   icon: isMicMuted ? Icons.mic_off : Icons.mic,
                   color: isMicMuted ? Colors.red : Colors.white,
@@ -195,7 +195,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                     });
                   },
                 ),
-                if (widget.isVideoCall) ...[
+                if (widget.isVideoCall) ...<>[
                   _buildControlButton(
                     icon: isCameraOn ? Icons.videocam : Icons.videocam_off,
                     color: isCameraOn ? Colors.green : Colors.red,
@@ -229,7 +229,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                    children: <>[
                       ScaleTransition(
                         scale: _pulseController,
                         child: Icon(

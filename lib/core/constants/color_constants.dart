@@ -27,7 +27,7 @@ class AppColors {
   static const Color svip = LinearGradient( // Purple to Pink
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
+    colors: <>[Color(0xFF8B5CF6), Color(0xFFEC4899)],
   );
   
   // Room Colors
@@ -39,13 +39,13 @@ class AppColors {
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primary, secondary],
+    colors: <>[primary, secondary],
   );
   
   static const LinearGradient darkGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF1a1a2e), Color(0xFF16213e)],
+    colors: <>[Color(0xFF1a1a2e), Color(0xFF16213e)],
   );
   
   // Opacity Colors

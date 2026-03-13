@@ -1,24 +1,4 @@
 class UserModel {
-  String uid;
-  String username;
-  String email;
-  String phone;
-  String? photoURL;
-  String? bio;
-  List<String> interests;
-  String country;
-  String region;
-  int coins;
-  int diamonds;
-  UserTier tier;
-  UserRole role;
-  String? agencyId;
-  bool isOnline;
-  DateTime lastActive;
-  List<String> friends;
-  List<String> followers;
-  List<String> following;
-  Map<String, dynamic> stats;
 
   UserModel({
     required this.uid,
@@ -43,29 +23,6 @@ class UserModel {
     this.stats = const {},
   });
 
-  Map<String, dynamic> toJson() => {
-        'uid': uid,
-        'username': username,
-        'email': email,
-        'phone': phone,
-        'photoURL': photoURL,
-        'bio': bio,
-        'interests': interests,
-        'country': country,
-        'region': region,
-        'coins': coins,
-        'diamonds': diamonds,
-        'tier': tier.index,
-        'role': role.index,
-        'agencyId': agencyId,
-        'isOnline': isOnline,
-        'lastActive': lastActive.toIso8601String(),
-        'friends': friends,
-        'followers': followers,
-        'following': following,
-        'stats': stats,
-      };
-
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
         uid: json['uid'],
         username: json['username'],
@@ -88,6 +45,49 @@ class UserModel {
         following: List<String>.from(json['following'] ?? []),
         stats: json['stats'] ?? {},
       );
+  String uid;
+  String username;
+  String email;
+  String phone;
+  String? photoURL;
+  String? bio;
+  List<String> interests;
+  String country;
+  String region;
+  int coins;
+  int diamonds;
+  UserTier tier;
+  UserRole role;
+  String? agencyId;
+  bool isOnline;
+  DateTime lastActive;
+  List<String> friends;
+  List<String> followers;
+  List<String> following;
+  Map<String, dynamic> stats;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'uid': uid,
+        'username': username,
+        'email': email,
+        'phone': phone,
+        'photoURL': photoURL,
+        'bio': bio,
+        'interests': interests,
+        'country': country,
+        'region': region,
+        'coins': coins,
+        'diamonds': diamonds,
+        'tier': tier.index,
+        'role': role.index,
+        'agencyId': agencyId,
+        'isOnline': isOnline,
+        'lastActive': lastActive.toIso8601String(),
+        'friends': friends,
+        'followers': followers,
+        'following': following,
+        'stats': stats,
+      };
 }
 
 enum UserTier {

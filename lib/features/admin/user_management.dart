@@ -19,11 +19,11 @@ class UserManagement extends StatefulWidget {
 class _UserManagementState extends State<UserManagement> 
     with LoadingMixin, ToastMixin, DialogMixin {
   
-  final _adminService = ServiceLocator().get<AdminService>();
+  final AdminService _adminService = ServiceLocator().get<AdminService>();
   final _searchController = TextEditingController();
   
-  List<UserModel> _users = [];
-  List<UserModel> _filteredUsers = [];
+  List<UserModel> _users = <UserModel>[];
+  List<UserModel> _filteredUsers = <UserModel>[];
   bool _isLoading = true;
 
   @override
@@ -58,7 +58,7 @@ class _UserManagementState extends State<UserManagement>
       if (query.isEmpty) {
         _filteredUsers = _users;
       } else {
-        _filteredUsers = _users.where((user) {
+        _filteredUsers = _users.where((UserModel user) {
           return user.username.toLowerCase().contains(query.toLowerCase()) ||
                  user.email.toLowerCase().contains(query.toLowerCase()) ||
                  user.phone.contains(query);
@@ -68,13 +68,13 @@ class _UserManagementState extends State<UserManagement>
   }
 
   Future<void> _banUser(UserModel user) async {
-    final confirmed = await showConfirmDialog(
+    final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Ban User',
       message: 'Are you sure you want to ban ${user.username}?',
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       await runWithLoading(() async {
         try {
           await _adminService.banUser(
@@ -91,13 +91,13 @@ class _UserManagementState extends State<UserManagement>
   }
 
   Future<void> _unbanUser(UserModel user) async {
-    final confirmed = await showConfirmDialog(
+    final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Unban User',
       message: 'Are you sure you want to unban ${user.username}?',
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       await runWithLoading(() async {
         try {
           await _adminService.unbanUser(user.uid);
@@ -111,14 +111,14 @@ class _UserManagementState extends State<UserManagement>
   }
 
   Future<void> _addCoins(UserModel user) async {
-    final amount = await showInputDialog(
+    final String? amount = await showInputDialog(
       context,
       title: 'Add Coins',
       hintText: 'Enter amount',
     );
 
     if (amount != null && amount.isNotEmpty) {
-      final coins = int.tryParse(amount);
+      final int? coins = int.tryParse(amount);
       if (coins != null && coins > 0) {
         await runWithLoading(() async {
           try {
@@ -146,7 +146,7 @@ class _UserManagementState extends State<UserManagement>
         title: const Text('Change Role'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: UserRole.values.map((role) {
+          children: UserRole.values.map((UserRole role) {
             return ListTile(
               title: Text(role.toString().split('.').last),
               onTap: () => Navigator.pop(context, role),
@@ -209,7 +209,7 @@ class _UserManagementState extends State<UserManagement>
               : ListView.builder(
                   itemCount: _filteredUsers.length,
                   itemBuilder: (context, index) {
-                    final user = _filteredUsers[index];
+                    final UserModel user = _filteredUsers[index];
                     return _buildUserTile(user);
                   },
                 ),
@@ -241,14 +241,14 @@ class _UserManagementState extends State<UserManagement>
             style: const TextStyle(color: Colors.white, fontSize: 10),
           ),
         ),
-        children: [
+        children: <>[
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              children: [
+              children: <>[
                 // User Info
                 Row(
-                  children: [
+                  children: <>[
                     Expanded(
                       child: _buildInfoRow('Phone', user.phone),
                     ),
@@ -259,7 +259,7 @@ class _UserManagementState extends State<UserManagement>
                 ),
                 const SizedBox(height: 8),
                 Row(
-                  children: [
+                  children: <>[
                     Expanded(
                       child: _buildInfoRow('Coins', '${user.coins}'),
                     ),
@@ -270,7 +270,7 @@ class _UserManagementState extends State<UserManagement>
                 ),
                 const SizedBox(height: 8),
                 Row(
-                  children: [
+                  children: <>[
                     Expanded(
                       child: _buildInfoRow('Status', user.isOnline ? 'Online' : 'Offline'),
                     ),
@@ -283,7 +283,7 @@ class _UserManagementState extends State<UserManagement>
 
                 // Actions
                 Row(
-                  children: [
+                  children: <>[
                     Expanded(
                       child: _buildActionButton(
                         icon: Icons.attach_money,
@@ -305,7 +305,7 @@ class _UserManagementState extends State<UserManagement>
                 ),
                 const SizedBox(height: 8),
                 Row(
-                  children: [
+                  children: <>[
                     Expanded(
                       child: _buildActionButton(
                         icon: user.isBanned ? Icons.block : Icons.block,
@@ -336,7 +336,7 @@ class _UserManagementState extends State<UserManagement>
   Widget _buildInfoRow(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <>[
         Text(
           label,
           style: const TextStyle(
@@ -370,7 +370,7 @@ class _UserManagementState extends State<UserManagement>
           borderRadius: BorderRadius.circular(4),
         ),
         child: Column(
-          children: [
+          children: <>[
             Icon(icon, color: color, size: 20),
             const SizedBox(height: 4),
             Text(
@@ -387,14 +387,14 @@ class _UserManagementState extends State<UserManagement>
     );
   }
 
-  void _deleteUser(UserModel user) async {
-    final confirmed = await showConfirmDialog(
+  Future<void> _deleteUser(UserModel user) async {
+    final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Delete User',
       message: 'Are you sure you want to permanently delete ${user.username}?',
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       showSuccess('User deleted (demo)');
     }
   }

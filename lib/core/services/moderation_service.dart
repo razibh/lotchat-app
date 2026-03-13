@@ -8,7 +8,7 @@ class ModerationService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   
   // Banned words list
-  static const List<String> bannedWords = [
+  static const List<String> bannedWords = <String>[
     // English profanity
     'fuck', 'shit', 'asshole', 'bitch', 'cunt', 'dick', 'pussy',
     'motherfucker', 'bastard', 'whore', 'slut', 'damn', 'hell',
@@ -24,21 +24,21 @@ class ModerationService {
   ];
   
   // Extreme slang - auto ban
-  static const List<String> extremeSlang = [
+  static const List<String> extremeSlang = <String>[
     'terrorist', 'bomb', 'kill', 'murder', 'rape', 'suicide',
     'child porn', 'cp', 'sex with', 'underage',
   ];
 
   // ==================== TEXT MODERATION ====================
   ModerationResult moderateText(String text) {
-    final lowerText = text.toLowerCase();
-    final words = lowerText.split(RegExp(r'\s+'));
+    final String lowerText = text.toLowerCase();
+    final List<String> words = lowerText.split(RegExp(r'\s+'));
     
-    List<String> foundBannedWords = [];
-    bool hasExtreme = false;
+    var foundBannedWords = <String><String>[];
+    var hasExtreme = false;
     
     // Check each word
-    for (var word in words) {
+    for (String word in words) {
       // Remove punctuation
       word = word.replaceAll(RegExp(r'[^\w\s]'), '');
       
@@ -51,7 +51,7 @@ class ModerationService {
     }
     
     // Check for patterns (like leetspeak)
-    final leetPattern = _checkLeetspeak(lowerText);
+    final String? leetPattern = _checkLeetspeak(lowerText);
     if (leetPattern != null) {
       foundBannedWords.add(leetPattern);
     }
@@ -68,18 +68,18 @@ class ModerationService {
 
   String? _checkLeetspeak(String text) {
     // Convert leetspeak to normal
-    final leetMap = {
-      r'0': 'o', r'1': 'i', r'3': 'e', r'4': 'a', r'5': 's',
-      r'7': 't', r'@': 'a', r'$': 's', r'!': 'i',
+    final Map<String, String> leetMap = <String, String>{
+      '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's',
+      '7': 't', '@': 'a', r'$': 's', '!': 'i',
     };
     
-    String normalized = text;
-    leetMap.forEach((leet, normal) {
+    var normalized = text;
+    leetMap.forEach((String leet, String normal) {
       normalized = normalized.replaceAll(leet, normal);
     });
     
     // Check if normalized contains banned words
-    for (var word in bannedWords) {
+    for (String word in bannedWords) {
       if (normalized.contains(word)) {
         return word;
       }
@@ -98,25 +98,25 @@ class ModerationService {
       }
       
       // Convert to base64
-      final base64Image = base64Encode(response.bodyBytes);
+      final String base64Image = base64Encode(response.bodyBytes);
       
       // Call Google Vision API
-      final apiKey = 'YOUR_GOOGLE_CLOUD_API_KEY';
-      final url = 'https://vision.googleapis.com/v1/images:annotate?key=$apiKey';
+      const String apiKey = 'YOUR_GOOGLE_CLOUD_API_KEY';
+      final String url = 'https://vision.googleapis.com/v1/images:annotate?key=$apiKey';
       
       final visionResponse = await http.post(
         Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'requests': [
-            {
-              'image': {'content': base64Image},
-              'features': [
-                {'type': 'SAFE_SEARCH_DETECTION', 'maxResults': 1},
-                {'type': 'ADULT', 'maxResults': 1},
-                {'type': 'VIOLENCE', 'maxResults': 1},
-                {'type': 'MEDICAL', 'maxResults': 1},
-                {'type': 'SPOOF', 'maxResults': 1},
+        headers: <String, String>{'Content-Type': 'application/json'},
+        body: jsonEncode(<String, List<Map<String, Object>>>{
+          'requests': <Map<String, Object>>[
+            <String, Object>{
+              'image': <String, String>{'content': base64Image},
+              'features': <Map<String, Object>>[
+                <String, Object>{'type': 'SAFE_SEARCH_DETECTION', 'maxResults': 1},
+                <String, Object>{'type': 'ADULT', 'maxResults': 1},
+                <String, Object>{'type': 'VIOLENCE', 'maxResults': 1},
+                <String, Object>{'type': 'MEDICAL', 'maxResults': 1},
+                <String, Object>{'type': 'SPOOF', 'maxResults': 1},
               ],
             }
           ],
@@ -128,7 +128,7 @@ class ModerationService {
         final safeSearch = data['responses'][0]['safeSearchAnnotation'];
         
         // Check likelihood levels
-        final likelihood = {
+        final Map<String, int> likelihood = <String, int>{
           'adult': _getLikelihoodLevel(safeSearch['adult']),
           'violence': _getLikelihoodLevel(safeSearch['violence']),
           'racy': _getLikelihoodLevel(safeSearch['racy']),
@@ -136,7 +136,7 @@ class ModerationService {
           'spoof': _getLikelihoodLevel(safeSearch['spoof']),
         };
         
-        bool isSafe = likelihood['adult']! < 3 &&
+        var isSafe = likelihood['adult']! < 3 &&
                       likelihood['violence']! < 3 &&
                       likelihood['racy']! < 3;
         
@@ -149,14 +149,14 @@ class ModerationService {
       
       return ImageModerationResult(
         isSafe: true,
-        likelihood: {},
+        likelihood: <String, int>{},
         action: ModerationAction.allow,
       );
     } catch (e) {
       print('Image moderation error: $e');
       return ImageModerationResult(
         isSafe: true,
-        likelihood: {},
+        likelihood: <String, int>{},
         action: ModerationAction.allow,
         error: e.toString(),
       );
@@ -190,7 +190,7 @@ class ModerationService {
     List<String>? evidence,
     String? screenRecording,
   }) async {
-    await _firestore.collection('reports').add({
+    await _firestore.collection('reports').add(<String, >{
       'reporterId': reporterId,
       'reportedUserId': reportedUserId,
       'reason': reason.toString(),
@@ -206,7 +206,7 @@ class ModerationService {
   Future<void> autoModerateUser(String userId, ModerationResult result) async {
     if (result.action == ModerationAction.ban) {
       // Auto-ban user
-      await _firestore.collection('users').doc(userId).update({
+      await _firestore.collection('users').doc(userId).update(<String, >{
         'isBanned': true,
         'banReason': 'Auto-moderation: Extreme content detected',
         'bannedAt': FieldValue.serverTimestamp(),
@@ -214,7 +214,7 @@ class ModerationService {
       });
       
       // Send notification
-      await _firestore.collection('notifications').add({
+      await _firestore.collection('notifications').add(<String, >{
         'userId': userId,
         'type': 'system',
         'title': 'Account Banned',
@@ -241,7 +241,7 @@ class ModerationService {
 
   // ==================== GET REPORTS ====================
   Stream<List<Report>> getReports({ReportStatus? status}) {
-    Query query = _firestore.collection('reports').orderBy('timestamp', descending: true);
+    var query = _firestore.collection('reports').orderBy('timestamp', descending: true);
     
     if (status != null) {
       query = query.where('status', isEqualTo: status.toString());
@@ -254,7 +254,7 @@ class ModerationService {
 
   // ==================== RESOLVE REPORT ====================
   Future<void> resolveReport(String reportId, String resolution) async {
-    await _firestore.collection('reports').doc(reportId).update({
+    await _firestore.collection('reports').doc(reportId).update(<String, >{
       'status': 'resolved',
       'resolution': resolution,
       'resolvedAt': FieldValue.serverTimestamp(),
@@ -271,10 +271,6 @@ enum ModerationAction {
 }
 
 class ModerationResult {
-  final bool isClean;
-  final List<String> foundWords;
-  final bool hasExtremeContent;
-  final ModerationAction action;
   
   ModerationResult({
     required this.isClean,
@@ -282,13 +278,13 @@ class ModerationResult {
     required this.hasExtremeContent,
     required this.action,
   });
+  final bool isClean;
+  final List<String> foundWords;
+  final bool hasExtremeContent;
+  final ModerationAction action;
 }
 
 class ImageModerationResult {
-  final bool isSafe;
-  final Map<String, int> likelihood;
-  final ModerationAction action;
-  final String? error;
   
   ImageModerationResult({
     required this.isSafe,
@@ -296,6 +292,10 @@ class ImageModerationResult {
     required this.action,
     this.error,
   });
+  final bool isSafe;
+  final Map<String, int> likelihood;
+  final ModerationAction action;
+  final String? error;
 }
 
 enum ReportReason {
@@ -317,17 +317,6 @@ enum ReportStatus {
 }
 
 class Report {
-  final String id;
-  final String reporterId;
-  final String reportedUserId;
-  final ReportReason reason;
-  final String? description;
-  final List<String>? evidence;
-  final String? screenRecording;
-  final ReportStatus status;
-  final DateTime timestamp;
-  final String? resolution;
-  final DateTime? resolvedAt;
   
   Report({
     required this.id,
@@ -366,4 +355,15 @@ class Report {
           : null,
     );
   }
+  final String id;
+  final String reporterId;
+  final String reportedUserId;
+  final ReportReason reason;
+  final String? description;
+  final List<String>? evidence;
+  final String? screenRecording;
+  final ReportStatus status;
+  final DateTime timestamp;
+  final String? resolution;
+  final DateTime? resolvedAt;
 }

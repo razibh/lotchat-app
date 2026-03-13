@@ -17,7 +17,7 @@ class GreedyCatGame extends StatefulWidget {
 class _GreedyCatGameState extends State<GreedyCatGame> 
     with LoadingMixin, ToastMixin, DialogMixin {
   
-  final _gameService = ServiceLocator().get<GameService>();
+  final GameService _gameService = ServiceLocator().get<GameService>();
   
   int _betAmount = 100;
   int? _selectedBox;
@@ -49,7 +49,7 @@ class _GreedyCatGameState extends State<GreedyCatGame>
       _selectedBox = null;
       _winningBox = null;
       _isRevealing = false;
-      for (int i = 0; i < 10; i++) {
+      for (var i = 0; i < 10; i++) {
         _boxColors[i] = Colors.orange;
       }
     });
@@ -70,7 +70,7 @@ class _GreedyCatGameState extends State<GreedyCatGame>
       // Simulate thinking
       await Future.delayed(const Duration(seconds: 1));
 
-      final result = _gameService.playGreedyCat(
+      final GreedyCatResult result = _gameService.playGreedyCat(
         betAmount: _betAmount,
         selectedBox: index + 1,
       );
@@ -80,7 +80,7 @@ class _GreedyCatGameState extends State<GreedyCatGame>
         _isRevealing = false;
         
         // Reveal all boxes
-        for (int i = 0; i < 10; i++) {
+        for (var i = 0; i < 10; i++) {
           if (i == _winningBox) {
             _boxColors[i] = Colors.green;
           } else if (i == index && !result.won) {
@@ -110,7 +110,7 @@ class _GreedyCatGameState extends State<GreedyCatGame>
       message = 'Better luck next time!\nWinning box was ${result.winningBox}';
     }
 
-    await showInfoDialog(
+    showInfoDialog(
       context,
       title: result.won ? '🎉 You Won!' : '😢 You Lost',
       message: message,
@@ -129,12 +129,12 @@ class _GreedyCatGameState extends State<GreedyCatGame>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.orange.shade900, Colors.orange.shade700],
+            colors: <>[Colors.orange.shade900, Colors.orange.shade700],
           ),
         ),
         child: SafeArea(
           child: Column(
-            children: [
+            children: <>[
               // Coins Display
               Container(
                 margin: const EdgeInsets.all(16),
@@ -145,7 +145,7 @@ class _GreedyCatGameState extends State<GreedyCatGame>
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+                  children: <>[
                     const Text(
                       'Your Coins:',
                       style: TextStyle(color: Colors.white, fontSize: 18),
@@ -178,13 +178,13 @@ class _GreedyCatGameState extends State<GreedyCatGame>
               ),
               const SizedBox(height: 20),
 
-              if (!_gameStarted) ...[
+              if (!_gameStarted) ...<>[
                 // Bet Selection
                 Expanded(
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                      children: <>[
                         const Text(
                           'Select Bet Amount',
                           style: TextStyle(
@@ -196,7 +196,7 @@ class _GreedyCatGameState extends State<GreedyCatGame>
                         const SizedBox(height: 20),
                         Wrap(
                           spacing: 10,
-                          children: [100, 500, 1000, 5000].map((amount) {
+                          children: <int>[100, 500, 1000, 5000].map((int amount) {
                             return FilterChip(
                               label: Text('$amount'),
                               selected: _betAmount == amount,
@@ -221,7 +221,7 @@ class _GreedyCatGameState extends State<GreedyCatGame>
                     ),
                   ),
                 ),
-              ] else ...[
+              ] else ...<>[
                 // Game Grid
                 Expanded(
                   child: GridView.builder(
@@ -257,8 +257,8 @@ class _GreedyCatGameState extends State<GreedyCatGame>
   }
 
   Widget _buildBox(int index) {
-    bool isSelected = _selectedBox == index;
-    bool isWinning = _winningBox == index;
+    final var isSelected = _selectedBox == index;
+    var isWinning = _winningBox == index;
 
     return GestureDetector(
       onTap: _isRevealing || _selectedBox != null 

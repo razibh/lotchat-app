@@ -18,11 +18,11 @@ class AgencyManagement extends StatefulWidget {
 class _AgencyManagementState extends State<AgencyManagement> 
     with LoadingMixin, ToastMixin, DialogMixin {
   
-  final _adminService = ServiceLocator().get<AdminService>();
+  final AdminService _adminService = ServiceLocator().get<AdminService>();
   final _searchController = TextEditingController();
   
-  List<AgencyModel> _agencies = [];
-  List<AgencyModel> _filteredAgencies = [];
+  List<AgencyModel> _agencies = <AgencyModel>[];
+  List<AgencyModel> _filteredAgencies = <AgencyModel>[];
   bool _isLoading = true;
 
   @override
@@ -35,7 +35,7 @@ class _AgencyManagementState extends State<AgencyManagement>
     await runWithLoading(() async {
       try {
         // Load agencies from service
-        _agencies = [];
+        _agencies = <AgencyModel>[];
         _filteredAgencies = _agencies;
       } catch (e) {
         showError('Failed to load agencies: $e');
@@ -48,28 +48,28 @@ class _AgencyManagementState extends State<AgencyManagement>
   }
 
   Future<void> _createAgency() async {
-    final name = await showInputDialog(
+    final String? name = await showInputDialog(
       context,
       title: 'Agency Name',
       hintText: 'Enter agency name',
     );
 
     if (name != null && name.isNotEmpty) {
-      final ownerId = await showInputDialog(
+      final String? ownerId = await showInputDialog(
         context,
         title: 'Owner ID',
         hintText: 'Enter owner user ID',
       );
 
       if (ownerId != null && ownerId.isNotEmpty) {
-        final commission = await showInputDialog(
+        final String? commission = await showInputDialog(
           context,
           title: 'Commission Rate',
           hintText: 'Enter commission rate (0.1 = 10%)',
         );
 
         if (commission != null && commission.isNotEmpty) {
-          final rate = double.tryParse(commission);
+          final double? rate = double.tryParse(commission);
           if (rate != null) {
             await runWithLoading(() async {
               try {
@@ -91,13 +91,13 @@ class _AgencyManagementState extends State<AgencyManagement>
   }
 
   Future<void> _deleteAgency(AgencyModel agency) async {
-    final confirmed = await showConfirmDialog(
+    final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Delete Agency',
       message: 'Are you sure you want to delete ${agency.name}?',
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       await runWithLoading(() async {
         try {
           await _adminService.deleteAgency(agency.id);
@@ -116,7 +116,7 @@ class _AgencyManagementState extends State<AgencyManagement>
       appBar: AppBar(
         title: const Text('Agency Management'),
         backgroundColor: Colors.blue,
-        actions: [
+        actions: <>[
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: _createAgency,
@@ -129,7 +129,7 @@ class _AgencyManagementState extends State<AgencyManagement>
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                    children: <>[
                       const Icon(Icons.business, size: 80, color: Colors.grey),
                       const SizedBox(height: 16),
                       const Text(
@@ -153,7 +153,7 @@ class _AgencyManagementState extends State<AgencyManagement>
               : ListView.builder(
                   itemCount: _filteredAgencies.length,
                   itemBuilder: (context, index) {
-                    final agency = _filteredAgencies[index];
+                    final AgencyModel agency = _filteredAgencies[index];
                     return _buildAgencyCard(agency);
                   },
                 ),
@@ -184,14 +184,14 @@ class _AgencyManagementState extends State<AgencyManagement>
             style: const TextStyle(color: Colors.white, fontSize: 10),
           ),
         ),
-        children: [
+        children: <>[
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              children: [
+              children: <>[
                 // Agency Info
                 Row(
-                  children: [
+                  children: <>[
                     Expanded(
                       child: _buildInfoRow('Owner', agency.ownerId),
                     ),
@@ -202,7 +202,7 @@ class _AgencyManagementState extends State<AgencyManagement>
                 ),
                 const SizedBox(height: 8),
                 Row(
-                  children: [
+                  children: <>[
                     Expanded(
                       child: _buildInfoRow('Total Earnings', '${agency.totalEarnings}'),
                     ),
@@ -225,7 +225,7 @@ class _AgencyManagementState extends State<AgencyManagement>
                     itemCount: agency.members.length,
                     itemBuilder: (context, index) {
                       final memberId = agency.members[index];
-                      final earnings = agency.memberEarnings[memberId] ?? 0;
+                      final int earnings = agency.memberEarnings[memberId] ?? 0;
                       return ListTile(
                         leading: const CircleAvatar(
                           child: Icon(Icons.person, size: 20),
@@ -240,7 +240,7 @@ class _AgencyManagementState extends State<AgencyManagement>
 
                 // Actions
                 Row(
-                  children: [
+                  children: <>[
                     Expanded(
                       child: _buildActionButton(
                         icon: Icons.person_add,
@@ -280,7 +280,7 @@ class _AgencyManagementState extends State<AgencyManagement>
   Widget _buildInfoRow(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <>[
         Text(
           label,
           style: const TextStyle(fontSize: 12, color: Colors.grey),
@@ -308,7 +308,7 @@ class _AgencyManagementState extends State<AgencyManagement>
           borderRadius: BorderRadius.circular(4),
         ),
         child: Column(
-          children: [
+          children: <>[
             Icon(icon, color: color, size: 16),
             const SizedBox(height: 4),
             Text(
@@ -325,8 +325,8 @@ class _AgencyManagementState extends State<AgencyManagement>
     );
   }
 
-  void _addMember(AgencyModel agency) async {
-    final userId = await showInputDialog(
+  Future<void> _addMember(AgencyModel agency) async {
+    final String? userId = await showInputDialog(
       context,
       title: 'Add Member',
       hintText: 'Enter user ID',
@@ -376,8 +376,8 @@ class _AgencyManagementState extends State<AgencyManagement>
     );
   }
 
-  void _addCoOwner(AgencyModel agency) async {
-    final userId = await showInputDialog(
+  Future<void> _addCoOwner(AgencyModel agency) async {
+    final String? userId = await showInputDialog(
       context,
       title: 'Add Co-Owner',
       hintText: 'Enter user ID',
@@ -388,14 +388,14 @@ class _AgencyManagementState extends State<AgencyManagement>
     }
   }
 
-  void _removeCoOwner(AgencyModel agency, String userId) async {
-    final confirmed = await showConfirmDialog(
+  Future<void> _removeCoOwner(AgencyModel agency, String userId) async {
+    final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Remove Co-Owner',
       message: 'Are you sure you want to remove this co-owner?',
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       showSuccess('Co-owner removed (demo)');
     }
   }

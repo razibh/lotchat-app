@@ -10,7 +10,7 @@ class AdminService {
 
   // ==================== CHECK ADMIN ====================
   Future<bool> isAdmin(String userId) async {
-    final user = await _databaseService.getUser(userId);
+    final UserModel? user = await _databaseService.getUser(userId);
     return user?.role == UserRole.admin || user?.role == UserRole.superAdmin;
   }
 
@@ -18,7 +18,7 @@ class AdminService {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Not logged in');
     
-    final isAdminUser = await isAdmin(user.uid);
+    final bool isAdminUser = await isAdmin(user.uid);
     if (!isAdminUser) throw Exception('Unauthorized: Admin access required');
   }
 
@@ -29,7 +29,7 @@ class AdminService {
   }) async {
     await _checkAdmin();
     
-    Query query = _firestore
+    var query = _firestore
         .collection('users')
         .orderBy('createdAt', descending: true)
         .limit(limit);
@@ -52,7 +52,7 @@ class AdminService {
     final usernameQuery = await _firestore
         .collection('users')
         .where('username', isGreaterThanOrEqualTo: query)
-        .where('username', isLessThanOrEqualTo: query + '\uf8ff')
+        .where('username', isLessThanOrEqualTo: '$query\uf8ff')
         .limit(20)
         .get();
     
@@ -66,19 +66,19 @@ class AdminService {
         .where('phone', isEqualTo: query)
         .get();
     
-    final Map<String, UserModel> results = {};
+    final results = <String, UserModel><String, UserModel>{};
     
-    for (var doc in usernameQuery.docs) {
+    for (final doc in usernameQuery.docs) {
       results[doc.id] = UserModel.fromJson(doc.data());
     }
     
-    for (var doc in emailQuery.docs) {
+    for (final doc in emailQuery.docs) {
       if (!results.containsKey(doc.id)) {
         results[doc.id] = UserModel.fromJson(doc.data());
       }
     }
     
-    for (var doc in phoneQuery.docs) {
+    for (final doc in phoneQuery.docs) {
       if (!results.containsKey(doc.id)) {
         results[doc.id] = UserModel.fromJson(doc.data());
       }
@@ -95,14 +95,14 @@ class AdminService {
   }) async {
     await _checkAdmin();
     
-    final admin = _auth.currentUser!;
+    final admin = _auth.currentUser;
     
     DateTime? banUntil;
     if (durationDays > 0) {
       banUntil = DateTime.now().add(Duration(days: durationDays));
     }
     
-    await _firestore.collection('users').doc(userId).update({
+    await _firestore.collection('users').doc(userId).update(<String, >{
       'isBanned': true,
       'banReason': reason,
       'bannedAt': FieldValue.serverTimestamp(),
@@ -114,14 +114,14 @@ class AdminService {
     await _logAdminAction(
       action: 'ban_user',
       targetId: userId,
-      details: {'reason': reason, 'duration': durationDays},
+      details: <String, dynamic>{'reason': reason, 'duration': durationDays},
     );
   }
 
   Future<void> unbanUser(String userId) async {
     await _checkAdmin();
     
-    await _firestore.collection('users').doc(userId).update({
+    await _firestore.collection('users').doc(userId).update(<String, bool?>{
       'isBanned': false,
       'banReason': null,
       'bannedAt': null,
@@ -143,7 +143,7 @@ class AdminService {
   }) async {
     await _checkAdmin();
     
-    final admin = _auth.currentUser!;
+    final admin = _auth.currentUser;
     
     await _firestore.runTransaction((transaction) async {
       final userRef = _firestore.collection('users').doc(userId);
@@ -153,14 +153,14 @@ class AdminService {
       
       final currentCoins = userDoc.data()!['coins'] ?? 0;
       
-      transaction.update(userRef, {
+      transaction.update(userRef, <String, dynamic>{
         'coins': currentCoins + amount,
       });
       
       // Log transaction
       transaction.set(
         _firestore.collection('admin_transactions').doc(),
-        {
+        <String, >{
           'adminId': admin.uid,
           'userId': userId,
           'amount': amount,
@@ -174,7 +174,7 @@ class AdminService {
     await _logAdminAction(
       action: 'add_coins',
       targetId: userId,
-      details: {'amount': amount, 'reason': reason},
+      details: <String, dynamic>{'amount': amount, 'reason': reason},
     );
   }
 
@@ -185,7 +185,7 @@ class AdminService {
   }) async {
     await _checkAdmin();
     
-    final admin = _auth.currentUser!;
+    final admin = _auth.currentUser;
     
     await _firestore.runTransaction((transaction) async {
       final userRef = _firestore.collection('users').doc(userId);
@@ -196,14 +196,14 @@ class AdminService {
       final currentCoins = userDoc.data()!['coins'] ?? 0;
       if (currentCoins < amount) throw Exception('Insufficient coins');
       
-      transaction.update(userRef, {
+      transaction.update(userRef, <String, dynamic>{
         'coins': currentCoins - amount,
       });
       
       // Log transaction
       transaction.set(
         _firestore.collection('admin_transactions').doc(),
-        {
+        <String, >{
           'adminId': admin.uid,
           'userId': userId,
           'amount': amount,
@@ -217,7 +217,7 @@ class AdminService {
     await _logAdminAction(
       action: 'remove_coins',
       targetId: userId,
-      details: {'amount': amount, 'reason': reason},
+      details: <String, dynamic>{'amount': amount, 'reason': reason},
     );
   }
 
@@ -228,14 +228,14 @@ class AdminService {
   }) async {
     await _checkAdmin();
     
-    await _firestore.collection('users').doc(userId).update({
+    await _firestore.collection('users').doc(userId).update(<String, int>{
       'role': newRole.index,
     });
     
     await _logAdminAction(
       action: 'change_role',
       targetId: userId,
-      details: {'newRole': newRole.toString()},
+      details: <String, dynamic>{'newRole': newRole.toString()},
     );
   }
 
@@ -247,18 +247,18 @@ class AdminService {
   }) async {
     await _checkAdmin();
     
-    final agencyRef = await _firestore.collection('agencies').add({
+    final agencyRef = await _firestore.collection('agencies').add(<String, >{
       'name': name,
       'ownerId': ownerId,
       'commissionRate': commissionRate,
-      'members': [ownerId],
+      'members': <String>[ownerId],
       'totalEarnings': 0,
       'createdAt': FieldValue.serverTimestamp(),
       'status': 'active',
     });
     
     // Update owner's role
-    await _firestore.collection('users').doc(ownerId).update({
+    await _firestore.collection('users').doc(ownerId).update(<String, >{
       'role': UserRole.agency.index,
       'agencyId': agencyRef.id,
     });
@@ -266,7 +266,7 @@ class AdminService {
     await _logAdminAction(
       action: 'create_agency',
       targetId: agencyRef.id,
-      details: {'name': name, 'ownerId': ownerId},
+      details: <String, dynamic>{'name': name, 'ownerId': ownerId},
     );
   }
 
@@ -275,11 +275,11 @@ class AdminService {
     
     // Get agency members
     final agencyDoc = await _firestore.collection('agencies').doc(agencyId).get();
-    final members = agencyDoc.data()?['members'] ?? [];
+    final members = agencyDoc.data()?['members'] ?? <dynamic>[];
     
     // Update all members' roles
-    for (var memberId in members) {
-      await _firestore.collection('users').doc(memberId).update({
+    for (final memberId in members) {
+      await _firestore.collection('users').doc(memberId).update(<String, int?>{
         'role': UserRole.user.index,
         'agencyId': null,
       });
@@ -302,7 +302,7 @@ class AdminService {
   }) async {
     await _checkAdmin();
     
-    await _firestore.collection('sellers').doc(userId).set({
+    await _firestore.collection('sellers').doc(userId).set(<String, >{
       'userId': userId,
       'commissionRate': commissionRate,
       'coinBalance': initialCoins,
@@ -313,14 +313,14 @@ class AdminService {
     });
     
     // Update user's role
-    await _firestore.collection('users').doc(userId).update({
+    await _firestore.collection('users').doc(userId).update(<String, int>{
       'role': UserRole.seller.index,
     });
     
     await _logAdminAction(
       action: 'create_seller',
       targetId: userId,
-      details: {'commissionRate': commissionRate, 'initialCoins': initialCoins},
+      details: <String, dynamic>{'commissionRate': commissionRate, 'initialCoins': initialCoins},
     );
   }
 
@@ -333,14 +333,14 @@ class AdminService {
     await _firestore
         .collection('sellers')
         .doc(sellerId)
-        .update({
+        .update(<String, >{
           'coinBalance': FieldValue.increment(amount),
         });
     
     await _logAdminAction(
       action: 'add_coins_to_seller',
       targetId: sellerId,
-      details: {'amount': amount},
+      details: <String, dynamic>{'amount': amount},
     );
   }
 
@@ -348,7 +348,7 @@ class AdminService {
   Future<void> addGift(Map<String, dynamic> giftData) async {
     await _checkAdmin();
     
-    await _firestore.collection('gifts').add({
+    await _firestore.collection('gifts').add(<String, dynamic>{
       ...giftData,
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': _auth.currentUser!.uid,
@@ -356,14 +356,14 @@ class AdminService {
     
     await _logAdminAction(
       action: 'add_gift',
-      details: {'giftData': giftData},
+      details: <String, dynamic>{'giftData': giftData},
     );
   }
 
   Future<void> updateGift(String giftId, Map<String, dynamic> giftData) async {
     await _checkAdmin();
     
-    await _firestore.collection('gifts').doc(giftId).update({
+    await _firestore.collection('gifts').doc(giftId).update(<String, dynamic>{
       ...giftData,
       'updatedAt': FieldValue.serverTimestamp(),
       'updatedBy': _auth.currentUser!.uid,
@@ -398,8 +398,8 @@ class AdminService {
         .count()
         .get();
     
-    final today = DateTime.now();
-    final startOfDay = DateTime(today.year, today.month, today.day);
+    final DateTime today = DateTime.now();
+    final DateTime startOfDay = DateTime(today.year, today.month, today.day);
     
     final todayTransactions = await _firestore
         .collection('transactions')
@@ -447,9 +447,9 @@ class AdminService {
     String? targetId,
     Map<String, dynamic>? details,
   }) async {
-    final admin = _auth.currentUser!;
+    final admin = _auth.currentUser;
     
-    await _firestore.collection('admin_logs').add({
+    await _firestore.collection('admin_logs').add(<String, >{
       'adminId': admin.uid,
       'adminEmail': admin.email,
       'action': action,
@@ -475,12 +475,6 @@ class AdminService {
 // ==================== MODEL CLASSES ====================
 
 class AdminDashboardStats {
-  final int totalUsers;
-  final int activeNow;
-  final double todayRevenue;
-  final int activeRooms;
-  final int totalGifts;
-  final int pendingReports;
   
   AdminDashboardStats({
     required this.totalUsers,
@@ -490,16 +484,15 @@ class AdminDashboardStats {
     required this.totalGifts,
     required this.pendingReports,
   });
+  final int totalUsers;
+  final int activeNow;
+  final double todayRevenue;
+  final int activeRooms;
+  final int totalGifts;
+  final int pendingReports;
 }
 
 class AdminLog {
-  final String id;
-  final String adminId;
-  final String adminEmail;
-  final String action;
-  final String? targetId;
-  final Map<String, dynamic>? details;
-  final DateTime timestamp;
   
   AdminLog({
     required this.id,
@@ -522,4 +515,11 @@ class AdminLog {
       timestamp: (json['timestamp'] as Timestamp).toDate(),
     );
   }
+  final String id;
+  final String adminId;
+  final String adminEmail;
+  final String action;
+  final String? targetId;
+  final Map<String, dynamic>? details;
+  final DateTime timestamp;
 }

@@ -1,0 +1,26 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="150" cy="150" r="140" stroke="url(#vip1Gradient)" stroke-width="15" fill="none"/>
+  <circle cx="150" cy="150" r="125" stroke="url(#vip1Gradient)" stroke-width="2" stroke-dasharray="12 8" fill="none"/>
+  <circle cx="150" cy="150" r="110" stroke="url(#vip1Gradient)" stroke-width="1" fill="none"/>
+  
+  <!-- Corner Decorations -->
+  <path d="M50 50 L70 30 L90 50 L70 70 L50 50Z" fill="url(#vip1Gradient)" fill-opacity="0.6"/>
+  <path d="M250 50 L270 30 L290 50 L270 70 L250 50Z" fill="url(#vip1Gradient)" fill-opacity="0.6"/>
+  <path d="M50 250 L70 230 L90 250 L70 270 L50 250Z" fill="url(#vip1Gradient)" fill-opacity="0.6"/>
+  <path d="M250 250 L270 230 L290 250 L270 270 L250 250Z" fill="url(#vip1Gradient)" fill-opacity="0.6"/>
+  
+  <!-- Small Stars -->
+  <circle cx="30" cy="150" r="5" fill="#FFD700"/>
+  <circle cx="270" cy="150" r="5" fill="#FFD700"/>
+  <circle cx="150" cy="30" r="5" fill="#FFD700"/>
+  <circle cx="150" cy="270" r="5" fill="#FFD700"/>
+  
+  <text x="150" y="280" font-size="24" font-weight="bold" text-anchor="middle" fill="url(#vip1Gradient)" font-family="Arial">VIP 1</text>
+  
+  <defs>
+    <linearGradient id="vip1Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6D28D9"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -1,0 +1,13 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M14 20 Q24 12 34 20" stroke="url(#necklaceGradient)" stroke-width="3" fill="none"/>
+  <circle cx="24" cy="26" r="6" fill="url(#necklaceGradient)"/>
+  <circle cx="19" cy="26" r="1" fill="white"/>
+  <circle cx="29" cy="26" r="1" fill="white"/>
+  <circle cx="24" cy="21" r="1" fill="white"/>
+  <defs>
+    <linearGradient id="necklaceGradient" x1="14" y1="12" x2="34" y2="32" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD700"/>
+      <stop offset="1" stop-color="#FFA500"/>
+    </linearGradient>
+  </defs>
+</svg>

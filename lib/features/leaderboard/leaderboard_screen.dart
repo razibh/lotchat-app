@@ -14,14 +14,14 @@ class LeaderboardScreen extends StatefulWidget {
 
 class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin {
   
-  final _leaderboardService = ServiceLocator().get<LeaderboardService>();
+  final LeaderboardService _leaderboardService = ServiceLocator().get<LeaderboardService>();
   String _selectedPeriod = 'Weekly';
   String _selectedCategory = 'Gifts';
   
-  final List<String> _periods = ['Daily', 'Weekly', 'Monthly', 'All Time'];
-  final List<String> _categories = ['Gifts', 'Diamonds', 'Games', 'Followers'];
+  final List<String> _periods = <String>['Daily', 'Weekly', 'Monthly', 'All Time'];
+  final List<String> _categories = <String>['Gifts', 'Diamonds', 'Games', 'Followers'];
 
-  List<Map<String, dynamic>> _leaderboardData = [];
+  List<Map<String, dynamic>> _leaderboardData = <Map<String, dynamic>>[];
   bool _isLoading = true;
 
   @override
@@ -35,9 +35,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin
       await Future.delayed(const Duration(seconds: 1));
       
       setState(() {
-        _leaderboardData = List.generate(50, (index) {
-          final isCurrentUser = index == 5;
-          return {
+        _leaderboardData = List.generate(50, (int index) {
+          final bool isCurrentUser = index == 5;
+          return <String, dynamic>{
             'rank': index + 1,
             'userId': 'user_$index',
             'name': isCurrentUser ? 'You' : 'User ${index + 1}',
@@ -46,7 +46,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin
             'value': 1000000 - (index * 50000),
             'change': index % 3 == 0 ? 5 : (index % 3 == 1 ? -3 : 0),
             'isCurrentUser': isCurrentUser,
-            'badges': index < 3 ? ['🥇', '🥈', '🥉'][index] : null,
+            'badges': index < 3 ? <String>['🥇', '🥈', '🥉'][index] : null,
           };
         });
         _isLoading = false;
@@ -98,14 +98,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Column(
-            children: [
+            children: <>[
               // Period Filter
               Container(
                 height: 50,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  children: _periods.map((period) {
+                  children: _periods.map((String period) {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: FilterChip(
@@ -133,7 +133,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  children: _categories.map((category) {
+                  children: _categories.map((String category) {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: ChoiceChip(
@@ -171,7 +171,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin
                   padding: const EdgeInsets.all(16),
                   itemCount: _leaderboardData.length,
                   itemBuilder: (context, index) {
-                    final item = _leaderboardData[index];
+                    final Map<String, dynamic> item = _leaderboardData[index];
                     return FadeAnimation(
                       delay: Duration(milliseconds: index * 50),
                       child: Container(
@@ -217,7 +217,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin
                                 : null,
                           ),
                           title: Row(
-                            children: [
+                            children: <>[
                               Text(
                                 item['name'],
                                 style: TextStyle(
@@ -240,11 +240,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin
                           subtitle: Text(item['username']),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: [
+                            children: <>[
                               Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
+                                children: <>[
                                   Text(
                                     _formatValue(item['value']),
                                     style: const TextStyle(
@@ -254,7 +254,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin
                                   ),
                                   if (item['change'] != 0)
                                     Row(
-                                      children: [
+                                      children: <>[
                                         Icon(
                                           _getChangeIcon(item['change']),
                                           color: _getChangeColor(item['change']),

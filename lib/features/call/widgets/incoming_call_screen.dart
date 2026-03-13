@@ -8,10 +8,6 @@ import '../../../widgets/animation/pulse_animation.dart';
 import 'call_screen.dart';
 
 class IncomingCallScreen extends StatefulWidget {
-  final String callerId;
-  final String callerName;
-  final String? callerAvatar;
-  final CallType callType;
 
   const IncomingCallScreen({
     Key? key,
@@ -20,16 +16,20 @@ class IncomingCallScreen extends StatefulWidget {
     this.callerAvatar,
     required this.callType,
   }) : super(key: key);
+  final String callerId;
+  final String callerName;
+  final String? callerAvatar;
+  final CallType callType;
 
   @override
   State<IncomingCallScreen> createState() => _IncomingCallScreenState();
 }
 
 class _IncomingCallScreenState extends State<IncomingCallScreen> {
-  final _callService = ServiceLocator().get<CallService>();
-  final _notificationService = ServiceLocator().get<NotificationService>();
+  final CallService _callService = ServiceLocator().get<CallService>();
+  final NotificationService _notificationService = ServiceLocator().get<NotificationService>();
   final _audioPlayer = AudioPlayer();
-  bool _isRinging = true;
+  final bool _isRinging = true;
 
   @override
   void initState() {
@@ -89,12 +89,12 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
       backgroundColor: Colors.black87,
       body: SafeArea(
         child: Column(
-          children: [
+          children: <>[
             const Spacer(flex: 2),
             
             // Caller Info
             Column(
-              children: [
+              children: <>[
                 // Avatar with pulse animation
                 PulseAnimation(
                   animate: _isRinging,
@@ -156,7 +156,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
             // Action Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
+              children: <>[
                 // Decline Button
                 _buildActionButton(
                   icon: Icons.call_end,
@@ -193,7 +193,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Column(
-        children: [
+        children: <>[
           Container(
             width: 70,
             height: 70,

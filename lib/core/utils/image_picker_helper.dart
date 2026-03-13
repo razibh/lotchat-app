@@ -14,7 +14,7 @@ class ImagePickerHelper {
         throw Exception('Permission denied');
       }
 
-      final XFile? image = await _picker.pickImage(
+      final image = await _picker.pickImage(
         source: ImageSource.gallery,
         maxWidth: 1080,
         maxHeight: 1080,
@@ -39,7 +39,7 @@ class ImagePickerHelper {
         throw Exception('Permission denied');
       }
 
-      final XFile? image = await _picker.pickImage(
+      final image = await _picker.pickImage(
         source: ImageSource.camera,
         maxWidth: 1080,
         maxHeight: 1080,
@@ -58,7 +58,7 @@ class ImagePickerHelper {
   // Pick video from gallery
   static Future<File?> pickVideoFromGallery() async {
     try {
-      final XFile? video = await _picker.pickVideo(
+      final video = await _picker.pickVideo(
         source: ImageSource.gallery,
         maxDuration: const Duration(minutes: 5),
       );
@@ -81,10 +81,10 @@ class ImagePickerHelper {
         imageQuality: 85,
       );
 
-      return images.map((image) => File(image.path)).toList();
+      return images.map((Object? image) => File(image.path)).toList();
     } catch (e) {
       print('Error picking multiple images: $e');
-      return [];
+      return <File>[];
     }
   }
 
@@ -96,13 +96,13 @@ class ImagePickerHelper {
         title: const Text('Choose Image'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
+          children: <>[
             ListTile(
               leading: const Icon(Icons.photo_library),
               title: const Text('Gallery'),
               onTap: () async {
                 Navigator.pop(context);
-                final file = await pickImageFromGallery();
+                final File? file = await pickImageFromGallery();
                 Navigator.pop(context, file);
               },
             ),
@@ -111,7 +111,7 @@ class ImagePickerHelper {
               title: const Text('Camera'),
               onTap: () async {
                 Navigator.pop(context);
-                final file = await pickImageFromCamera();
+                final File? file = await pickImageFromCamera();
                 Navigator.pop(context, file);
               },
             ),

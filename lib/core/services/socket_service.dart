@@ -3,9 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 
 class SocketService {
-  static final SocketService _instance = SocketService._internal();
   factory SocketService() => _instance;
   SocketService._internal();
+  static final SocketService _instance = SocketService._internal();
 
   late IO.Socket socket;
   bool _isConnected = false;
@@ -15,9 +15,9 @@ class SocketService {
     final token = prefs.getString('auth_token');
 
     socket = IO.io(ApiConstants.socketUrl, <String, dynamic>{
-      'transports': ['websocket'],
+      'transports': <String>['websocket'],
       'autoConnect': true,
-      'query': {
+      'query': <String, >{
         'token': token,
       },
     });
@@ -41,7 +41,7 @@ class SocketService {
 
   // Join room
   void joinRoom(String roomId) {
-    socket.emit('join-room', {
+    socket.emit('join-room', <String, String>{
       'roomId': roomId,
       'timestamp': DateTime.now().toIso8601String(),
     });
@@ -49,7 +49,7 @@ class SocketService {
 
   // Leave room
   void leaveRoom(String roomId) {
-    socket.emit('leave-room', {
+    socket.emit('leave-room', <String, String>{
       'roomId': roomId,
       'timestamp': DateTime.now().toIso8601String(),
     });
@@ -62,7 +62,7 @@ class SocketService {
     required String senderId,
     required String senderName,
   }) {
-    socket.emit('send-message', {
+    socket.emit('send-message', <String, String>{
       'roomId': roomId,
       'message': message,
       'senderId': senderId,
@@ -79,7 +79,7 @@ class SocketService {
     required String receiverId,
     required int amount,
   }) {
-    socket.emit('send-gift', {
+    socket.emit('send-gift', <String, Object>{
       'roomId': roomId,
       'giftId': giftId,
       'senderId': senderId,
@@ -95,7 +95,7 @@ class SocketService {
     required int seatNumber,
     required String userId,
   }) {
-    socket.emit('take-seat', {
+    socket.emit('take-seat', <String, Object>{
       'roomId': roomId,
       'seatNumber': seatNumber,
       'userId': userId,
@@ -108,7 +108,7 @@ class SocketService {
     required String roomId,
     required int seatNumber,
   }) {
-    socket.emit('leave-seat', {
+    socket.emit('leave-seat', <String, Object>{
       'roomId': roomId,
       'seatNumber': seatNumber,
       'timestamp': DateTime.now().toIso8601String(),
@@ -121,7 +121,7 @@ class SocketService {
     required int seatNumber,
     required bool isMuted,
   }) {
-    socket.emit('toggle-mic', {
+    socket.emit('toggle-mic', <String, Object>{
       'roomId': roomId,
       'seatNumber': seatNumber,
       'isMuted': isMuted,
@@ -131,7 +131,7 @@ class SocketService {
 
   // PK Battle actions
   void joinPKBattle(String battleId) {
-    socket.emit('join-pk', {
+    socket.emit('join-pk', <String, String>{
       'battleId': battleId,
       'timestamp': DateTime.now().toIso8601String(),
     });
@@ -142,7 +142,7 @@ class SocketService {
     required String roomId,
     required int points,
   }) {
-    socket.emit('update-pk-score', {
+    socket.emit('update-pk-score', <String, Object>{
       'battleId': battleId,
       'roomId': roomId,
       'points': points,

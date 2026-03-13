@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 
 class VideoView extends StatelessWidget {
-  final RtcEngine engine;
-  final int uid;
-  final bool isLocal;
 
   const VideoView({
     Key? key,
@@ -12,6 +9,9 @@ class VideoView extends StatelessWidget {
     required this.uid,
     this.isLocal = false,
   }) : super(key: key);
+  final RtcEngine engine;
+  final int uid;
+  final bool isLocal;
 
   @override
   Widget build(BuildContext context) {

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class CallTimer extends StatefulWidget {
-  final int duration;
 
   const CallTimer({Key? key, required this.duration}) : super(key: key);
+  final int duration;
 
   @override
   State<CallTimer> createState() => _CallTimerState();
@@ -25,7 +25,7 @@ class _CallTimerState extends State<CallTimer> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
+      children: <>[
         // Pulse animation when call is active
         AnimatedBuilder(
           animation: _controller,
@@ -36,7 +36,7 @@ class _CallTimerState extends State<CallTimer> with SingleTickerProviderStateMix
               decoration: BoxDecoration(
                 color: Colors.green,
                 shape: BoxShape.circle,
-                boxShadow: [
+                boxShadow: <>[
                   BoxShadow(
                     color: Colors.green.withOpacity(0.5),
                     blurRadius: 10 * _controller.value,
@@ -61,9 +61,9 @@ class _CallTimerState extends State<CallTimer> with SingleTickerProviderStateMix
   }
 
   String _formatDuration(int seconds) {
-    final hours = seconds ~/ 3600;
-    final minutes = (seconds % 3600) ~/ 60;
-    final secs = seconds % 60;
+    final int hours = seconds ~/ 3600;
+    final int minutes = (seconds % 3600) ~/ 60;
+    final int secs = seconds % 60;
 
     if (hours > 0) {
       return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';

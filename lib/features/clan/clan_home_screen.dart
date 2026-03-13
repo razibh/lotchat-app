@@ -20,10 +20,10 @@ class ClanHomeScreen extends StatefulWidget {
 class _ClanHomeScreenState extends State<ClanHomeScreen> 
     with LoadingMixin, ToastMixin {
   
-  final _clanService = ServiceLocator().get<ClanService>();
-  final _authService = ServiceLocator().get<AuthService>();
+  final ClanService _clanService = ServiceLocator().get<ClanService>();
+  final AuthService _authService = ServiceLocator().get<AuthService>();
   
-  List<ClanModel> _clans = [];
+  List<ClanModel> _clans = <>[];
   ClanModel? _myClan;
   String _selectedTab = 'My Clan';
   bool _isLoading = true;
@@ -57,7 +57,7 @@ class _ClanHomeScreenState extends State<ClanHomeScreen>
       appBar: AppBar(
         title: const Text('Clans'),
         backgroundColor: Colors.deepPurple,
-        actions: [
+        actions: <>[
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
@@ -77,7 +77,7 @@ class _ClanHomeScreenState extends State<ClanHomeScreen>
               _selectedTab = index == 0 ? 'My Clan' : 'Discover';
             });
           },
-          tabs: const [
+          tabs: const <>[
             Tab(text: 'My Clan'),
             Tab(text: 'Discover'),
           ],
@@ -111,7 +111,7 @@ class _ClanHomeScreenState extends State<ClanHomeScreen>
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          children: <>[
             Container(
               width: 120,
               height: 120,
@@ -141,7 +141,7 @@ class _ClanHomeScreenState extends State<ClanHomeScreen>
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+              children: <>[
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
@@ -175,15 +175,15 @@ class _ClanHomeScreenState extends State<ClanHomeScreen>
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
-        children: [
+        children: <>[
           // Clan Card
           ClanCard(
-            clan: _myClan!,
+            clan: _myClan,
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ClanDetailScreen(clan: _myClan!),
+                  builder: (context) => ClanDetailScreen(clan: _myClan),
                 ),
               ).then((_) => _loadData());
             },
@@ -196,7 +196,7 @@ class _ClanHomeScreenState extends State<ClanHomeScreen>
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                children: <>[
                   const Text(
                     'Quick Actions',
                     style: TextStyle(
@@ -207,7 +207,7 @@ class _ClanHomeScreenState extends State<ClanHomeScreen>
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
+                    children: <>[
                       _buildActionButton(
                         icon: Icons.chat,
                         label: 'Chat',
@@ -270,7 +270,7 @@ class _ClanHomeScreenState extends State<ClanHomeScreen>
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                children: <>[
                   const Text(
                     'Recent Activity',
                     style: TextStyle(
@@ -279,14 +279,14 @@ class _ClanHomeScreenState extends State<ClanHomeScreen>
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ...List.generate(5, (index) {
+                  ...List.generate(5, (int index) {
                     return ListTile(
                       leading: CircleAvatar(
                         radius: 20,
                         child: Text('U${index + 1}'),
                       ),
                       title: Text('User ${index + 1}'),
-                      subtitle: Text([
+                      subtitle: Text(<String>[
                         'completed a task',
                         'donated 100 coins',
                         'joined the clan',
@@ -343,7 +343,7 @@ class _ClanHomeScreenState extends State<ClanHomeScreen>
     return InkWell(
       onTap: onTap,
       child: Column(
-        children: [
+        children: <>[
           Container(
             width: 50,
             height: 50,

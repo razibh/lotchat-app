@@ -39,14 +39,14 @@ class ConnectionHelper {
       builder: (context) => AlertDialog(
         title: const Text('No Internet'),
         content: const Text('Please check your internet connection and try again.'),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
           ),
           TextButton(
             onPressed: () async {
-              final hasInternet = await ConnectionHelper.hasInternet();
+              final bool hasInternet = await ConnectionHelper.hasInternet();
               if (hasInternet) {
                 Navigator.pop(context);
               }

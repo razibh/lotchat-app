@@ -5,7 +5,7 @@ class Validators {
       return 'Email is required';
     }
     
-    final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    final RegExp emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegExp.hasMatch(value)) {
       return 'Invalid email address';
     }
@@ -23,11 +23,11 @@ class Validators {
       return 'Password must be at least 6 characters';
     }
     
-    if (!value.contains(RegExp(r'[A-Z]'))) {
+    if (!value.contains(RegExp('[A-Z]'))) {
       return 'Password must contain at least one uppercase letter';
     }
     
-    if (!value.contains(RegExp(r'[0-9]'))) {
+    if (!value.contains(RegExp('[0-9]'))) {
       return 'Password must contain at least one number';
     }
     
@@ -40,7 +40,7 @@ class Validators {
       return 'Phone number is required';
     }
     
-    final phoneRegExp = RegExp(r'^\+?[\d\s-]{10,}$');
+    final RegExp phoneRegExp = RegExp(r'^\+?[\d\s-]{10,}$');
     if (!phoneRegExp.hasMatch(value)) {
       return 'Invalid phone number';
     }
@@ -62,7 +62,7 @@ class Validators {
       return 'Username must be less than 20 characters';
     }
     
-    final usernameRegExp = RegExp(r'^[a-zA-Z0-9_]+$');
+    final RegExp usernameRegExp = RegExp(r'^[a-zA-Z0-9_]+$');
     if (!usernameRegExp.hasMatch(value)) {
       return 'Username can only contain letters, numbers and underscore';
     }
@@ -76,7 +76,7 @@ class Validators {
       return 'Amount is required';
     }
     
-    final amount = int.tryParse(value);
+    final int? amount = int.tryParse(value);
     if (amount == null) {
       return 'Invalid amount';
     }
@@ -94,7 +94,7 @@ class Validators {
 
   // URL validation
   static bool isValidUrl(String url) {
-    final urlRegExp = RegExp(
+    final RegExp urlRegExp = RegExp(
       r'^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$',
     );
     return urlRegExp.hasMatch(url);

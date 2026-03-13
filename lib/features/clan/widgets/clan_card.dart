@@ -4,14 +4,14 @@ import 'clan_badge.dart';
 import 'clan_progress_bar.dart';
 
 class ClanCard extends StatelessWidget {
-  final ClanModel clan;
-  final VoidCallback onTap;
 
   const ClanCard({
     Key? key,
     required this.clan,
     required this.onTap,
   }) : super(key: key);
+  final ClanModel clan;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class ClanCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
-            children: [
+            children: <>[
               // Clan Emblem
               Container(
                 width: 60,
@@ -52,9 +52,9 @@ class ClanCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  children: <>[
                     Row(
-                      children: [
+                      children: <>[
                         Expanded(
                           child: Text(
                             clan.name,
@@ -83,7 +83,7 @@ class ClanCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Row(
-                      children: [
+                      children: <>[
                         const Icon(
                           Icons.military_tech,
                           size: 12,

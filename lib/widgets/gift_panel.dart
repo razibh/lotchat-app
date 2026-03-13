@@ -3,14 +3,14 @@ import 'package:lottie/lottie.dart';
 import '../core/models/gift_model.dart';
 
 class GiftPanel extends StatefulWidget {
-  final Function(GiftModel) onSendGift;
-  final VoidCallback onClose;
   
   const GiftPanel({
     super.key,
     required this.onSendGift,
     required this.onClose,
   });
+  final Function(GiftModel) onSendGift;
+  final VoidCallback onClose;
 
   @override
   State<GiftPanel> createState() => _GiftPanelState();
@@ -23,7 +23,7 @@ class _GiftPanelState extends State<GiftPanel> with SingleTickerProviderStateMix
   GiftModel? selectedGift;
   int userCoins = 5000; // Get from user provider
   
-  final List<String> categories = ['Cute', 'Luxury', 'VIP', 'SVIP', 'Special'];
+  final List<String> categories = <String>['Cute', 'Luxury', 'VIP', 'SVIP', 'Special'];
   
   @override
   void initState() {
@@ -45,7 +45,7 @@ class _GiftPanelState extends State<GiftPanel> with SingleTickerProviderStateMix
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
-        children: [
+        children: <>[
           // Header
           Container(
             padding: EdgeInsets.all(16),
@@ -55,7 +55,7 @@ class _GiftPanelState extends State<GiftPanel> with SingleTickerProviderStateMix
               ),
             ),
             child: Row(
-              children: [
+              children: <>[
                 Text(
                   'Send Gift',
                   style: TextStyle(
@@ -103,16 +103,14 @@ class _GiftPanelState extends State<GiftPanel> with SingleTickerProviderStateMix
             controller: _tabController,
             isScrollable: true,
             indicatorColor: Colors.purple,
-            tabs: categories.map((cat) => Tab(text: cat)).toList(),
+            tabs: categories.map((String cat) => Tab(text: cat)).toList(),
           ),
           
           // Gifts Grid
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: categories.map((category) {
-                return _buildGiftGrid(category);
-              }).toList(),
+              children: categories.map(_buildGiftGrid).toList(),
             ),
           ),
           
@@ -125,7 +123,7 @@ class _GiftPanelState extends State<GiftPanel> with SingleTickerProviderStateMix
               ),
             ),
             child: Row(
-              children: [
+              children: <>[
                 // Multiplier
                 Container(
                   decoration: BoxDecoration(
@@ -133,7 +131,7 @@ class _GiftPanelState extends State<GiftPanel> with SingleTickerProviderStateMix
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
-                    children: [1, 5, 10, 99].map((m) {
+                    children: <int>[1, 5, 10, 99].map((int m) {
                       return GestureDetector(
                         onTap: () {
                           setState(() {
@@ -192,8 +190,8 @@ class _GiftPanelState extends State<GiftPanel> with SingleTickerProviderStateMix
   }
   
   Widget _buildGiftGrid(String category) {
-    final gifts = GiftModel.getGifts()
-        .where((g) => g.category == category)
+    final List<GiftModel> gifts = GiftModel.getGifts()
+        .where((GiftModel g) => g.category == category)
         .toList();
     
     return GridView.builder(
@@ -206,9 +204,9 @@ class _GiftPanelState extends State<GiftPanel> with SingleTickerProviderStateMix
       ),
       itemCount: gifts.length,
       itemBuilder: (context, index) {
-        final gift = gifts[index];
-        final isSelected = selectedGift?.id == gift.id;
-        final canAfford = userCoins >= gift.price * multiplier;
+        final GiftModel gift = gifts[index];
+        final bool isSelected = selectedGift?.id == gift.id;
+        final bool canAfford = userCoins >= gift.price * multiplier;
         
         return GestureDetector(
           onTap: () {
@@ -230,7 +228,7 @@ class _GiftPanelState extends State<GiftPanel> with SingleTickerProviderStateMix
               ),
             ),
             child: Column(
-              children: [
+              children: <>[
                 Expanded(
                   child: Container(
                     padding: EdgeInsets.all(8),

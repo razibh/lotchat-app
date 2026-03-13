@@ -29,7 +29,7 @@ mixin DialogMixin {
       builder: (context) => AlertDialog(
         title: Text(title),
         content: Text(message),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(cancelText),
@@ -58,7 +58,7 @@ mixin DialogMixin {
       builder: (context) => AlertDialog(
         title: Text(title),
         content: Text(message),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(buttonText),
@@ -93,7 +93,7 @@ mixin DialogMixin {
           keyboardType: keyboardType,
           autofocus: true,
         ),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),

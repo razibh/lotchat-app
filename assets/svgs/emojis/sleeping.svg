@@ -1,0 +1,6 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="20" cy="20" r="15" fill="#87CEEB"/>
+  <path d="M12 16 L18 16 M22 16 L28 16" stroke="black" stroke-width="2" stroke-linecap="round"/>
+  <path d="M12 24 Q20 20 28 24" stroke="black" stroke-width="3" fill="none"/>
+  <text x="14" y="32" font-size="8" fill="black">zzz</text>
+</svg>

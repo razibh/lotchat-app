@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 mixin PaginationMixin<T> {
-  final List<T> _items = [];
+  final List<T> _items = <Object?>[];
   int _currentPage = 0;
   bool _hasMore = true;
   bool _isLoadingMore = false;
@@ -38,7 +38,7 @@ mixin PaginationMixin<T> {
 
     _isLoadingMore = true;
     try {
-      final newItems = await fetchPage(_currentPage);
+      final List<Object?> newItems = await fetchPage(_currentPage);
       
       if (newItems.isEmpty) {
         _hasMore = false;
@@ -66,7 +66,7 @@ mixin PaginationMixin<T> {
 
   // Update item
   void updateItem(T oldItem, T newItem) {
-    final index = _items.indexOf(oldItem);
+    final int index = _items.indexOf(oldItem);
     if (index != -1) {
       _items[index] = newItem;
     }

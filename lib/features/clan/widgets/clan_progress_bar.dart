@@ -1,12 +1,8 @@
-// TODO Implement this library.import 'package:flutter/material.dart';
+// TODOImplement this library.import 'package:flutter/material.dart';
 
 import 'package:flutter/material.dart';
 
 class ClanProgressBar extends StatelessWidget {
-  final double progress;
-  final Color color;
-  final double height;
-  final bool showPercentage;
 
   const ClanProgressBar({
     Key? key,
@@ -15,12 +11,16 @@ class ClanProgressBar extends StatelessWidget {
     this.height = 8,
     this.showPercentage = false,
   }) : super(key: key);
+  final double progress;
+  final Color color;
+  final double height;
+  final bool showPercentage;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <>[
         if (showPercentage)
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
@@ -33,7 +33,7 @@ class ClanProgressBar extends StatelessWidget {
             ),
           ),
         Stack(
-          children: [
+          children: <>[
             // Background
             Container(
               height: height,
@@ -49,7 +49,7 @@ class ClanProgressBar extends StatelessWidget {
               width: MediaQuery.of(context).size.width * progress,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [color, color.withOpacity(0.7)],
+                  colors: <>[color, color.withOpacity(0.7)],
                 ),
                 borderRadius: BorderRadius.circular(height / 2),
               ),

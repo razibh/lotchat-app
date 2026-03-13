@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'logger_service.dart';
 
 class ErrorService {
-  static final ErrorService _instance = ErrorService._internal();
   factory ErrorService() => _instance;
   ErrorService._internal();
+  static final ErrorService _instance = ErrorService._internal();
 
   final LoggerService _logger = LoggerService();
 
@@ -63,7 +63,7 @@ class ErrorService {
       builder: (context) => AlertDialog(
         title: const Text('Error'),
         content: Text(message),
-        actions: [
+        actions: <>[
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
@@ -76,7 +76,7 @@ class ErrorService {
   // ==================== SPECIFIC ERROR HANDLERS ====================
 
   void handleAuthError(dynamic error, BuildContext context) {
-    String message = 'Authentication failed';
+    var message = 'Authentication failed';
     
     if (error.toString().contains('user-not-found')) {
       message = 'No user found with this email';
@@ -101,7 +101,7 @@ class ErrorService {
   }
 
   void handlePaymentError(dynamic error, BuildContext context) {
-    String message = 'Payment failed';
+    var message = 'Payment failed';
     
     if (error.toString().contains('insufficient-funds')) {
       message = 'Insufficient funds';
@@ -152,7 +152,7 @@ class ErrorService {
     RegExp? pattern,
     String? patternMessage,
   }) {
-    final errors = <String>[];
+    final List<String> errors = <String>[];
 
     if (required && value.isEmpty) {
       errors.add('${fieldName ?? 'Field'} is required');
@@ -205,7 +205,7 @@ class ErrorService {
     int maxRetries = 3,
     Duration delay = const Duration(seconds: 1),
   }) async {
-    for (int i = 0; i < maxRetries; i++) {
+    for (var i = 0; i < maxRetries; i++) {
       try {
         await operation();
         return true;
@@ -224,13 +224,13 @@ class ErrorService {
 // ==================== MODEL CLASSES ====================
 
 class ValidationResult {
-  final bool isValid;
-  final List<String> errors;
 
   ValidationResult({
     required this.isValid,
     required this.errors,
   });
+  final bool isValid;
+  final List<String> errors;
 
   String? get firstError => errors.isNotEmpty ? errors.first : null;
 }

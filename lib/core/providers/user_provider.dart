@@ -50,20 +50,20 @@ class UserProvider extends ChangeNotifier {
   Future<void> updateCoins(int amount) async {
     if (_currentUser == null) return;
 
-    final newCoins = _currentUser!.coins + amount;
-    await updateUser({'coins': newCoins});
+    final int newCoins = _currentUser!.coins + amount;
+    await updateUser(<String, dynamic>{'coins': newCoins});
   }
 
   Future<void> updateDiamonds(int amount) async {
     if (_currentUser == null) return;
 
-    final newDiamonds = _currentUser!.diamonds + amount;
-    await updateUser({'diamonds': newDiamonds});
+    final int newDiamonds = _currentUser!.diamonds + amount;
+    await updateUser(<String, dynamic>{'diamonds': newDiamonds});
   }
 
   Future<void> updateTier(UserTier tier) async {
     if (_currentUser == null) return;
-    await updateUser({'tier': tier.index});
+    await updateUser(<String, dynamic>{'tier': tier.index});
   }
 
   void clearUser() {

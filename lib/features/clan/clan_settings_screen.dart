@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/services/clan_service.dart';
@@ -11,9 +13,9 @@ import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_field.dart';
 
 class ClanSettingsScreen extends StatefulWidget {
-  final ClanModel clan;
 
   const ClanSettingsScreen({Key? key, required this.clan}) : super(key: key);
+  final ClanModel clan;
 
   @override
   State<ClanSettingsScreen> createState() => _ClanSettingsScreenState();
@@ -22,8 +24,8 @@ class ClanSettingsScreen extends StatefulWidget {
 class _ClanSettingsScreenState extends State<ClanSettingsScreen> 
     with LoadingMixin, ToastMixin, DialogMixin, FormMixin {
   
-  final _clanService = ServiceLocator().get<ClanService>();
-  final _authService = ServiceLocator().get<AuthService>();
+  final ClanService _clanService = ServiceLocator().get<ClanService>();
+  final AuthService _authService = ServiceLocator().get<AuthService>();
   
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
@@ -53,7 +55,7 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
   }
 
   Future<void> _pickEmblem() async {
-    final file = await ImagePickerHelper.pickImageFromGallery();
+    final File? file = await ImagePickerHelper.pickImageFromGallery();
     if (file != null) {
       setState(() {
         _newEmblem = file.path;
@@ -75,7 +77,7 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
       }
 
       // Update clan
-      final success = true; // await _clanService.updateClan(...);
+      const bool success = true; // await _clanService.updateClan(...);
       
       if (success) {
         showSuccess('Settings saved');
@@ -126,13 +128,13 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
     );
 
     if (selectedMember != null) {
-      final confirmed = await showConfirmDialog(
+      final bool? confirmed = await showConfirmDialog(
         context,
         title: 'Confirm Transfer',
         message: 'Transfer leadership to ${selectedMember.username}? You will become a co-leader.',
       );
 
-      if (confirmed == true) {
+      if (confirmed ?? false) {
         await runWithLoading(() async {
           await Future.delayed(const Duration(seconds: 1));
           showSuccess('Leadership transferred');
@@ -143,13 +145,13 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
   }
 
   Future<void> _disbandClan() async {
-    final confirmed = await showConfirmDialog(
+    final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Disband Clan',
       message: 'Are you sure you want to disband the clan? This action cannot be undone.',
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       await runWithLoading(() async {
         await Future.delayed(const Duration(seconds: 1));
         showSuccess('Clan disbanded');
@@ -172,13 +174,13 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
           key: formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            children: <>[
               // Emblem
               Center(
                 child: GestureDetector(
                   onTap: _pickEmblem,
                   child: Stack(
-                    children: [
+                    children: <>[
                       Container(
                         width: 120,
                         height: 120,
@@ -293,7 +295,7 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
               ),
               const SizedBox(height: 8),
               Row(
-                children: [10, 25, 50, 100, 200].map((max) {
+                children: <int>[10, 25, 50, 100, 200].map((int max) {
                   return Expanded(
                     child: Padding(
                       padding: const EdgeInsets.only(right: 8),
@@ -330,7 +332,7 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
               Card(
                 color: Colors.red.shade50,
                 child: Column(
-                  children: [
+                  children: <>[
                     ListTile(
                       leading: const Icon(Icons.swap_horiz, color: Colors.orange),
                       title: const Text('Transfer Leadership'),
@@ -371,7 +373,7 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
       groupValue: _joinType,
       onChanged: (value) {
         setState(() {
-          _joinType = value!;
+          _joinType = value;
         });
       },
       activeColor: Colors.deepPurple,

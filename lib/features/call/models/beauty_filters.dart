@@ -1,10 +1,5 @@
 // lib/features/call/models/beauty_filters.dart
 class BeautyFilter {
-  final String name;
-  final double smoothness;
-  final double brightness;
-  final double sharpness;
-  final String? preset;
 
   const BeautyFilter({
     required this.name,
@@ -13,12 +8,17 @@ class BeautyFilter {
     required this.sharpness,
     this.preset,
   });
+  final String name;
+  final double smoothness;
+  final double brightness;
+  final double sharpness;
+  final String? preset;
 
-  static const List<BeautyFilter> filters = [
+  static const List<BeautyFilter> filters = <BeautyFilter>[
     BeautyFilter(
       name: 'Natural',
       smoothness: 0.5,
-      brightness: 0.0,
+      brightness: 0,
       sharpness: 0.5,
       preset: 'natural',
     ),
