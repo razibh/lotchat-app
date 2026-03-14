@@ -1,0 +1,28 @@
+<svg width="350" height="350" viewBox="0 0 350 350" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="175" cy="175" r="160" stroke="url(#svip1Gradient)" stroke-width="20" fill="none"/>
+  <circle cx="175" cy="175" r="135" stroke="url(#svip1Gradient)" stroke-width="3" stroke-dasharray="15 10" fill="none"/>
+  
+  <!-- Double Crown -->
+  <path d="M145 70 L175 40 L205 70 L225 55 L215 90 L175 120 L135 90 L125 55 L145 70Z" fill="url(#svip1Gradient)"/>
+  <path d="M145 280 L175 310 L205 280 L225 295 L215 260 L175 230 L135 260 L125 295 L145 280Z" fill="url(#svip1Gradient)"/>
+  
+  <!-- Diamond Accents -->
+  <circle cx="175" cy="175" r="20" fill="white" fill-opacity="0.2"/>
+  <circle cx="175" cy="175" r="10" fill="url(#svip1Gradient)"/>
+  
+  <!-- Corner Gems -->
+  <circle cx="75" cy="75" r="15" fill="#FFD700"/>
+  <circle cx="275" cy="75" r="15" fill="#FFD700"/>
+  <circle cx="75" cy="275" r="15" fill="#FFD700"/>
+  <circle cx="275" cy="275" r="15" fill="#FFD700"/>
+  
+  <text x="175" y="310" font-size="32" font-weight="bold" text-anchor="middle" fill="url(#svip1Gradient)" font-family="Arial">SVIP 1</text>
+  
+  <defs>
+    <linearGradient id="svip1Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="50%" stop-color="#EC4899"/>
+      <stop offset="100%" stop-color="#FFD700"/>
+    </linearGradient>
+  </defs>
+</svg>

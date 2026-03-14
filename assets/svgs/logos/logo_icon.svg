@@ -1,0 +1,57 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Glow -->
+  <circle cx="40" cy="40" r="36" fill="url(#paint0_radial)" fill-opacity="0.2"/>
+  
+  <!-- Main Icon Shape -->
+  <g filter="url(#filter0_d)">
+    <path d="M40 15L55 32L40 49L25 32L40 15Z" fill="url(#paint1_linear)"/>
+    <path d="M40 15L55 32L40 49L25 32L40 15Z" stroke="white" stroke-width="2" stroke-opacity="0.5"/>
+  </g>
+  
+  <!-- Inner Diamond -->
+  <path d="M40 25L48 35L40 45L32 35L40 25Z" fill="white" fill-opacity="0.8"/>
+  
+  <!-- Sparkle Effects -->
+  <circle cx="52" cy="28" r="2" fill="white">
+    <animate attributeName="r" values="2;3;2" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="28" cy="48" r="2" fill="white">
+    <animate attributeName="r" values="2;3;2" dur="2s" begin="0.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="48" cy="48" r="1.5" fill="#FFD700">
+    <animate attributeName="r" values="1.5;2.5;1.5" dur="1.5s" begin="1s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Decorative Rings -->
+  <circle cx="40" cy="40" r="30" stroke="url(#paint2_linear)" stroke-width="1" stroke-dasharray="4 4" fill="none"/>
+  <circle cx="40" cy="40" r="25" stroke="white" stroke-width="0.5" stroke-opacity="0.3" fill="none"/>
+  
+  <defs>
+    <filter id="filter0_d" x="20" y="10" width="40" height="44" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/>
+      <feOffset dy="3"/>
+      <feGaussianBlur stdDeviation="2.5"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+    </filter>
+    
+    <radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(40 40) rotate(90) scale(36)">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#EC4899" stop-opacity="0"/>
+    </radialGradient>
+    
+    <linearGradient id="paint1_linear" x1="25" y1="15" x2="55" y2="49" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="0.5" stop-color="#EC4899"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+    
+    <linearGradient id="paint2_linear" x1="10" y1="10" x2="70" y2="70" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="0.5" stop-color="#EC4899"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+</svg>

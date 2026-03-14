@@ -1,0 +1,7 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="40" cy="40" r="35" fill="#3498db" stroke="#2980b9" stroke-width="2"/>
+  <path d="M25 35 L40 25 L55 35 L55 50 L40 60 L25 50 L25 35Z" fill="white" opacity="0.9"/>
+  <text x="40" y="55" font-size="14" font-weight="bold" text-anchor="middle" fill="white" font-family="Arial">MOD</text>
+  <circle cx="30" cy="40" r="3" fill="white"/>
+  <circle cx="50" cy="40" r="3" fill="white"/>
+</svg>

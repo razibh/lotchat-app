@@ -1,0 +1,15 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Success Circle -->
+  <circle cx="150" cy="150" r="50" fill="#D1FAE5" stroke="#10B981" stroke-width="3"/>
+  
+  <!-- Check Mark -->
+  <path d="M125 150 L145 170 L175 130" stroke="#10B981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Sparkles -->
+  <circle cx="190" cy="120" r="3" fill="#FFD700"/>
+  <circle cx="110" cy="180" r="3" fill="#FFD700"/>
+  
+  <!-- Text -->
+  <text x="150" y="230" font-size="18" font-weight="bold" text-anchor="middle" fill="#10B981">Success!</text>
+  <text x="150" y="255" font-size="14" text-anchor="middle" fill="#10B981">Operation completed</text>
+</svg>

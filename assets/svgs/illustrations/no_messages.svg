@@ -1,0 +1,7 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="60" y="60" width="80" height="60" rx="10" fill="#E5E7EB" stroke="#9CA3AF" stroke-width="2"/>
+  <path d="M60 120 L80 100 L120 100 L140 120" stroke="#9CA3AF" stroke-width="2" fill="none"/>
+  <circle cx="90" cy="90" r="3" fill="#9CA3AF"/>
+  <circle cx="110" cy="90" r="3" fill="#9CA3AF"/>
+  <text x="100" y="150" font-size="14" text-anchor="middle" fill="#9CA3AF">No Messages</text>
+</svg>

@@ -1,0 +1,26 @@
+@keyframes glow {
+  0% { box-shadow: 0 0 5px #8B5CF6, 0 0 10px #8B5CF6; }
+  25% { box-shadow: 0 0 10px #EC4899, 0 0 20px #EC4899; }
+  50% { box-shadow: 0 0 15px #FFD700, 0 0 30px #FFD700; }
+  75% { box-shadow: 0 0 10px #3B82F6, 0 0 20px #3B82F6; }
+  100% { box-shadow: 0 0 5px #8B5CF6, 0 0 10px #8B5CF6; }
+}
+
+@keyframes borderGlow {
+  0% { border-color: #8B5CF6; }
+  25% { border-color: #EC4899; }
+  50% { border-color: #FFD700; }
+  75% { border-color: #3B82F6; }
+  100% { border-color: #8B5CF6; }
+}
+
+.glow-frame {
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  border: 10px solid;
+  animation: borderGlow 5s linear infinite;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+  animation: glow 3s ease-in-out infinite;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2), transparent 70%);
+}

@@ -1,0 +1,21 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="150" cy="150" r="140" stroke="url(#heartGradient)" stroke-width="15" fill="none"/>
+  <circle cx="150" cy="150" r="120" stroke="url(#heartGradient)" stroke-width="2" stroke-dasharray="10 8" fill="none"/>
+  
+  <!-- Hearts -->
+  <path d="M100 100 L120 80 L140 100 L130 120 L100 140 L70 120 L60 100 L80 80 L100 100Z" fill="#FF69B4" fill-opacity="0.6"/>
+  <path d="M200 100 L220 80 L240 100 L230 120 L200 140 L170 120 L160 100 L180 80 L200 100Z" fill="#FF1493" fill-opacity="0.6"/>
+  <path d="M150 180 L170 160 L190 180 L180 200 L150 220 L120 200 L110 180 L130 160 L150 180Z" fill="#FF4500" fill-opacity="0.6"/>
+  
+  <!-- Small Hearts Scattered -->
+  <path d="M60 180 L65 175 L70 180 L67 185 L60 188 L53 185 L50 180 L55 175 L60 180Z" fill="#FF69B4"/>
+  <path d="M240 220 L245 215 L250 220 L247 225 L240 228 L233 225 L230 220 L235 215 L240 220Z" fill="#FF1493"/>
+  
+  <defs>
+    <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF69B4"/>
+      <stop offset="50%" stop-color="#FF1493"/>
+      <stop offset="100%" stop-color="#FF4500"/>
+    </linearGradient>
+  </defs>
+</svg>

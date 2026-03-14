@@ -1,0 +1,13 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Room Icon -->
+  <rect x="120" y="120" width="60" height="60" rx="5" fill="#E5E7EB" stroke="#9CA3AF" stroke-width="2"/>
+  <circle cx="150" cy="150" r="10" fill="white" stroke="#9CA3AF" stroke-width="2"/>
+  
+  <!-- Sound Waves (muted) -->
+  <path d="M180 130 L190 140 L180 150" stroke="#EF4444" stroke-width="3" opacity="0.5"/>
+  <line x1="190" y1="130" x2="200" y2="150" stroke="#EF4444" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+  
+  <!-- Text -->
+  <text x="150" y="230" font-size="18" font-weight="bold" text-anchor="middle" fill="#9CA3AF">No Rooms</text>
+  <text x="150" y="255" font-size="14" text-anchor="middle" fill="#8B5CF6">Create or join a room</text>
+</svg>

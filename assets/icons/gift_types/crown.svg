@@ -1,0 +1,12 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 30 L20 18 L24 24 L28 18 L36 30 L12 30Z" fill="url(#crownGradient)"/>
+  <circle cx="16" cy="26" r="2" fill="red"/>
+  <circle cx="24" cy="26" r="2" fill="blue"/>
+  <circle cx="32" cy="26" r="2" fill="green"/>
+  <defs>
+    <linearGradient id="crownGradient" x1="12" y1="18" x2="36" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD700"/>
+      <stop offset="1" stop-color="#FFA500"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -1,0 +1,24 @@
+<svg width="400" height="200" viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left Circle -->
+  <circle cx="100" cy="100" r="80" stroke="url(#coupleGradient)" stroke-width="12" fill="none"/>
+  <path d="M70 70 L100 50 L130 70 L120 100 L100 120 L80 100 L70 70Z" fill="url(#coupleGradient)" fill-opacity="0.4"/>
+  
+  <!-- Right Circle -->
+  <circle cx="300" cy="100" r="80" stroke="url(#coupleGradient)" stroke-width="12" fill="none"/>
+  <path d="M270 70 L300 50 L330 70 L320 100 L300 120 L280 100 L270 70Z" fill="url(#coupleGradient)" fill-opacity="0.4"/>
+  
+  <!-- Connecting Hearts -->
+  <path d="M180 80 L200 60 L220 80 L210 100 L200 110 L190 100 L180 80Z" fill="#FF69B4"/>
+  <path d="M200 110 L220 130 L240 110 L230 130 L220 150 L210 130 L200 110Z" fill="#FF1493"/>
+  
+  <!-- Infinity Symbol -->
+  <path d="M150 140 Q170 120 190 140 Q210 160 230 140 Q250 120 270 140" stroke="url(#coupleGradient)" stroke-width="3" fill="none"/>
+  
+  <defs>
+    <linearGradient id="coupleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF69B4"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#FF1493"/>
+    </linearGradient>
+  </defs>
+</svg>

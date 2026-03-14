@@ -1,0 +1,18 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="60" cy="60" r="50" fill="url(#gradient_svip1)" stroke="url(#stroke_gradient)" stroke-width="3"/>
+  <path d="M40 45 L60 25 L80 45 L70 75 L60 85 L50 75 L40 45Z" fill="white" opacity="0.9"/>
+  <text x="60" y="75" font-size="22" font-weight="bold" text-anchor="middle" fill="white" font-family="Arial">SVIP</text>
+  <text x="60" y="95" font-size="14" font-weight="bold" text-anchor="middle" fill="white" font-family="Arial">1</text>
+  <circle cx="40" cy="40" r="4" fill="white" opacity="0.5"/>
+  <circle cx="80" cy="40" r="4" fill="white" opacity="0.5"/>
+  <defs>
+    <linearGradient id="gradient_svip1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+    <linearGradient id="stroke_gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#FFA500"/>
+    </linearGradient>
+  </defs>
+</svg>

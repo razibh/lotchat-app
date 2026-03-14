@@ -1,0 +1,27 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="150" cy="150" r="140" stroke="url(#vip5Gradient)" stroke-width="15" fill="none"/>
+  <circle cx="150" cy="150" r="120" stroke="url(#vip5Gradient)" stroke-width="3" fill="none"/>
+  
+  <!-- Decorative Pattern -->
+  <path d="M150 20 L155 35 L170 35 L160 45 L165 60 L150 50 L135 60 L140 45 L130 35 L145 35 L150 20Z" fill="url(#vip5Gradient)" fill-opacity="0.4"/>
+  <path d="M150 280 L155 265 L170 265 L160 255 L165 240 L150 250 L135 240 L140 255 L130 265 L145 265 L150 280Z" fill="url(#vip5Gradient)" fill-opacity="0.4"/>
+  <path d="M40 150 L55 145 L55 130 L65 140 L80 135 L70 150 L80 165 L65 160 L55 170 L55 155 L40 150Z" fill="url(#vip5Gradient)" fill-opacity="0.4"/>
+  <path d="M260 150 L275 145 L275 130 L285 140 L300 135 L290 150 L300 165 L285 160 L275 170 L275 155 L260 150Z" fill="url(#vip5Gradient)" fill-opacity="0.4"/>
+  
+  <!-- 5 Stars for Level 5 -->
+  <circle cx="110" cy="110" r="8" fill="#FFD700"/>
+  <circle cx="190" cy="110" r="8" fill="#FFD700"/>
+  <circle cx="150" cy="150" r="8" fill="#FFD700"/>
+  <circle cx="110" cy="190" r="8" fill="#FFD700"/>
+  <circle cx="190" cy="190" r="8" fill="#FFD700"/>
+  
+  <text x="150" y="280" font-size="24" font-weight="bold" text-anchor="middle" fill="url(#vip5Gradient)" font-family="Arial">VIP 5</text>
+  
+  <defs>
+    <linearGradient id="vip5Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="50%" stop-color="#EC4899"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+</svg>

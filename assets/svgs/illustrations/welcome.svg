@@ -1,0 +1,39 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Elements -->
+  <circle cx="150" cy="150" r="120" fill="url(#welcomeGradient)" fill-opacity="0.1"/>
+  <circle cx="150" cy="150" r="100" fill="url(#welcomeGradient)" fill-opacity="0.1"/>
+  
+  <!-- Main Character -->
+  <circle cx="150" cy="130" r="40" fill="#8B5CF6" fill-opacity="0.2"/>
+  <circle cx="150" cy="130" r="30" fill="#8B5CF6" fill-opacity="0.3"/>
+  <circle cx="150" cy="130" r="20" fill="#8B5CF6"/>
+  
+  <!-- Eyes -->
+  <circle cx="135" cy="120" r="3" fill="white"/>
+  <circle cx="165" cy="120" r="3" fill="white"/>
+  <circle cx="135" cy="120" r="1.5" fill="black"/>
+  <circle cx="165" cy="120" r="1.5" fill="black"/>
+  
+  <!-- Smile -->
+  <path d="M135 145 Q150 155 165 145" stroke="white" stroke-width="3" fill="none"/>
+  
+  <!-- Raised Hand -->
+  <circle cx="120" cy="100" r="8" fill="#EC4899"/>
+  <line x1="128" y1="108" x2="140" y2="120" stroke="#EC4899" stroke-width="4"/>
+  
+  <!-- Welcome Text -->
+  <text x="150" y="220" font-size="24" font-weight="bold" text-anchor="middle" fill="#8B5CF6">Welcome to</text>
+  <text x="150" y="250" font-size="32" font-weight="bold" text-anchor="middle" fill="url(#welcomeGradient)">LotChat!</text>
+  
+  <!-- Decorative Elements -->
+  <circle cx="50" cy="50" r="5" fill="#F59E0B" fill-opacity="0.3"/>
+  <circle cx="250" cy="80" r="8" fill="#EC4899" fill-opacity="0.2"/>
+  <circle cx="220" cy="260" r="6" fill="#8B5CF6" fill-opacity="0.3"/>
+  
+  <defs>
+    <linearGradient id="welcomeGradient" x1="50" y1="50" x2="250" y2="250" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+</svg>

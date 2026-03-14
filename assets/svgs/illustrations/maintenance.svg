@@ -1,0 +1,15 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tools -->
+  <circle cx="120" cy="150" r="20" stroke="#F59E0B" stroke-width="3" fill="none"/>
+  <line x1="135" y1="165" x2="165" y2="195" stroke="#F59E0B" stroke-width="3"/>
+  <rect x="165" y="190" width="25" height="10" rx="3" fill="#F59E0B" fill-opacity="0.3" stroke="#F59E0B" stroke-width="2"/>
+  
+  <!-- Gear -->
+  <circle cx="180" cy="120" r="15" stroke="#F59E0B" stroke-width="3" fill="none"/>
+  <line x1="180" y1="100" x2="180" y2="105" stroke="#F59E0B" stroke-width="2"/>
+  <line x1="200" y1="120" x2="205" y2="120" stroke="#F59E0B" stroke-width="2"/>
+  
+  <!-- Text -->
+  <text x="150" y="230" font-size="18" font-weight="bold" text-anchor="middle" fill="#F59E0B">Under Maintenance</text>
+  <text x="150" y="255" font-size="14" text-anchor="middle" fill="#F59E0B">We'll be back soon</text>
+</svg>

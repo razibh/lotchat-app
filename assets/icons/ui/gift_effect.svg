@@ -1,0 +1,13 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="24" cy="24" r="12" fill="url(#effectGradient)" fill-opacity="0.3"/>
+  <path d="M24 8 L26 14 L32 16 L26 18 L24 24 L22 18 L16 16 L22 14 L24 8Z" fill="#F59E0B"/>
+  <path d="M36 20 L38 24 L42 25 L38 26 L36 30 L34 26 L30 25 L34 24 L36 20Z" fill="#EF4444"/>
+  <path d="M12 28 L14 32 L18 33 L14 34 L12 38 L10 34 L6 33 L10 32 L12 28Z" fill="#3B82F6"/>
+  <defs>
+    <linearGradient id="effectGradient" x1="12" y1="12" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F59E0B"/>
+      <stop offset="0.5" stop-color="#EF4444"/>
+      <stop offset="1" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+</svg>

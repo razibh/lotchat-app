@@ -1,0 +1,18 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Clock -->
+  <circle cx="150" cy="140" r="40" stroke="#8B5CF6" stroke-width="3" fill="none"/>
+  <line x1="150" y1="140" x2="150" y2="120" stroke="#8B5CF6" stroke-width="2"/>
+  <line x1="150" y1="140" x2="170" y2="140" stroke="#8B5CF6" stroke-width="2"/>
+  
+  <!-- Text -->
+  <text x="150" y="210" font-size="24" font-weight="bold" text-anchor="middle" fill="#8B5CF6">Coming Soon</text>
+  <text x="150" y="240" font-size="16" text-anchor="middle" fill="#8B5CF6">Stay Tuned!</text>
+  
+  <!-- Sparkles -->
+  <circle cx="100" cy="100" r="3" fill="#FFD700">
+    <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="200" cy="180" r="3" fill="#EC4899">
+    <animate attributeName="r" values="2;4;2" dur="1.5s" begin="0.5s" repeatCount="indefinite"/>
+  </circle>
+</svg>

@@ -1,0 +1,15 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Signal Bars -->
+  <rect x="100" y="150" width="15" height="40" rx="3" fill="#D1D5DB"/>
+  <rect x="130" y="130" width="15" height="60" rx="3" fill="#D1D5DB"/>
+  <rect x="160" y="110" width="15" height="80" rx="3" fill="#D1D5DB"/>
+  <rect x="190" y="90" width="15" height="100" rx="3" fill="#D1D5DB"/>
+  
+  <!-- Cross on first bar -->
+  <line x1="95" y1="145" x2="120" y2="195" stroke="#EF4444" stroke-width="3" stroke-linecap="round"/>
+  <line x1="120" y1="145" x2="95" y2="195" stroke="#EF4444" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Text -->
+  <text x="150" y="230" font-size="18" font-weight="bold" text-anchor="middle" fill="#EF4444">No Connection</text>
+  <text x="150" y="255" font-size="14" text-anchor="middle" fill="#EF4444">Check your internet</text>
+</svg>
