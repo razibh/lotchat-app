@@ -33,7 +33,7 @@ class AnalyticsService {
   }
 
   // Track event
-  Future<void> trackEvent(String eventName, {Map<String, Object?>? parameters}) async {
+  Future<void> trackEvent(String eventName, {Map<String, Object>? parameters}) async {
     try {
       await _analytics.logEvent(
         name: eventName,
