@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 
+// Importance enum টি define করা হলো (যেহেতু Flutter-এ built-in Importance নেই)
+enum Importance {
+  low,
+  defaultImportance,
+  high,
+  max,
+}
+
 class NotificationChannels {
   // Channel IDs
   static const String channelGeneral = 'general_notifications';
@@ -77,7 +85,7 @@ class NotificationChannels {
   static Map<String, dynamic> getChannelConfig(String channelId) {
     switch (channelId) {
       case channelGeneral:
-        return <String, dynamic>{
+        return {
           'id': channelGeneral,
           'name': nameGeneral,
           'description': descGeneral,
@@ -86,7 +94,7 @@ class NotificationChannels {
           'icon': iconGeneral,
         };
       case channelMessages:
-        return <String, dynamic>{
+        return {
           'id': channelMessages,
           'name': nameMessages,
           'description': descMessages,
@@ -95,7 +103,7 @@ class NotificationChannels {
           'icon': iconMessages,
         };
       case channelGifts:
-        return <String, dynamic>{
+        return {
           'id': channelGifts,
           'name': nameGifts,
           'description': descGifts,
@@ -104,7 +112,7 @@ class NotificationChannels {
           'icon': iconGifts,
         };
       case channelCalls:
-        return <String, dynamic>{
+        return {
           'id': channelCalls,
           'name': nameCalls,
           'description': descCalls,
@@ -113,7 +121,7 @@ class NotificationChannels {
           'icon': iconCalls,
         };
       case channelGames:
-        return <String, dynamic>{
+        return {
           'id': channelGames,
           'name': nameGames,
           'description': descGames,
@@ -122,7 +130,7 @@ class NotificationChannels {
           'icon': iconGames,
         };
       case channelFriends:
-        return <String, dynamic>{
+        return {
           'id': channelFriends,
           'name': nameFriends,
           'description': descFriends,
@@ -131,7 +139,7 @@ class NotificationChannels {
           'icon': iconFriends,
         };
       case channelClan:
-        return <String, dynamic>{
+        return {
           'id': channelClan,
           'name': nameClan,
           'description': descClan,
@@ -140,7 +148,7 @@ class NotificationChannels {
           'icon': iconClan,
         };
       case channelPk:
-        return <String, dynamic>{
+        return {
           'id': channelPk,
           'name': namePk,
           'description': descPk,
@@ -149,7 +157,7 @@ class NotificationChannels {
           'icon': iconPk,
         };
       case channelPromotions:
-        return <String, dynamic>{
+        return {
           'id': channelPromotions,
           'name': namePromotions,
           'description': descPromotions,
@@ -158,7 +166,7 @@ class NotificationChannels {
           'icon': iconPromotions,
         };
       case channelSystem:
-        return <String, dynamic>{
+        return {
           'id': channelSystem,
           'name': nameSystem,
           'description': descSystem,
@@ -167,7 +175,7 @@ class NotificationChannels {
           'icon': iconSystem,
         };
       default:
-        return <String, dynamic>{
+        return {
           'id': channelGeneral,
           'name': nameGeneral,
           'description': descGeneral,
@@ -180,7 +188,7 @@ class NotificationChannels {
 
   // Get all channels
   static List<Map<String, dynamic>> getAllChannels() {
-    return <Map<String, dynamic>>[
+    return [
       getChannelConfig(channelGeneral),
       getChannelConfig(channelMessages),
       getChannelConfig(channelGifts),

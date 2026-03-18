@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/di/service_locator.dart';
-import '../../../core/services/socket_service.dart';
-import 'models/chat_model.dart';
+import '../../core/di/service_locator.dart';
+import '../../core/services/socket_service.dart';
 import 'models/chat_model.dart';
 import 'models/message_model.dart';
 import 'providers/message_provider.dart';
@@ -13,26 +12,21 @@ import 'widgets/typing_indicator.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   const ChatDetailScreen({
-    required this.chat, super.key,
+    super.key,
+    required this.chat,
   });
 
   final ChatModel chat;
 
   @override
   State<ChatDetailScreen> createState() => _ChatDetailScreenState();
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<ChatModel>('chat', chat));
-  }
 }
 
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   late final ScrollController _scrollController;
   late final SocketService _socketService;
-  final List<String> _typingUsers = <String>[];
-  final String _currentUserId = 'current_user_id'; // TODO: Get from AuthProvider
+  final List<String> _typingUsers = [];
+  final String _currentUserId = 'current_user_id';
 
   @override
   void initState() {
@@ -63,17 +57,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         if (data is Map<String, dynamic> && data['chatId'] == widget.chat.id) {
           final userId = data['userId'] as String? ?? '';
           if (userId.isNotEmpty && !_typingUsers.contains(userId)) {
-            setState(() {
-              _typingUsers.add(userId);
-            });
-
-            // Remove after 2 seconds
+            setState(() => _typingUsers.add(userId));
             Future.delayed(const Duration(seconds: 2), () {
-              if (mounted) {
-                setState(() {
-                  _typingUsers.remove(userId);
-                });
-              }
+              if (mounted) setState(() => _typingUsers.remove(userId));
             });
           }
         }
@@ -98,7 +84,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          0, // ListView reverse: true, so 0 is bottom
+          0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -108,7 +94,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   void _sendMessage(String text) {
     if (text.trim().isEmpty) return;
-
     try {
       context.read<MessageProvider>().sendMessage(
         chatId: widget.chat.id,
@@ -120,11 +105,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
   }
 
-  void _sendTyping() {
+  void _sendTyping(String text) {
     try {
-      _socketService.emit('typing', <String, dynamic>{
+      _socketService.emit('typing', {
         'chatId': widget.chat.id,
         'userId': _currentUserId,
+        'text': text,
       });
     } catch (e) {
       debugPrint('Error sending typing: $e');
@@ -137,7 +123,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       appBar: AppBar(
         elevation: 0,
         title: Row(
-          children: <Widget>[
+          children: [
             CircleAvatar(
               radius: 20,
               backgroundColor: Colors.grey[300],
@@ -158,7 +144,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
+                children: [
                   Text(
                     widget.chat.displayTitle,
                     style: const TextStyle(
@@ -181,36 +167,31 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             ),
           ],
         ),
-        actions: <Widget>[
+        actions: [
           IconButton(
             icon: const Icon(Icons.call),
-            onPressed: () {
-              // TODO: Implement voice call
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Voice call coming soon!')),
-              );
-            },
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Voice call coming soon!')),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.videocam),
-            onPressed: () {
-              // TODO: Implement video call
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Video call coming soon!')),
-              );
-            },
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Video call coming soon!')),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.info_outline),
-            onPressed: () {
-              // TODO: Show chat info
-              Navigator.pushNamed(context, '/chat-info', arguments: widget.chat);
-            },
+            onPressed: () => Navigator.pushNamed(
+                context,
+                '/chat-info',
+                arguments: widget.chat
+            ),
           ),
         ],
       ),
       body: Consumer<MessageProvider>(
-        builder: (BuildContext context, MessageProvider provider, Widget? child) {
+        builder: (context, provider, child) {
           if (provider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -219,7 +200,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
+                children: [
                   Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
                   SizedBox(height: 16),
                   Text(
@@ -237,41 +218,29 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           }
 
           return Column(
-            children: <Widget>[
+            children: [
               Expanded(
                 child: ListView.builder(
                   controller: _scrollController,
                   reverse: true,
                   padding: const EdgeInsets.all(8),
                   itemCount: provider.messages.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final MessageModel message = provider.messages[index];
-                    final bool isMe = message.senderId == _currentUserId;
-
-                    // Check if we should show avatar
-                    final bool showAvatar;
-                    if (index == provider.messages.length - 1) {
-                      showAvatar = true;
-                    } else {
-                      showAvatar = provider.messages[index + 1].senderId != message.senderId;
-                    }
+                  itemBuilder: (context, index) {
+                    final message = provider.messages[index];
+                    final isMe = message.senderId == _currentUserId;
+                    final showAvatar = index == provider.messages.length - 1 ||
+                        provider.messages[index + 1].senderId != message.senderId;
 
                     return MessageBubble(
                       message: message,
                       isMe: isMe,
                       showAvatar: showAvatar,
                       showName: !isMe && showAvatar,
-                      onReply: () {
-                        // TODO: Implement reply
-                      },
-                      onForward: () {
-                        // TODO: Implement forward
-                      },
+                      onReply: () {},
+                      onForward: () {},
                       onDelete: () => provider.deleteMessage(message.id),
-                      onReport: () {
-                        // TODO: Implement report
-                      },
-                      onReaction: (reaction) =>
+                      onReport: () {},
+                      onReaction: (String reaction) =>
                           provider.addReaction(message.id, reaction),
                     );
                   },
@@ -289,4 +258,4 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       ),
     );
   }
-}o
+}

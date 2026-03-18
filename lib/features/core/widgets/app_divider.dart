@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 
 class AppDivider extends StatelessWidget {
-
-  const AppDivider({
-    super.key,
-    this.text,
-    this.thickness = 1,
-    this.indent = 16,
-    this.endIndent = 16,
-    this.color,
-    this.textStyle,
-  });
   final String? text;
   final double thickness;
   final double indent;
   final double endIndent;
   final Color? color;
   final TextStyle? textStyle;
+
+  const AppDivider({
+    this.text,
+    this.thickness = 1,
+    this.indent = 16,
+    this.endIndent = 16,
+    this.color,
+    this.textStyle,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +31,7 @@ class AppDivider extends StatelessWidget {
     }
 
     return Row(
-      children: <>[
+      children: [
         Expanded(
           child: Divider(
             thickness: thickness,
@@ -72,24 +73,25 @@ class AppDivider extends StatelessWidget {
 }
 
 class VerticalDividerWithText extends StatelessWidget {
-
-  const VerticalDividerWithText({
-    required this.text, super.key,
-    this.thickness = 1,
-    this.height = 20,
-    this.color,
-    this.textStyle,
-  });
   final String text;
   final double thickness;
   final double height;
   final Color? color;
   final TextStyle? textStyle;
 
+  const VerticalDividerWithText({
+    required this.text,
+    this.thickness = 1,
+    this.height = 20,
+    this.color,
+    this.textStyle,
+    super.key,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: <>[
+      children: [
         Container(
           width: thickness,
           height: height,
@@ -119,18 +121,18 @@ class VerticalDividerWithText extends StatelessWidget {
 }
 
 class DashedDivider extends StatelessWidget {
-
-  const DashedDivider({
-    super.key,
-    this.height = 1,
-    this.color = Colors.grey,
-    this.dashWidth = 5,
-    this.dashSpacing = 3,
-  });
   final double height;
   final Color color;
   final double dashWidth;
   final double dashSpacing;
+
+  const DashedDivider({
+    this.height = 1,
+    this.color = Colors.grey,
+    this.dashWidth = 5,
+    this.dashSpacing = 3,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -138,13 +140,13 @@ class DashedDivider extends StatelessWidget {
       builder: (BuildContext context, BoxConstraints constraints) {
         final double totalWidth = constraints.maxWidth;
         final int dashCount = (totalWidth / (dashWidth + dashSpacing)).floor();
-        
+
         return Row(
           children: List.generate(dashCount, (int index) {
             return Container(
               width: dashWidth,
               height: height,
-              margin: EdgeInsets.only(right: dashSpacing),
+              margin: EdgeInsets.only(right: index == dashCount - 1 ? 0 : dashSpacing),
               color: color,
             );
           }),

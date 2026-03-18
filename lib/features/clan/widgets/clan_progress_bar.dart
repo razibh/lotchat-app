@@ -1,30 +1,33 @@
-// TODOImplement this library.import 'package:flutter/material.dart';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class ClanProgressBar extends StatelessWidget {
-
-  const ClanProgressBar({
-    required this.progress, super.key,
-    this.color = Colors.blue,
-    this.height = 8,
-    this.showPercentage = false,
-  });
   final double progress;
   final Color color;
   final double height;
   final bool showPercentage;
 
+  const ClanProgressBar({
+    required this.progress,
+    super.key,
+    this.color = Colors.blue,
+    this.height = 8,
+    this.showPercentage = false,
+  });
+
   @override
   Widget build(BuildContext context) {
+    // Ensure progress is between 0 and 1
+    final double clampedProgress = progress.clamp(0.0, 1.0);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         if (showPercentage)
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Text(
-              '${(progress * 100).toInt()}%',
+              '${(clampedProgress * 100).toInt()}%',
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -32,7 +35,7 @@ class ClanProgressBar extends StatelessWidget {
             ),
           ),
         Stack(
-          children: <>[
+          children: [
             // Background
             Container(
               height: height,
@@ -45,10 +48,10 @@ class ClanProgressBar extends StatelessWidget {
             // Progress
             Container(
               height: height,
-              width: MediaQuery.of(context).size.width * progress,
+              width: MediaQuery.of(context).size.width * clampedProgress,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: <>[color, color.withValues(alpha: 0.7)],
+                  colors: [color, color.withOpacity(0.7)],
                 ),
                 borderRadius: BorderRadius.circular(height / 2),
               ),

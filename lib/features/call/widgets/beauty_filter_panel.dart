@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';  // DiagnosticPropertiesBuilder এর জন্য
 
 class BeautyFilterPanel extends StatefulWidget {
+  final Function(Map<String, double>) onFilterChanged;
+  final Map<String, double> initialFilters;
 
   const BeautyFilterPanel({
-    required this.onFilterChanged, super.key,
-    this.initialFilters = const <String, double>{
+    required this.onFilterChanged,
+    super.key,
+    this.initialFilters = const {
       'smoothness': 0.5,
       'brightness': 0.5,
       'whiteness': 0.5,
@@ -12,8 +16,6 @@ class BeautyFilterPanel extends StatefulWidget {
       'bigEyes': 0.0,
     },
   });
-  final Function(Map<String, double>) onFilterChanged;
-  final Map<String, double> initialFilters;
 
   @override
   State<BeautyFilterPanel> createState() => _BeautyFilterPanelState();
@@ -49,9 +51,9 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: <>[
+        boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -60,10 +62,10 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <>[
+            children: [
               const Text(
                 'Beauty Filters',
                 style: TextStyle(
@@ -78,7 +80,7 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
             ],
           ),
           const Divider(),
-          
+
           // Smoothness
           _buildFilterSlider(
             label: 'Smoothness',
@@ -86,7 +88,7 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
             icon: Icons.face,
             color: Colors.pink,
           ),
-          
+
           // Brightness
           _buildFilterSlider(
             label: 'Brightness',
@@ -94,7 +96,7 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
             icon: Icons.brightness_6,
             color: Colors.amber,
           ),
-          
+
           // Whiteness
           _buildFilterSlider(
             label: 'Whiteness',
@@ -102,33 +104,33 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
             icon: Icons.wb_sunny,
             color: Colors.blue,
           ),
-          
+
           // Thin Face
           _buildFilterSlider(
             label: 'Thin Face',
             key: 'thinFace',
             icon: Icons.face_retouching_natural,
             color: Colors.purple,
-            min: -1,
+            min: -1.0,
           ),
-          
+
           // Big Eyes
           _buildFilterSlider(
             label: 'Big Eyes',
             key: 'bigEyes',
             icon: Icons.visibility,
             color: Colors.green,
-            min: -1,
+            min: -1.0,
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Reset Button
           Center(
             child: TextButton.icon(
               onPressed: () {
                 setState(() {
-                  _filters = <String, double>{
+                  _filters = {
                     'smoothness': 0.5,
                     'brightness': 0.5,
                     'whiteness': 0.5,
@@ -158,12 +160,12 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        children: <>[
+        children: [
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 20),
@@ -172,7 +174,7 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   label,
                   style: const TextStyle(
@@ -186,7 +188,7 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
                   max: max,
                   divisions: 100,
                   activeColor: color,
-                  onChanged: (double value) => _updateFilter(key, value),
+                  onChanged: (value) => _updateFilter(key, value),
                 ),
               ],
             ),
@@ -212,29 +214,29 @@ class _BeautyFilterPanelState extends State<BeautyFilterPanel> {
 
 // Preset Beauty Filters
 class BeautyFilterPresets {
-  static const Map<String, Map<String, double>> presets = <String, Map<String, double>>{
-    'Natural': <String, double>{
+  static const Map<String, Map<String, double>> presets = {
+    'Natural': {
       'smoothness': 0.3,
       'brightness': 0.5,
       'whiteness': 0.4,
       'thinFace': 0.0,
       'bigEyes': 0.0,
     },
-    'Glowing': <String, double>{
+    'Glowing': {
       'smoothness': 0.6,
       'brightness': 0.7,
       'whiteness': 0.6,
       'thinFace': 0.1,
       'bigEyes': 0.1,
     },
-    'Vintage': <String, double>{
+    'Vintage': {
       'smoothness': 0.4,
       'brightness': 0.4,
       'whiteness': 0.3,
       'thinFace': 0.0,
       'bigEyes': 0.0,
     },
-    'Kawaii': <String, double>{
+    'Kawaii': {
       'smoothness': 0.8,
       'brightness': 0.8,
       'whiteness': 0.8,

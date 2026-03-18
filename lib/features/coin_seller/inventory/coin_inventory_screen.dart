@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/gradient_background.dart';
 import '../../../core/widgets/neumorphic_button.dart';
@@ -6,9 +7,9 @@ import '../../../core/widgets/neumorphic_text_field.dart';
 import '../models/seller_models.dart';
 
 class CoinInventoryScreen extends StatefulWidget {
+  final String sellerId;
 
   const CoinInventoryScreen({required this.sellerId, super.key});
-  final String sellerId;
 
   @override
   State<CoinInventoryScreen> createState() => _CoinInventoryScreenState();
@@ -23,11 +24,11 @@ class CoinInventoryScreen extends StatefulWidget {
 class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
-  
-  List<CoinPackage> _packages = <>[];
-  List<BulkCoinPurchase> _purchases = <>[];
-  final List<CoinTransfer> _recentTransfers = <>[];
-  
+
+  List<CoinPackage> _packages = [];
+  List<BulkCoinPurchase> _purchases = [];
+  final List<CoinTransfer> _recentTransfers = [];
+
   final double _totalCoins = 25000;
   final double _lockedCoins = 5000;
   final double _availableCoins = 20000;
@@ -50,7 +51,7 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
     await Future.delayed(const Duration(seconds: 1));
 
     setState(() {
-      _packages = <>[
+      _packages = [
         CoinPackage(
           id: 'pkg_001',
           name: 'Starter Pack',
@@ -76,6 +77,7 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
           regularPrice: 1000,
           sellerPrice: 850,
           discountRate: 15,
+          isPopular: false,
         ),
         CoinPackage(
           id: 'pkg_004',
@@ -84,10 +86,11 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
           regularPrice: 5000,
           sellerPrice: 4250,
           discountRate: 15,
+          isPopular: false,
         ),
       ];
 
-      _purchases = <>[
+      _purchases = [
         BulkCoinPurchase(
           id: 'buy_001',
           sellerId: widget.sellerId,
@@ -114,13 +117,33 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
     });
   }
 
+  String _getPurchaseStatusText(PurchaseStatus status) {
+    if (status == PurchaseStatus.completed) {
+      return 'Completed';
+    } else if (status == PurchaseStatus.pending) {
+      return 'Pending';
+    } else {
+      return 'Failed';
+    }
+  }
+
+  Color _getPurchaseStatusColor(PurchaseStatus status) {
+    if (status == PurchaseStatus.completed) {
+      return Colors.green;
+    } else if (status == PurchaseStatus.pending) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildBalanceCard(),
               _buildTabBar(),
@@ -128,13 +151,13 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : TabBarView(
-                        controller: _tabController,
-                        children: <>[
-                          _buildPackagesTab(),
-                          _buildPurchasesTab(),
-                          _buildTransfersTab(),
-                        ],
-                      ),
+                  controller: _tabController,
+                  children: [
+                    _buildPackagesTab(),
+                    _buildPurchasesTab(),
+                    _buildTransfersTab(),
+                  ],
+                ),
               ),
             ],
           ),
@@ -147,7 +170,7 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -177,23 +200,19 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <>[
-            Colors.green.withValues(alpha: 0.3),
-            Colors.blue.withValues(alpha: 0.3),
+          colors: [
+            Colors.green.withOpacity(0.3),
+            Colors.blue.withOpacity(0.3),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Column(
-        children: <>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <>[
-              _buildBalanceItem('Total', _totalCoins.toString(), Icons.account_balance),
-              _buildBalanceItem('Locked', _lockedCoins.toString(), Icons.lock),
-              _buildBalanceItem('Available', _availableCoins.toString(), Icons.check_circle),
-            ],
-          ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildBalanceItem('Total', _totalCoins.toStringAsFixed(0), Icons.account_balance),
+          _buildBalanceItem('Locked', _lockedCoins.toStringAsFixed(0), Icons.lock),
+          _buildBalanceItem('Available', _availableCoins.toStringAsFixed(0), Icons.check_circle),
         ],
       ),
     );
@@ -201,7 +220,7 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
 
   Widget _buildBalanceItem(String label, String value, IconData icon) {
     return Column(
-      children: <>[
+      children: [
         Icon(icon, color: Colors.white),
         const SizedBox(height: 4),
         Text(
@@ -217,7 +236,7 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
     return Container(
       margin: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(30),
       ),
       child: TabBar(
@@ -228,7 +247,7 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
         ),
         labelColor: Colors.white,
         unselectedLabelColor: Colors.white70,
-        tabs: const <>[
+        tabs: const [
           Tab(text: 'Packages'),
           Tab(text: 'Purchases'),
           Tab(text: 'Transfers'),
@@ -253,20 +272,20 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
         border: pkg.isPopular
             ? Border.all(color: Colors.orange, width: 2)
             : null,
       ),
       child: Column(
-        children: <>[
+        children: [
           Row(
-            children: <>[
+            children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.2),
+                  color: Colors.orange.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.inventory, color: Colors.orange),
@@ -275,14 +294,14 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     Row(
-                      children: <>[
+                      children: [
                         Text(
                           pkg.name,
                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                         ),
-                        if (pkg.isPopular) ...<>[
+                        if (pkg.isPopular) ...[
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -304,9 +323,9 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: <>[
+                children: [
                   Text(
-                    '৳${pkg.currentPrice}',
+                    '৳${pkg.sellerPrice}',
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   Text(
@@ -324,7 +343,7 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <>[
+            children: [
               _buildActionButton('Edit', Icons.edit, () {}),
               _buildActionButton('Disable', Icons.visibility_off, () {}),
               _buildActionButton('Share', Icons.share, () {}),
@@ -341,11 +360,11 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
+          color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
-          children: <>[
+          children: [
             Icon(icon, color: Colors.white70, size: 14),
             const SizedBox(width: 4),
             Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10)),
@@ -367,19 +386,22 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
   }
 
   Widget _buildPurchaseCard(BulkCoinPurchase purchase) {
+    final statusText = _getPurchaseStatusText(purchase.status);
+    final statusColor = _getPurchaseStatusColor(purchase.status);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.2),
+              color: Colors.blue.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.shopping_cart, color: Colors.blue),
@@ -388,7 +410,7 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   '${purchase.coins} Coins',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -398,7 +420,7 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
                   style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
                 Text(
-                  'Price/Coin: ৳${purchase.pricePerCoin}',
+                  'Price/Coin: ৳${purchase.pricePerCoin.toStringAsFixed(2)}',
                   style: const TextStyle(color: Colors.white54, fontSize: 10),
                 ),
               ],
@@ -406,16 +428,16 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: <>[
+            children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.2),
+                  color: statusColor.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  purchase.status.toString().split('.').last,
-                  style: const TextStyle(color: Colors.green, fontSize: 10),
+                  statusText,
+                  style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 4),
@@ -435,12 +457,12 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
-            Icon(Icons.history, size: 60, color: Colors.white.withValues(alpha: 0.3)),
+          children: [
+            Icon(Icons.history, size: 60, color: Colors.white.withOpacity(0.3)),
             const SizedBox(height: 16),
             Text(
               'No transfers yet',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+              style: TextStyle(color: Colors.white.withOpacity(0.5)),
             ),
           ],
         ),
@@ -462,15 +484,15 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.2),
+              color: Colors.green.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.send, color: Colors.green),
@@ -479,7 +501,7 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   'To: ${transfer.receiverName}',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -493,7 +515,7 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: <>[
+            children: [
               Text(
                 '৳${transfer.amount}',
                 style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
@@ -510,6 +532,10 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
   }
 
   void _showAddPackageDialog() {
+    final nameController = TextEditingController();
+    final coinsController = TextEditingController();
+    final priceController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -517,26 +543,26 @@ class _CoinInventoryScreenState extends State<CoinInventoryScreen> with SingleTi
         title: const Text('Add New Package', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             NeumorphicTextField(
-              controller: TextEditingController(),
+              controller: nameController,
               hintText: 'Package Name',
             ),
             const SizedBox(height: 12),
             NeumorphicTextField(
-              controller: TextEditingController(),
+              controller: coinsController,
               hintText: 'Coins',
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 12),
             NeumorphicTextField(
-              controller: TextEditingController(),
+              controller: priceController,
               hintText: 'Price (৳)',
               keyboardType: TextInputType.number,
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),

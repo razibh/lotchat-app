@@ -1,12 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
-import '../../chat/models/chat_model.dart';
 
-import '../constants/firestore_constants.dart';
-import '../models/gift_model.dart';
+// 🟢 সঠিক imports
+import '../../chat/models/chat_model.dart';
 import '../../chat/models/room_model.dart';
-import '../models/user_model.dart';
+import '../../chat/models/gift_model.dart';
+import '../models/user_models.dart' as app; // 🟢 alias ব্যবহার
+import '../constants/firestore_constants.dart';
 
 class DatabaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -14,12 +15,11 @@ class DatabaseService {
 
   // ==================== CHAT OPERATIONS ====================
 
-  // 🟢 Save chat method
   Future<void> saveChat(ChatModel chat) async {
     try {
       debugPrint('📝 Saving chat: ${chat.id}');
 
-      await _firestore.collection('chats').doc(chat.id).set(<String, dynamic>{
+      await _firestore.collection('chats').doc(chat.id).set({
         'id': chat.id,
         'type': chat.type,
         'groupName': chat.groupName,
@@ -36,13 +36,10 @@ class DatabaseService {
     }
   }
 
-  // 🟢 Delete chat method
   Future<void> deleteChat(String chatId) async {
     try {
       debugPrint('📝 Deleting chat: $chatId');
-
       await _firestore.collection('chats').doc(chatId).delete();
-
       debugPrint('✅ Chat deleted successfully: $chatId');
     } catch (e) {
       debugPrint('❌ Error deleting chat: $e');
@@ -50,19 +47,17 @@ class DatabaseService {
     }
   }
 
-  // 🟢 Get chat by ID
   Future<ChatModel?> getChat(String chatId) async {
     try {
-      final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore.collection('chats').doc(chatId).get();
-
+      final doc = await _firestore.collection('chats').doc(chatId).get();
       if (doc.exists) {
-        final Map<String, dynamic> data = doc.data()!;
+        final data = doc.data()!;
         return ChatModel(
           id: doc.id,
           type: data['type'] ?? 'private',
           groupName: data['groupName'],
           groupAvatar: data['groupAvatar'],
-          participants: List<String>.from(data['participants'] ?? <dynamic>[]),
+          participants: List<String>.from(data['participants'] ?? []),
           lastMessage: data['lastMessage'],
           lastMessageTime: data['lastMessageTime'] != null
               ? DateTime.parse(data['lastMessageTime'])
@@ -76,21 +71,20 @@ class DatabaseService {
     }
   }
 
-  // 🟢 Get all chats for a user
   Stream<List<ChatModel>> getChats(String userId) {
     return _firestore
         .collection('chats')
         .where('participants', arrayContains: userId)
         .snapshots()
-        .map((QuerySnapshot<Map<String, dynamic>> snapshot) {
-      return snapshot.docs.map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-        final Map<String, dynamic> data = doc.data();
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
         return ChatModel(
           id: doc.id,
           type: data['type'] ?? 'private',
           groupName: data['groupName'],
           groupAvatar: data['groupAvatar'],
-          participants: List<String>.from(data['participants'] ?? <dynamic>[]),
+          participants: List<String>.from(data['participants'] ?? []),
           lastMessage: data['lastMessage'],
           lastMessageTime: data['lastMessageTime'] != null
               ? DateTime.parse(data['lastMessageTime'])
@@ -102,28 +96,29 @@ class DatabaseService {
 
   // ==================== USER OPERATIONS ====================
 
-  Future<void> createUser(UserModel user) async {
+  Future<void> createUser(app.User user) async {
     try {
       await _firestore
           .collection(FirestoreConstants.users)
-          .doc(user.uid)
+          .doc(user.id)
           .set(user.toJson());
-      debugPrint('✅ User created: ${user.uid}');
+      debugPrint('✅ User created: ${user.id}');
     } catch (e) {
       debugPrint('❌ Error creating user: $e');
       rethrow;
     }
   }
 
-  Future<UserModel?> getUser(String uid) async {
+  Future<app.User?> getUser(String uid) async {
     try {
-      final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore
+      final doc = await _firestore
           .collection(FirestoreConstants.users)
           .doc(uid)
           .get();
-
       if (doc.exists) {
-        return UserModel.fromJson(doc.data()!);
+        final data = doc.data()!;
+        data['id'] = doc.id;
+        return app.User.fromJson(data);
       }
       return null;
     } catch (e) {
@@ -158,28 +153,38 @@ class DatabaseService {
     }
   }
 
-  Stream<UserModel?> streamUser(String uid) {
+  Stream<app.User?> streamUser(String uid) {
     return _firestore
         .collection(FirestoreConstants.users)
         .doc(uid)
         .snapshots()
-        .map((DocumentSnapshot<Map<String, dynamic>> doc) => doc.exists ? UserModel.fromJson(doc.data()!) : null);
+        .map((doc) {
+      if (doc.exists) {
+        final data = doc.data()!;
+        data['id'] = doc.id;
+        return app.User.fromJson(data);
+      }
+      return null;
+    });
   }
 
-  Future<List<UserModel>> getUsersByCountry(String country) async {
+  Future<List<app.User>> getUsersByCountry(String country) async {
     try {
-      final QuerySnapshot<Map<String, dynamic>> query = await _firestore
+      final query = await _firestore
           .collection(FirestoreConstants.users)
-          .where('country', isEqualTo: country)
+          .where('countryId', isEqualTo: country)
           .limit(50)
           .get();
-
       return query.docs
-          .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => UserModel.fromJson(doc.data()))
+          .map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return app.User.fromJson(data);
+      })
           .toList();
     } catch (e) {
       debugPrint('Error getting users by country: $e');
-      return <UserModel>[];
+      return [];
     }
   }
 
@@ -200,13 +205,14 @@ class DatabaseService {
 
   Future<RoomModel?> getRoom(String roomId) async {
     try {
-      final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore
+      final doc = await _firestore
           .collection(FirestoreConstants.rooms)
           .doc(roomId)
           .get();
-
       if (doc.exists) {
-        return RoomModel.fromJson(doc.data()!);
+        final data = doc.data()!;
+        data['id'] = doc.id;
+        return RoomModel.fromJson(data);
       }
       return null;
     } catch (e) {
@@ -229,20 +235,22 @@ class DatabaseService {
   }
 
   Stream<List<RoomModel>> streamActiveRooms(String country) {
-    Query<Map<String, dynamic>> query = _firestore
+    var query = _firestore
         .collection(FirestoreConstants.rooms)
-        .where('isActive', isEqualTo: true);
-
+        .where('status', isEqualTo: 'active');
     if (country != 'All') {
       query = query.where('country', isEqualTo: country);
     }
-
     return query
         .orderBy('viewerCount', descending: true)
         .snapshots()
-        .map((QuerySnapshot<Map<String, dynamic>> snapshot) => snapshot.docs
-        .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => RoomModel.fromJson(doc.data()))
-        .toList(),);
+        .map((snapshot) => snapshot.docs
+        .map((doc) {
+      final data = doc.data();
+      data['id'] = doc.id;
+      return RoomModel.fromJson(data);
+    })
+        .toList());
   }
 
   // ==================== GIFT OPERATIONS ====================
@@ -255,41 +263,33 @@ class DatabaseService {
     String? roomId,
   }) async {
     try {
-      await _firestore.runTransaction((Transaction transaction) async {
-        // Update sender's coins
-        final DocumentReference<Map<String, dynamic>> senderRef = _firestore
+      await _firestore.runTransaction((transaction) async {
+        final senderRef = _firestore
             .collection(FirestoreConstants.users)
             .doc(senderId);
-
-        final DocumentSnapshot<Map<String, dynamic>> senderDoc = await transaction.get(senderRef);
+        final senderDoc = await transaction.get(senderRef);
         if (!senderDoc.exists) return;
 
         final senderCoins = senderDoc.data()!['coins'] ?? 0;
         if (senderCoins < amount) throw Exception('Insufficient coins');
 
-        transaction.update(senderRef, <String, dynamic>{
-          'coins': senderCoins - amount,
-        });
+        transaction.update(senderRef, {'coins': senderCoins - amount});
 
-        // Update receiver's diamonds
-        final DocumentReference<Map<String, dynamic>> receiverRef = _firestore
+        final receiverRef = _firestore
             .collection(FirestoreConstants.users)
             .doc(receiverId);
-
-        final DocumentSnapshot<Map<String, dynamic>> receiverDoc = await transaction.get(receiverRef);
+        final receiverDoc = await transaction.get(receiverRef);
         if (receiverDoc.exists) {
           final receiverDiamonds = receiverDoc.data()!['diamonds'] ?? 0;
-          transaction.update(receiverRef, <String, dynamic>{
-            'diamonds': receiverDiamonds + (amount ~/ 2), // 50% conversion
+          transaction.update(receiverRef, {
+            'diamonds': receiverDiamonds + (amount ~/ 2),
           });
         }
 
-        // Record gift transaction
-        final DocumentReference<Map<String, dynamic>> giftTransactionRef = _firestore
+        final giftTransactionRef = _firestore
             .collection(FirestoreConstants.transactions)
             .doc();
-
-        transaction.set(giftTransactionRef, <String, Object?>{
+        transaction.set(giftTransactionRef, {
           'senderId': senderId,
           'receiverId': receiverId,
           'giftId': giftId,
@@ -308,17 +308,19 @@ class DatabaseService {
 
   Future<List<GiftModel>> getAvailableGifts() async {
     try {
-      final QuerySnapshot<Map<String, dynamic>> snapshot = await _firestore
+      final snapshot = await _firestore
           .collection(FirestoreConstants.gifts)
           .where('isAvailable', isEqualTo: true)
           .get();
 
-      return snapshot.docs
-          .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => GiftModel.fromJson(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return GiftModel.fromJson(data);
+      }).toList();
     } catch (e) {
       debugPrint('Error getting gifts: $e');
-      return <GiftModel>[];
+      return [];
     }
   }
 
@@ -329,7 +331,7 @@ class DatabaseService {
       await _firestore
           .collection(FirestoreConstants.friendRequests)
           .doc()
-          .set(<String, dynamic>{
+          .set({
         'fromId': fromId,
         'toId': toId,
         'status': 'pending',
@@ -344,30 +346,25 @@ class DatabaseService {
 
   Future<void> acceptFriendRequest(String requestId) async {
     try {
-      await _firestore.runTransaction((Transaction transaction) async {
-        final DocumentReference<Map<String, dynamic>> requestRef = _firestore
+      await _firestore.runTransaction((transaction) async {
+        final requestRef = _firestore
             .collection(FirestoreConstants.friendRequests)
             .doc(requestId);
-
-        final DocumentSnapshot<Map<String, dynamic>> requestDoc = await transaction.get(requestRef);
+        final requestDoc = await transaction.get(requestRef);
         if (!requestDoc.exists) return;
 
-        final Map<String, dynamic> data = requestDoc.data()!;
+        final data = requestDoc.data()!;
         final fromId = data['fromId'];
         final toId = data['toId'];
 
-        // Update request status
-        transaction.update(requestRef, <String, dynamic>{'status': 'accepted'});
-
-        // Add to friends lists
+        transaction.update(requestRef, {'status': 'accepted'});
         transaction.update(
           _firestore.collection(FirestoreConstants.users).doc(fromId),
-          <String, dynamic>{'friends': FieldValue.arrayUnion(<dynamic>[toId])},
+          {'friends': FieldValue.arrayUnion([toId])},
         );
-
         transaction.update(
           _firestore.collection(FirestoreConstants.users).doc(toId),
-          <String, dynamic>{'friends': FieldValue.arrayUnion(<dynamic>[fromId])},
+          {'friends': FieldValue.arrayUnion([fromId])},
         );
       });
       debugPrint('✅ Friend request accepted');
@@ -381,24 +378,19 @@ class DatabaseService {
 
   Future<void> addCoins(String userId, int amount, String reason) async {
     try {
-      await _firestore.runTransaction((Transaction transaction) async {
-        final DocumentReference<Map<String, dynamic>> userRef = _firestore
+      await _firestore.runTransaction((transaction) async {
+        final userRef = _firestore
             .collection(FirestoreConstants.users)
             .doc(userId);
-
-        final DocumentSnapshot<Map<String, dynamic>> userDoc = await transaction.get(userRef);
+        final userDoc = await transaction.get(userRef);
         if (!userDoc.exists) return;
 
         final currentCoins = userDoc.data()!['coins'] ?? 0;
+        transaction.update(userRef, {'coins': currentCoins + amount});
 
-        transaction.update(userRef, <String, dynamic>{
-          'coins': currentCoins + amount,
-        });
-
-        // Record transaction
         transaction.set(
           _firestore.collection(FirestoreConstants.transactions).doc(),
-          <String, Object>{
+          {
             'userId': userId,
             'amount': amount,
             'type': 'credit',
@@ -424,7 +416,7 @@ class DatabaseService {
     List<String>? evidence,
   }) async {
     try {
-      await _firestore.collection(FirestoreConstants.reports).add(<String, dynamic>{
+      await _firestore.collection(FirestoreConstants.reports).add({
         'reporterId': reporterId,
         'reportedUserId': reportedUserId,
         'reason': reason,
@@ -442,41 +434,40 @@ class DatabaseService {
 
   // ==================== SEARCH OPERATIONS ====================
 
-  Future<List<UserModel>> searchUsers(String query) async {
+  Future<List<app.User>> searchUsers(String query) async {
     try {
-      if (query.isEmpty) return <UserModel>[];
+      if (query.isEmpty) return [];
 
-      // Search by username
-      final QuerySnapshot<Map<String, dynamic>> usernameQuery = await _firestore
+      final usernameQuery = await _firestore
           .collection(FirestoreConstants.users)
           .where('username', isGreaterThanOrEqualTo: query)
           .where('username', isLessThanOrEqualTo: '$query\uf8ff')
           .limit(20)
           .get();
 
-      // Search by ID
-      final QuerySnapshot<Map<String, dynamic>> idQuery = await _firestore
+      final idQuery = await _firestore
           .collection(FirestoreConstants.users)
           .where('uid', isEqualTo: query)
           .get();
 
-      final List<UserModel> results = <UserModel>[];
-
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in usernameQuery.docs) {
-        results.add(UserModel.fromJson(doc.data()));
+      final results = <app.User>[];
+      for (final doc in usernameQuery.docs) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        results.add(app.User.fromJson(data));
       }
-
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in idQuery.docs) {
-        final UserModel user = UserModel.fromJson(doc.data());
-        if (!results.any((UserModel u) => u.uid == user.uid)) {
+      for (final doc in idQuery.docs) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        final user = app.User.fromJson(data);
+        if (!results.any((u) => u.id == user.id)) {
           results.add(user);
         }
       }
-
       return results;
     } catch (e) {
       debugPrint('Error searching users: $e');
-      return <UserModel>[];
+      return [];
     }
   }
 
@@ -484,9 +475,9 @@ class DatabaseService {
 
   Future<void> batchWrite(List<Future<void>> operations) async {
     try {
-      final WriteBatch batch = _firestore.batch();
+      final batch = _firestore.batch();
 
-      for (Future<void> op in operations) {
+      for (var op in operations) {
         // Add operations to batch
         // This needs to be implemented based on your needs
       }

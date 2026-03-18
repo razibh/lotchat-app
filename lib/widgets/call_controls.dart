@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class CallControls extends StatelessWidget {
-
-  const CallControls({
-    required this.isVideoCall, required this.isMicMuted, required this.isSpeakerOn, required this.isCameraOn, required this.isFrontCamera, required this.onToggleMic, required this.onToggleSpeaker, required this.onToggleCamera, required this.onFlipCamera, required this.onToggleScreenShare, required this.onEndCall, super.key,
-    this.isScreenSharing = false,
-  });
   final bool isVideoCall;
   final bool isMicMuted;
   final bool isSpeakerOn;
@@ -18,6 +14,24 @@ class CallControls extends StatelessWidget {
   final VoidCallback onFlipCamera;
   final VoidCallback onToggleScreenShare;
   final VoidCallback onEndCall;
+  final bool showLabels;
+
+  const CallControls({
+    required this.isVideoCall,
+    required this.isMicMuted,
+    required this.isSpeakerOn,
+    required this.isCameraOn,
+    required this.isFrontCamera,
+    required this.onToggleMic,
+    required this.onToggleSpeaker,
+    required this.onToggleCamera,
+    required this.onFlipCamera,
+    required this.onToggleScreenShare,
+    required this.onEndCall,
+    this.isScreenSharing = false,
+    this.showLabels = true,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,11 +44,11 @@ class CallControls extends StatelessWidget {
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             // Main Controls Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <>[
+              children: [
                 _buildControlButton(
                   icon: isMicMuted ? Icons.mic_off : Icons.mic,
                   label: isMicMuted ? 'Unmute' : 'Mute',
@@ -77,13 +91,13 @@ class CallControls extends StatelessWidget {
                   ),
               ],
             ),
-            
+
             const SizedBox(height: 8),
-            
+
             // Additional Info
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: <>[
+              children: [
                 if (isScreenSharing)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -92,7 +106,7 @@ class CallControls extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Row(
-                      children: <>[
+                      children: [
                         Icon(Icons.fiber_manual_record, color: Colors.white, size: 12),
                         SizedBox(width: 4),
                         Text(
@@ -121,12 +135,12 @@ class CallControls extends StatelessWidget {
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
+        children: [
           Container(
             width: size,
             height: size,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
+              color: color.withOpacity(0.2),
               shape: BoxShape.circle,
               border: Border.all(color: color, width: 2),
             ),
@@ -136,14 +150,16 @@ class CallControls extends StatelessWidget {
               size: size * 0.4,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 10,
+          if (showLabels) ...[
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 10,
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -158,6 +174,7 @@ class CallControls extends StatelessWidget {
     properties.add(DiagnosticsProperty<bool>('isCameraOn', isCameraOn));
     properties.add(DiagnosticsProperty<bool>('isFrontCamera', isFrontCamera));
     properties.add(DiagnosticsProperty<bool>('isScreenSharing', isScreenSharing));
+    properties.add(DiagnosticsProperty<bool>('showLabels', showLabels));
     properties.add(ObjectFlagProperty<VoidCallback>.has('onToggleMic', onToggleMic));
     properties.add(ObjectFlagProperty<VoidCallback>.has('onToggleSpeaker', onToggleSpeaker));
     properties.add(ObjectFlagProperty<VoidCallback>.has('onToggleCamera', onToggleCamera));
@@ -168,9 +185,9 @@ class CallControls extends StatelessWidget {
 }
 
 class CallTimer extends StatelessWidget {
-
-  const CallTimer({required this.duration, super.key});
   final Duration duration;
+
+  const CallTimer({super.key, required this.duration});
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +199,7 @@ class CallTimer extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
+        children: [
           const Icon(
             Icons.timer,
             color: Colors.white70,
@@ -225,14 +242,18 @@ class CallTimer extends StatelessWidget {
 }
 
 class IncomingCallControls extends StatelessWidget {
-
-  const IncomingCallControls({
-    required this.onAccept, required this.onDecline, required this.callerName, required this.isVideoCall, super.key,
-  });
   final VoidCallback onAccept;
   final VoidCallback onDecline;
   final String callerName;
   final bool isVideoCall;
+
+  const IncomingCallControls({
+    required this.onAccept,
+    required this.onDecline,
+    required this.callerName,
+    required this.isVideoCall,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -244,7 +265,7 @@ class IncomingCallControls extends StatelessWidget {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
+        children: [
           Text(
             callerName,
             style: const TextStyle(
@@ -261,7 +282,7 @@ class IncomingCallControls extends StatelessWidget {
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <>[
+            children: [
               _buildActionButton(
                 icon: Icons.call_end,
                 label: 'Decline',
@@ -293,12 +314,12 @@ class IncomingCallControls extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Column(
-        children: <>[
+        children: [
           Container(
             width: size,
             height: size,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
+              color: color.withOpacity(0.2),
               shape: BoxShape.circle,
               border: Border.all(color: color, width: 2),
             ),

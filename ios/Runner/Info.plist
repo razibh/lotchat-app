@@ -3,6 +3,22 @@
 <plist version="1.0">
 <dict>
     <!-- Basic App Information -->
+    <key>NSCameraUsageDescription</key>
+    <string>We need camera access for video calls and photos</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>We need microphone access for audio calls</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>We need photo library access to share images</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>We need location access to share your location</string>
+    <key>NSContactsUsageDescription</key>
+    <string>We need contacts access to share contacts</string>
+    <key>NSCalendarsUsageDescription</key>
+    <string>We need calendar access for events</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>We need bluetooth access for calls</string>
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>We need bluetooth access for calls</string>
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>

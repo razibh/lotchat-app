@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 import 'attachment_picker.dart';
 import 'emoji_picker.dart';
 
 class MessageInput extends StatefulWidget {
-
   const MessageInput({
-    required this.onSend, super.key,
+    super.key,
+    required this.onSend,
     this.onAttachment,
     this.onTyping,
     this.enabled = true,
   });
+
   final Function(String) onSend;
   final Function(File)? onAttachment;
   final Function(String)? onTyping;
@@ -53,7 +55,10 @@ class _MessageInputState extends State<MessageInput> {
     setState(() {
       _isComposing = _controller.text.trim().isNotEmpty;
     });
-    widget.onTyping?.call(_controller.text);
+    // 🟢 Null safety check
+    if (widget.onTyping != null) {
+      widget.onTyping!(_controller.text);
+    }
   }
 
   void _handleSend() {
@@ -72,7 +77,7 @@ class _MessageInputState extends State<MessageInput> {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: <>[
+        boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
@@ -82,7 +87,7 @@ class _MessageInputState extends State<MessageInput> {
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.attach_file),
             onPressed: widget.enabled ? _showAttachmentPicker : null,
@@ -91,11 +96,11 @@ class _MessageInputState extends State<MessageInput> {
             icon: const Icon(Icons.emoji_emotions),
             onPressed: widget.enabled
                 ? () {
-                    setState(() {
-                      _showEmoji = !_showEmoji;
-                      if (_showEmoji) _focusNode.unfocus();
-                    });
-                  }
+              setState(() {
+                _showEmoji = !_showEmoji;
+                if (_showEmoji) _focusNode.unfocus();
+              });
+            }
                 : null,
           ),
           Expanded(
@@ -128,12 +133,15 @@ class _MessageInputState extends State<MessageInput> {
             ),
             onPressed: widget.enabled
                 ? () {
-                    if (_isComposing) {
-                      _handleSend();
-                    } else {
-                      // Start voice recording
-                    }
-                  }
+              if (_isComposing) {
+                _handleSend();
+              } else {
+                // TODO: Start voice recording
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Voice recording coming soon!')),
+                );
+              }
+            }
                 : null,
           ),
         ],
@@ -147,23 +155,38 @@ class _MessageInputState extends State<MessageInput> {
       builder: (BuildContext context) => AttachmentPicker(
         onPickImage: () {
           Navigator.pop(context);
-          // Pick image
+          // TODO: Pick image
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Image picker coming soon!')),
+          );
         },
         onPickVideo: () {
           Navigator.pop(context);
-          // Pick video
+          // TODO: Pick video
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Video picker coming soon!')),
+          );
         },
         onPickFile: () {
           Navigator.pop(context);
-          // Pick file
+          // TODO: Pick file
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('File picker coming soon!')),
+          );
         },
         onSendLocation: () {
           Navigator.pop(context);
-          // Send location
+          // TODO: Send location
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location picker coming soon!')),
+          );
         },
         onSendContact: () {
           Navigator.pop(context);
-          // Send contact
+          // TODO: Send contact
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Contact picker coming soon!')),
+          );
         },
       ),
     );

@@ -1,26 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../core/utils/date_formatter.dart';
+import 'package:flutter/foundation.dart';
 import '../models/clan_member_model.dart';
 
+// MessageType enum
 enum MessageType { text, image, gift, system, announcement }
 
 class ClanChatBubble extends StatelessWidget {
-
-  const ClanChatBubble({
-    required this.sender, required this.message, required this.type, required this.timestamp, required this.isMe, super.key,
-    this.showAvatar = true,
-    this.showName = true,
-    this.imageUrl,
-    this.giftName,
-    this.giftPrice,
-    this.reactions,
-    this.onTap,
-    this.onLongPress,
-    this.onReply,
-    this.onReact,
-    this.onPin,
-    this.onReport,
-  });
   final ClanMemberModel sender;
   final String message;
   final MessageType type;
@@ -39,11 +24,32 @@ class ClanChatBubble extends StatelessWidget {
   final VoidCallback? onPin;
   final VoidCallback? onReport;
 
+  const ClanChatBubble({
+    required this.sender,
+    required this.message,
+    required this.type,
+    required this.timestamp,
+    required this.isMe,
+    super.key,
+    this.showAvatar = true,
+    this.showName = true,
+    this.imageUrl,
+    this.giftName,
+    this.giftPrice,
+    this.reactions,
+    this.onTap,
+    this.onLongPress,
+    this.onReply,
+    this.onReact,
+    this.onPin,
+    this.onReport,
+  });
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      onLongPress: _showOptions,
+      onLongPress: () => _showOptions(context),
       child: Container(
         margin: EdgeInsets.only(
           left: isMe ? 64 : 8,
@@ -54,16 +60,16 @@ class ClanChatBubble extends StatelessWidget {
         child: Row(
           mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <>[
+          children: [
             if (!isMe && showAvatar)
               _buildAvatar()
             else if (!isMe && !showAvatar)
               const SizedBox(width: 40),
-            
+
             Expanded(
               child: Column(
                 crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                children: <>[
+                children: [
                   if (!isMe && showName)
                     Padding(
                       padding: const EdgeInsets.only(left: 8, bottom: 2),
@@ -76,22 +82,22 @@ class ClanChatBubble extends StatelessWidget {
                         ),
                       ),
                     ),
-                  
+
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: _getBubbleColor(),
                       borderRadius: BorderRadius.circular(16).copyWith(
-                        bottomLeft: isMe 
-                            ? const Radius.circular(16) 
+                        bottomLeft: isMe
+                            ? const Radius.circular(16)
                             : Radius.zero,
-                        bottomRight: isMe 
-                            ? Radius.zero 
+                        bottomRight: isMe
+                            ? Radius.zero
                             : const Radius.circular(16),
                       ),
-                      boxShadow: <>[
+                      boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: Colors.black.withOpacity(0.05),
                           blurRadius: 5,
                           offset: const Offset(0, 2),
                         ),
@@ -99,18 +105,18 @@ class ClanChatBubble extends StatelessWidget {
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <>[
+                      children: [
                         if (type == MessageType.system)
                           _buildSystemMessage()
                         else if (type == MessageType.announcement)
                           _buildAnnouncement()
                         else if (type == MessageType.image)
-                          _buildImageMessage()
-                        else if (type == MessageType.gift)
-                          _buildGiftMessage()
-                        else
-                          _buildTextMessage(),
-                        
+                            _buildImageMessage()
+                          else if (type == MessageType.gift)
+                              _buildGiftMessage()
+                            else
+                              _buildTextMessage(),
+
                         _buildFooter(),
                       ],
                     ),
@@ -136,7 +142,7 @@ class ClanChatBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: Stack(
-        children: <>[
+        children: [
           CircleAvatar(
             radius: 16,
             backgroundImage: sender.avatar != null
@@ -145,22 +151,18 @@ class ClanChatBubble extends StatelessWidget {
             backgroundColor: Colors.grey.shade200,
             child: sender.avatar == null
                 ? Text(
-                    sender.username[0].toUpperCase(),
-                    style: const TextStyle(fontSize: 12),
-                  )
+              sender.username[0].toUpperCase(),
+              style: const TextStyle(fontSize: 12),
+            )
                 : null,
           ),
           if (sender.isOnline)
-            Positioned(
+            const Positioned(
               bottom: 0,
               right: 0,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                ),
+              child: CircleAvatar(
+                radius: 4,
+                backgroundColor: Colors.green,
               ),
             ),
         ],
@@ -180,7 +182,7 @@ class ClanChatBubble extends StatelessWidget {
 
   Widget _buildImageMessage() {
     return Column(
-      children: <>[
+      children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: Image.network(
@@ -188,7 +190,7 @@ class ClanChatBubble extends StatelessWidget {
             height: 150,
             width: 150,
             fit: BoxFit.cover,
-            loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? progress) {
+            loadingBuilder: (context, child, progress) {
               if (progress == null) return child;
               return Container(
                 height: 150,
@@ -201,7 +203,7 @@ class ClanChatBubble extends StatelessWidget {
             },
           ),
         ),
-        if (message.isNotEmpty) ...<>[
+        if (message.isNotEmpty) ...[
           const SizedBox(height: 8),
           _buildTextMessage(),
         ],
@@ -214,12 +216,12 @@ class ClanChatBubble extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: <>[Colors.purple, Colors.pink],
+          colors: [Colors.purple, Colors.pink],
         ),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
-        children: <>[
+        children: [
           const Icon(
             Icons.card_giftcard,
             color: Colors.white,
@@ -229,7 +231,7 @@ class ClanChatBubble extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   giftName ?? 'Gift',
                   style: const TextStyle(
@@ -239,7 +241,7 @@ class ClanChatBubble extends StatelessWidget {
                 ),
                 if (giftPrice != null)
                   Text(
-                    '$giftPrice coins',
+                    '${giftPrice!} coins',
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
@@ -282,7 +284,7 @@ class ClanChatBubble extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
-        children: <>[
+        children: [
           const Icon(
             Icons.campaign,
             color: Colors.amber,
@@ -307,9 +309,9 @@ class ClanChatBubble extends StatelessWidget {
       padding: const EdgeInsets.only(top: 4),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
+        children: [
           Text(
-            DateFormatter.formatChatTime(timestamp),
+            _formatDate(timestamp),
             style: TextStyle(
               fontSize: 10,
               color: isMe ? Colors.white70 : Colors.grey,
@@ -325,7 +327,7 @@ class ClanChatBubble extends StatelessWidget {
       padding: const EdgeInsets.only(top: 2),
       child: Wrap(
         spacing: 2,
-        children: reactions!.entries.map((MapEntry<String, dynamic> entry) {
+        children: reactions!.entries.map((entry) {
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
@@ -335,7 +337,7 @@ class ClanChatBubble extends StatelessWidget {
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: <>[
+              children: [
                 Text(entry.key),
                 const SizedBox(width: 2),
                 Text(
@@ -360,12 +362,15 @@ class ClanChatBubble extends StatelessWidget {
     return isMe ? Colors.blue : Colors.grey.shade200;
   }
 
-  void _showOptions() {
+  void _showOptions(BuildContext context) {
+    final isLeaderOrCoLeader = sender.role == MemberClanRole.leader ||
+        sender.role == MemberClanRole.coLeader;
+
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) => SafeArea(
         child: Wrap(
-          children: <>[
+          children: [
             ListTile(
               leading: const Icon(Icons.reply),
               title: const Text('Reply'),
@@ -382,7 +387,7 @@ class ClanChatBubble extends StatelessWidget {
                 onReact?.call();
               },
             ),
-            if (!isMe && sender.role != ClanRole.member) ...<>[
+            if (!isMe && isLeaderOrCoLeader) ...[
               ListTile(
                 leading: const Icon(Icons.push_pin),
                 title: const Text('Pin Message'),
@@ -392,7 +397,7 @@ class ClanChatBubble extends StatelessWidget {
                 },
               ),
             ],
-            if (!isMe) ...<>[
+            if (!isMe) ...[
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.flag, color: Colors.orange),
@@ -407,6 +412,27 @@ class ClanChatBubble extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      if (difference.inHours > 0) {
+        return '${difference.inHours}h ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes}m ago';
+      } else {
+        return 'Just now';
+      }
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
   }
 
   @override

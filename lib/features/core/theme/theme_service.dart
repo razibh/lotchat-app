@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
+import 'package:provider/provider.dart'; // Consumer এর জন্য
 
 class ThemeService {
   static const String _themeKey = 'theme_mode';
-  
+
   // Save theme mode
   static Future<void> saveThemeMode(ThemeMode mode) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -66,7 +68,7 @@ class ThemeService {
   // Get theme colors
   static Map<String, Color> getThemeColors(Brightness brightness) {
     if (brightness == Brightness.dark) {
-      return <String, >{
+      return {
         'background': const Color(0xFF1a1a2e),
         'surface': const Color(0xFF16213e),
         'card': const Color(0xFF1E293B),
@@ -75,7 +77,7 @@ class ThemeService {
         'textHint': Colors.white38,
       };
     } else {
-      return <String, >{
+      return {
         'background': const Color(0xFFF5F5F5),
         'surface': Colors.white,
         'card': Colors.white,
@@ -89,13 +91,13 @@ class ThemeService {
 
 // Theme Provider for state management
 class ThemeProvider extends ChangeNotifier {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  ThemeMode get themeMode => _themeMode;
 
   ThemeProvider() {
     _loadTheme();
   }
-  ThemeMode _themeMode = ThemeMode.system;
-
-  ThemeMode get themeMode => _themeMode;
 
   Future<void> _loadTheme() async {
     _themeMode = await ThemeService.loadThemeMode();
@@ -117,9 +119,9 @@ class ThemeProvider extends ChangeNotifier {
 
 // Theme Helper Widget
 class ThemeBuilder extends StatelessWidget {
+  final Widget Function(BuildContext context, ThemeMode themeMode) builder;
 
   const ThemeBuilder({required this.builder, super.key});
-  final Widget Function(BuildContext context, ThemeMode themeMode) builder;
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +135,6 @@ class ThemeBuilder extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(ObjectFlagProperty<Widget Function(BuildContext context, ThemeMode themeMode)>.has('builder', builder));
+    properties.add(DiagnosticsProperty<Widget Function(BuildContext, ThemeMode)>('builder', builder));
   }
 }

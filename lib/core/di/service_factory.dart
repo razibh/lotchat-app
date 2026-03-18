@@ -1,31 +1,31 @@
 // lib/core/di/service_factory.dart
 import 'package:get_it/get_it.dart';
 
-typedef ServiceCreator<T> = T Function();
+typedef ServiceCreator<T extends Object> = T Function(); // 🟢 Fixed: Added extends Object
 
 class ServiceFactory {
-  final Map<Type, ServiceCreator> _factories = <Type, ServiceCreator<dynamic>>{};
-  final Map<Type, dynamic> _singletons = <Type, dynamic>{};
+  final Map<Type, ServiceCreator<Object>> _factories = {}; // 🟢 Fixed: Use Object instead of dynamic
+  final Map<Type, Object> _singletons = {}; // 🟢 Fixed: Use Object instead of dynamic
   final GetIt _getIt = GetIt.instance;
 
   // Register a factory (creates new instance each time)
-  void registerFactory<T>(ServiceCreator<T> factory) {
+  void registerFactory<T extends Object>(ServiceCreator<T> factory) { // 🟢 Fixed: Added extends Object
     _factories[T] = factory;
   }
 
   // Register a singleton (same instance always)
-  void registerSingleton<T>(T instance) {
+  void registerSingleton<T extends Object>(T instance) { // 🟢 Fixed: Added extends Object
     _singletons[T] = instance;
     _getIt.registerSingleton<T>(instance);
   }
 
   // Register lazy singleton (created when first needed)
-  void registerLazySingleton<T>(ServiceCreator<T> factory) {
+  void registerLazySingleton<T extends Object>(ServiceCreator<T> factory) { // 🟢 Fixed: Added extends Object
     _getIt.registerLazySingleton<T>(factory);
   }
 
   // Get service instance
-  T get<T>() {
+  T get<T extends Object>() { // 🟢 Fixed: Added extends Object
     // Check singleton first
     if (_singletons.containsKey(T)) {
       return _singletons[T] as T;
@@ -33,7 +33,7 @@ class ServiceFactory {
 
     // Check factory
     if (_factories.containsKey(T)) {
-      return _factories[T]!() as T;
+      return (_factories[T]!() as T);
     }
 
     // Check GetIt
@@ -45,22 +45,22 @@ class ServiceFactory {
   }
 
   // Create new instance (ignores singleton)
-  T createNew<T>() {
+  T createNew<T extends Object>() { // 🟢 Fixed: Added extends Object
     if (_factories.containsKey(T)) {
-      return _factories[T]!() as T;
+      return (_factories[T]!() as T);
     }
     throw Exception('Factory for $T not found');
   }
 
   // Check if service exists
-  bool has<T>() {
-    return _singletons.containsKey(T) || 
-           _factories.containsKey(T) || 
-           _getIt.isRegistered<T>();
+  bool has<T extends Object>() { // 🟢 Fixed: Added extends Object
+    return _singletons.containsKey(T) ||
+        _factories.containsKey(T) ||
+        _getIt.isRegistered<T>();
   }
 
   // Remove service
-  void remove<T>() {
+  void remove<T extends Object>() { // 🟢 Fixed: Added extends Object
     _singletons.remove(T);
     _factories.remove(T);
     if (_getIt.isRegistered<T>()) {

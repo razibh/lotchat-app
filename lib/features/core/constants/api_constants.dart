@@ -3,7 +3,7 @@ class ApiConstants {
   static const String baseUrl = 'https://api.lotchat.com/v1';
   static const String socketUrl = 'wss://socket.lotchat.com';
   static const String cdnUrl = 'https://cdn.lotchat.com';
-  
+
   // Development URLs
   static const String devBaseUrl = 'https://dev-api.lotchat.com/v1';
   static const String devSocketUrl = 'wss://dev-socket.lotchat.com';
@@ -145,7 +145,7 @@ class ApiConstants {
   // Seller Endpoints
   static const String sellers = '/sellers';
   static const String sellerCoins = '/sellers/coins';
-  static const string sellerAddCoins = '/sellers/add-coins';
+  static const String sellerAddCoins = '/sellers/add-coins'; // ✅ 'string' → 'String'
   static const String sellerSales = '/sellers/sales';
 
   // Upload Endpoints

@@ -15,49 +15,73 @@ enum AppLifecycleStateEx {
 
 class AppLifecycleProvider extends ChangeNotifier {
   final LoggerService _logger = ServiceLocator().get<LoggerService>();
-  
+
   AppLifecycleStateEx _currentState = AppLifecycleStateEx.resumed;
   DateTime _lastBackgroundTime = DateTime.now();
   int _backgroundDuration = 0;
   bool _isInBackground = false;
-  StreamSubscription? _lifecycleSubscription;
+  final List<AppLifecycleListener> _listeners = [];
 
   AppLifecycleStateEx get currentState => _currentState;
   bool get isInBackground => _isInBackground;
   int get backgroundDuration => _backgroundDuration;
 
   void initialize() {
-    _lifecycleSubscription = WidgetsBinding.instance.lifecycleStateChanges.listen(
-      _handleLifecycleChange,
+    // Add lifecycle listener
+    final listener = AppLifecycleListener(
+      onResume: _onResume,
+      onPause: _onPause,
+      onInactive: _onInactive,
+      onDetach: _onDetach,
+      onHide: _onHide,
+      onShow: _onShow,
     );
+
+    _listeners.add(listener);
+
+    _logger.debug('App lifecycle provider initialized');
   }
 
-  void _handleLifecycleChange(AppLifecycleState state) {
-    switch (state) {
-      case AppLifecycleState.resumed:
-        _currentState = AppLifecycleStateEx.resumed;
-        if (_isInBackground) {
-          _backgroundDuration = DateTime.now().difference(_lastBackgroundTime).inSeconds;
-          _logger.info('App resumed after $_backgroundDuration seconds in background');
-        }
-        _isInBackground = false;
-
-      case AppLifecycleState.inactive:
-        _currentState = AppLifecycleStateEx.inactive;
-
-      case AppLifecycleState.paused:
-        _currentState = AppLifecycleStateEx.paused;
-        _lastBackgroundTime = DateTime.now();
-        _isInBackground = true;
-
-      case AppLifecycleState.detached:
-        _currentState = AppLifecycleStateEx.detached;
-
-      default:
-        _currentState = AppLifecycleStateEx.background;
+  void _onResume() {
+    _currentState = AppLifecycleStateEx.resumed;
+    if (_isInBackground) {
+      _backgroundDuration = DateTime.now().difference(_lastBackgroundTime).inSeconds;
+      _logger.info('App resumed after $_backgroundDuration seconds in background');
     }
+    _isInBackground = false;
+    _logger.debug('App lifecycle state changed: ${_currentState.name}');
+    notifyListeners();
+  }
 
-    _logger.debug('App lifecycle state changed: $_currentState');
+  void _onPause() {
+    _currentState = AppLifecycleStateEx.paused;
+    _lastBackgroundTime = DateTime.now();
+    _isInBackground = true;
+    _logger.debug('App lifecycle state changed: ${_currentState.name}');
+    notifyListeners();
+  }
+
+  void _onInactive() {
+    _currentState = AppLifecycleStateEx.inactive;
+    _logger.debug('App lifecycle state changed: ${_currentState.name}');
+    notifyListeners();
+  }
+
+  void _onDetach() {
+    _currentState = AppLifecycleStateEx.detached;
+    _logger.debug('App lifecycle state changed: ${_currentState.name}');
+    notifyListeners();
+  }
+
+  void _onHide() {
+    _currentState = AppLifecycleStateEx.background;
+    _logger.debug('App lifecycle state changed: ${_currentState.name}');
+    notifyListeners();
+  }
+
+  void _onShow() {
+    _currentState = AppLifecycleStateEx.resumed;
+    _logger.debug('App lifecycle state changed: ${_currentState.name}');
     notifyListeners();
   }
 
@@ -73,7 +97,11 @@ class AppLifecycleProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _lifecycleSubscription?.cancel();
+    // Dispose all listeners
+    for (final listener in _listeners) {
+      listener.dispose();
+    }
+    _listeners.clear();
     super.dispose();
   }
 }

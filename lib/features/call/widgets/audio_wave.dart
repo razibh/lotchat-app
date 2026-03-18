@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';  // DiagnosticPropertiesBuilder এর জন্য
 
 class AudioWave extends StatefulWidget {
+  final bool isActive;
+  final Color color;
+  final double height;
+  final double width;
+  final int barCount;
+  final Duration animationDuration;
 
   const AudioWave({
     super.key,
@@ -11,12 +18,6 @@ class AudioWave extends StatefulWidget {
     this.barCount = 5,
     this.animationDuration = const Duration(milliseconds: 300),
   });
-  final bool isActive;
-  final Color color;
-  final double height;
-  final double width;
-  final int barCount;
-  final Duration animationDuration;
 
   @override
   State<AudioWave> createState() => _AudioWaveState();
@@ -35,7 +36,7 @@ class AudioWave extends StatefulWidget {
 
 class _AudioWaveState extends State<AudioWave> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  final List<double> _heights = <double>[];
+  final List<double> _heights = [];
 
   @override
   void initState() {
@@ -44,7 +45,7 @@ class _AudioWaveState extends State<AudioWave> with SingleTickerProviderStateMix
       vsync: this,
       duration: widget.animationDuration,
     )..repeat(reverse: true);
-    
+
     // Initialize random heights
     for (var i = 0; i < widget.barCount; i++) {
       _heights.add(0.3 + (i * 0.1));
@@ -65,13 +66,13 @@ class _AudioWaveState extends State<AudioWave> with SingleTickerProviderStateMix
         width: widget.width,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.barCount, (int index) {
+          children: List.generate(widget.barCount, (index) {
             return Container(
               width: 4,
               height: 4,
               margin: const EdgeInsets.symmetric(horizontal: 2),
               decoration: BoxDecoration(
-                color: widget.color.withValues(alpha: 0.3),
+                color: widget.color.withOpacity(0.3),
                 shape: BoxShape.circle,
               ),
             );
@@ -82,13 +83,13 @@ class _AudioWaveState extends State<AudioWave> with SingleTickerProviderStateMix
 
     return AnimatedBuilder(
       animation: _controller,
-      builder: (BuildContext context, Widget? child) {
+      builder: (context, child) {
         return SizedBox(
           height: widget.height,
           width: widget.width,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(widget.barCount, (int index) {
+            children: List.generate(widget.barCount, (index) {
               final scale = 0.5 + (index * 0.1) + (_controller.value * 0.5);
               return Container(
                 width: 4,
@@ -108,6 +109,10 @@ class _AudioWaveState extends State<AudioWave> with SingleTickerProviderStateMix
 }
 
 class CircularAudioWave extends StatefulWidget {
+  final bool isActive;
+  final Color color;
+  final double radius;
+  final int ringCount;
 
   const CircularAudioWave({
     super.key,
@@ -116,10 +121,6 @@ class CircularAudioWave extends StatefulWidget {
     this.radius = 50,
     this.ringCount = 3,
   });
-  final bool isActive;
-  final Color color;
-  final double radius;
-  final int ringCount;
 
   @override
   State<CircularAudioWave> createState() => _CircularAudioWaveState();
@@ -157,7 +158,7 @@ class _CircularAudioWaveState extends State<CircularAudioWave> with SingleTicker
     if (!widget.isActive) {
       return CircleAvatar(
         radius: widget.radius,
-        backgroundColor: widget.color.withValues(alpha: 0.1),
+        backgroundColor: widget.color.withOpacity(0.1),
         child: Icon(
           Icons.mic_off,
           color: widget.color,
@@ -168,7 +169,7 @@ class _CircularAudioWaveState extends State<CircularAudioWave> with SingleTicker
 
     return AnimatedBuilder(
       animation: _controller,
-      builder: (BuildContext context, Widget? child) {
+      builder: (context, child) {
         return CustomPaint(
           size: Size(widget.radius * 2, widget.radius * 2),
           painter: CircularWavePainter(
@@ -193,19 +194,19 @@ class _CircularAudioWaveState extends State<CircularAudioWave> with SingleTicker
 }
 
 class CircularWavePainter extends CustomPainter {
+  final Color color;
+  final double progress;
+  final int ringCount;
 
   CircularWavePainter({
     required this.color,
     required this.progress,
     required this.ringCount,
   });
-  final Color color;
-  final double progress;
-  final int ringCount;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Offset center = Offset(size.width / 2, size.height / 2);
+    final center = Offset(size.width / 2, size.height / 2);
     final double maxRadius = size.width / 2;
 
     for (var i = 0; i < ringCount; i++) {
@@ -213,8 +214,8 @@ class CircularWavePainter extends CustomPainter {
       final double radius = maxRadius * (0.3 + ringProgress * 0.7);
       final double opacity = (1.0 - ringProgress).clamp(0.0, 1.0);
 
-      final Paint paint = Paint()
-        ..color = color.withValues(alpha: opacity * 0.3)
+      final paint = Paint()
+        ..color = color.withOpacity(opacity * 0.3)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2;
 

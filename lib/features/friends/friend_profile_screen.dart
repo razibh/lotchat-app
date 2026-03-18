@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../core/models/user_model.dart';
+import 'package:flutter/foundation.dart';
+
+import '../../core/models/user_models.dart';
+import '../../core/utils/date_formatters.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/services/friend_service.dart';
 import '../../core/services/notification_service.dart';
-import '../../core/utils/date_formatter.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../mixins/dialog_mixin.dart';
-import '../../widgets/common/custom_button.dart';
-import '../../widgets/animation/fade_animation.dart';
 import '../profile/profile_screen.dart';
-import '../chat/chat_detail_screen.dart';
+import '../../chat/chat_detail_screen.dart';
+import '../../chat/models/chat_model.dart';
 import 'mutual_friends_screen.dart';
 
 class FriendProfileScreen extends StatefulWidget {
+  final String userId;
 
   const FriendProfileScreen({
-    required this.userId, super.key,
+    required this.userId,
+    super.key,
   });
-  final String userId;
 
   @override
   State<FriendProfileScreen> createState() => _FriendProfileScreenState();
@@ -31,13 +32,13 @@ class FriendProfileScreen extends StatefulWidget {
   }
 }
 
-class _FriendProfileScreenState extends State<FriendProfileScreen> 
+class _FriendProfileScreenState extends State<FriendProfileScreen>
     with LoadingMixin, ToastMixin, DialogMixin {
-  
+
   final FriendService _friendService = ServiceLocator().get<FriendService>();
   final NotificationService _notificationService = ServiceLocator().get<NotificationService>();
-  
-  UserModel? _user;
+
+  User? _user;
   String? _friendStatus;
   bool _isLoading = true;
 
@@ -48,62 +49,45 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   }
 
   Future<void> _loadUser() async {
-    await runWithLoading(() async {
-      try {
-        // Load user data
-        await Future.delayed(const Duration(seconds: 1));
-        
-        _user = UserModel(
-          uid: widget.userId,
-          username: 'Wares Ahmed',
-          displayName: 'Ritu',
-          email: 'ritu@cook.com',
-          phone: '+1234567890',
-  photoURL: 'https://i.pravatar.cc/300?u=${widget.userId}',
-          bio: 'Life is beautiful! 🌟\nTravel enthusiast ✈️\nPhotography lover 📸',
-          interests: <String>['Travel', 'Photography', 'Music', 'Gaming'],
-          country: 'Oman',
-          region: 'Muscat',
-          coins: 15000,
-          diamonds: 500,
-          tier: UserTier.vip3,
-          isOnline: true,
-          lastActive: DateTime.now(),
-          friends: <String>[],
-          followers: <String>[],
-          following: <String>[],
-          stats: <String, dynamic>{
-            'posts': 42,
-            'followers': 1234,
-            'following': 567,
-          },
-        );
+    setState(() => _isLoading = true);
 
-        _friendStatus = await _friendService.getFriendStatus(widget.userId);
-      } catch (e) {
-        showError('Failed to load profile');
-      } finally {
+    try {
+      await Future.delayed(const Duration(seconds: 1));
+
+      _user = User(
+        id: widget.userId,
+        username: 'wares_ahmed',
+        name: 'Wares Ahmed',
+        email: 'wares@example.com',
+        role: UserRole.user,
+        countryId: 'bd',
+        createdAt: DateTime.now(),
+        avatar: 'https://i.pravatar.cc/300?u=${widget.userId}',
+        bio: 'Life is beautiful! 🌟\nTravel enthusiast ✈️\nPhotography lover 📸',
+        isOnline: true,
+        interests: ['Travel', 'Photography', 'Music', 'Gaming'],
+        phoneNumber: '+1234567890',
+        coins: 15000,
+        diamonds: 500,
+        tier: UserTier.vip3,
+      );
+
+      _friendStatus = 'none';
+    } catch (e) {
+      showError('Failed to load profile');
+    } finally {
+      setState(() {
         _isLoading = false;
-      }
-    });
+      });
+    }
   }
 
   Future<void> _sendFriendRequest() async {
-    await runWithLoading(() async {
-      try {
-        final bool success = await _friendService.sendFriendRequest(widget.userId);
-        if (success) {
-          setState(() => _friendStatus = 'request_sent');
-          showSuccess('Friend request sent');
-        }
-      } catch (e) {
-        showError('Failed to send request');
-      }
-    });
+    setState(() => _friendStatus = 'request_sent');
+    showSuccess('Friend request sent');
   }
 
   Future<void> _acceptFriendRequest() async {
-    // This would need the request ID
     showSuccess('Friend request accepted');
     setState(() => _friendStatus = 'friends');
   }
@@ -129,15 +113,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     );
 
     if (confirmed ?? false) {
-      await runWithLoading(() async {
-        try {
-          await _friendService.removeFriend(widget.userId);
-          setState(() => _friendStatus = null);
-          showSuccess('Friend removed');
-        } catch (e) {
-          showError('Failed to remove friend');
-        }
-      });
+      setState(() => _friendStatus = null);
+      showSuccess('Friend removed');
     }
   }
 
@@ -149,17 +126,33 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     );
 
     if (confirmed ?? false) {
-      await runWithLoading(() async {
-        try {
-          await _friendService.blockUser(widget.userId);
-          setState(() => _friendStatus = 'blocked');
-          showSuccess('User blocked');
-          Navigator.pop(context);
-        } catch (e) {
-          showError('Failed to block user');
-        }
-      });
+      setState(() => _friendStatus = 'blocked');
+      showSuccess('User blocked');
+      Navigator.pop(context);
     }
+  }
+
+  void _openChat() {
+    if (_user == null) return;
+
+    final chat = ChatModel(
+      id: 'chat_${_user!.id}_current',
+      type: 'private',
+      participants: [_user!.id, 'current_user_id'],
+      groupName: _user!.name,
+      groupAvatar: _user!.avatar,
+      lastMessageTime: DateTime.now(),
+      lastMessage: '',
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatDetailScreen(
+          chat: chat,
+        ),
+      ),
+    );
   }
 
   @override
@@ -170,11 +163,11 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       );
     }
 
-    final UserModel user = _user!;
+    final user = _user!;
 
     return Scaffold(
       body: CustomScrollView(
-        slivers: <>[
+        slivers: [
           // Profile Header
           SliverAppBar(
             expandedHeight: 300,
@@ -182,7 +175,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
-                children: <>[
+                children: [
                   // Cover Image
                   ColoredBox(
                     color: Colors.purple.shade300,
@@ -194,7 +187,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                       ),
                     ),
                   ),
-                  
+
                   // Gradient Overlay
                   Positioned.fill(
                     child: Container(
@@ -202,9 +195,9 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: <>[
+                          colors: [
                             Colors.transparent,
-                            Colors.black.withValues(alpha: 0.7),
+                            Colors.black.withOpacity(0.7),
                           ],
                         ),
                       ),
@@ -217,29 +210,30 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     left: 16,
                     right: 16,
                     child: Row(
-                      children: <>[
+                      children: [
                         // Avatar
                         CircleAvatar(
                           radius: 50,
-                          backgroundImage: user.photoURL != null
-                              ? NetworkImage(user.photoURL!)
+                          backgroundImage: user.avatar != null
+                              ? NetworkImage(user.avatar!)
                               : null,
-                          child: user.photoURL == null
+                          backgroundColor: Colors.grey.shade200,
+                          child: user.avatar == null
                               ? Text(
-                                  user.username[0].toUpperCase(),
-                                  style: const TextStyle(fontSize: 30),
-                                )
+                            user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                            style: const TextStyle(fontSize: 30),
+                          )
                               : null,
                         ),
                         const SizedBox(width: 16),
-                        
+
                         // User Info
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <>[
+                            children: [
                               Text(
-                                user.displayName ?? user.username,
+                                user.name,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 24,
@@ -256,7 +250,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                               ),
                               const SizedBox(height: 8),
                               Row(
-                                children: <>[
+                                children: [
                                   Icon(
                                     user.isOnline ? Icons.circle : Icons.circle_outlined,
                                     color: user.isOnline ? Colors.green : Colors.grey,
@@ -289,46 +283,29 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <>[
+                children: [
                   // Stats
-                  FadeAnimation(
-                    child: _buildStats(),
-                  ),
+                  _buildStats(),
                   const SizedBox(height: 20),
 
                   // Bio
-                  FadeAnimation(
-                    delay: const Duration(milliseconds: 100),
-                    child: _buildBio(),
-                  ),
+                  _buildBio(user),
                   const SizedBox(height: 20),
 
                   // Interests
-                  FadeAnimation(
-                    delay: const Duration(milliseconds: 150),
-                    child: _buildInterests(),
-                  ),
+                  _buildInterests(user),
                   const SizedBox(height: 20),
 
                   // Action Buttons
-                  FadeAnimation(
-                    delay: const Duration(milliseconds: 200),
-                    child: _buildActionButtons(),
-                  ),
+                  _buildActionButtons(user),
                   const SizedBox(height: 20),
 
                   // Mutual Friends
-                  FadeAnimation(
-                    delay: const Duration(milliseconds: 250),
-                    child: _buildMutualFriends(),
-                  ),
+                  _buildMutualFriends(user),
                   const SizedBox(height: 20),
 
                   // Recent Activity
-                  FadeAnimation(
-                    delay: const Duration(milliseconds: 300),
-                    child: _buildRecentActivity(),
-                  ),
+                  _buildRecentActivity(),
                 ],
               ),
             ),
@@ -340,26 +317,30 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   Widget _buildStats() {
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: <>[
+          children: [
             _buildStatItem(
               'Posts',
-              '${_user!.stats['posts'] ?? 0}',
+              '42',
               Icons.post_add,
               Colors.blue,
             ),
             _buildStatItem(
               'Followers',
-              '${_user!.stats['followers'] ?? 0}',
+              '1.2K',
               Icons.people,
               Colors.green,
             ),
             _buildStatItem(
               'Following',
-              '${_user!.stats['following'] ?? 0}',
+              '567',
               Icons.person_add,
               Colors.orange,
             ),
@@ -371,7 +352,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   Widget _buildStatItem(String label, String value, IconData icon, Color color) {
     return Column(
-      children: <>[
+      children: [
         Icon(icon, color: color, size: 24),
         const SizedBox(height: 4),
         Text(
@@ -392,15 +373,19 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     );
   }
 
-  Widget _buildBio() {
+  Widget _buildBio(User user) {
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <>[
+          children: [
             const Row(
-              children: <>[
+              children: [
                 Icon(Icons.info, size: 20, color: Colors.blue),
                 SizedBox(width: 8),
                 Text(
@@ -414,7 +399,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             ),
             const SizedBox(height: 12),
             Text(
-              _user!.bio ?? 'No bio yet',
+              user.bio ?? 'No bio yet',
               style: const TextStyle(fontSize: 14),
             ),
           ],
@@ -423,17 +408,21 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     );
   }
 
-  Widget _buildInterests() {
-    if (_user!.interests.isEmpty) return const SizedBox.shrink();
+  Widget _buildInterests(User user) {
+    if (user.interests.isEmpty) return const SizedBox.shrink();
 
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <>[
+          children: [
             const Row(
-              children: <>[
+              children: [
                 Icon(Icons.interests, size: 20, color: Colors.purple),
                 SizedBox(width: 8),
                 Text(
@@ -448,14 +437,14 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
-              children: _user!.interests.map((String interest) {
+              children: user.interests.map((interest) {
                 return Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.purple.withValues(alpha: 0.1),
+                    color: Colors.purple.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -474,93 +463,137 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(User user) {
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: <>[
-            if (_friendStatus == 'friends') ...<>[
+          children: [
+            if (_friendStatus == 'friends') ...[
               Row(
-                children: <>[
+                children: [
                   Expanded(
-                    child: CustomButton(
-                      text: 'Message',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-           builder: (BuildContext context) => ChatDetailScreen(
-                       userId: _user!.uid,
-    userName: _user!.displayName ?? _user!.username,
-                              userAvatar: _user!.photoURL,
-                            ),
-                          ),
-                        );
-                      },
-                      color: Colors.blue,
+                    child: ElevatedButton(
+                      onPressed: _openChat,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 45),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Message'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: CustomButton(
-                      text: 'Unfriend',
+                    child: ElevatedButton(
                       onPressed: _unfriend,
-                      color: Colors.red,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 45),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Unfriend'),
                     ),
                   ),
                 ],
               ),
-            ] else if (_friendStatus == 'request_sent') ...<>[
+            ] else if (_friendStatus == 'request_sent') ...[
               Row(
-                children: <>[
-                  const Expanded(
-                    child: CustomButton(
-                      text: 'Request Sent',
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
                       onPressed: null,
-                      color: Colors.grey,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey,
+                        minimumSize: const Size(double.infinity, 45),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Request Sent'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: CustomButton(
-                      text: 'Cancel',
+                    child: ElevatedButton(
                       onPressed: () => setState(() => _friendStatus = null),
-                      color: Colors.red,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 45),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Cancel'),
                     ),
                   ),
                 ],
               ),
-            ] else if (_friendStatus == 'request_received') ...<>[
+            ] else if (_friendStatus == 'request_received') ...[
               Row(
-                children: <>[
+                children: [
                   Expanded(
-                    child: CustomButton(
-                      text: 'Accept',
+                    child: ElevatedButton(
                       onPressed: _acceptFriendRequest,
-                      color: Colors.green,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 45),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Accept'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: CustomButton(
-                      text: 'Reject',
+                    child: ElevatedButton(
                       onPressed: _rejectFriendRequest,
-                      color: Colors.red,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 45),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Reject'),
                     ),
                   ),
                 ],
               ),
-            ] else if (_friendStatus != 'blocked') ...<CustomButton>[
-              CustomButton(
-                text: 'Add Friend',
-                onPressed: _sendFriendRequest,
-                color: Colors.green,
+            ] else if (_friendStatus != 'blocked') ...[
+              SizedBox(
+                width: double.infinity,
+                height: 45,
+                child: ElevatedButton(
+                  onPressed: _sendFriendRequest,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Add Friend'),
+                ),
               ),
             ],
-            
+
             const SizedBox(height: 12),
-            
+
             OutlinedButton.icon(
               onPressed: _blockUser,
               icon: const Icon(Icons.block, color: Colors.red),
@@ -568,6 +601,9 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 45),
                 side: const BorderSide(color: Colors.red),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ],
@@ -576,16 +612,20 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     );
   }
 
-  Widget _buildMutualFriends() {
+  Widget _buildMutualFriends(User user) {
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <>[
+          children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <>[
+              children: [
                 const Text(
                   'Mutual Friends',
                   style: TextStyle(
@@ -598,9 +638,9 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-          builder: (BuildContext context) => MutualFriendsScreen(
-                          userId: _user!.uid,
-  userName: _user!.displayName ?? _user!.username,
+                        builder: (context) => MutualFriendsScreen(
+                          userId: user.id,
+                          userName: user.name,
                         ),
                       ),
                     );
@@ -615,12 +655,12 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: 5,
-                itemBuilder: (BuildContext context, int index) {
+                itemBuilder: (context, index) {
                   return Container(
                     width: 70,
                     margin: const EdgeInsets.only(right: 8),
                     child: Column(
-                      children: <>[
+                      children: [
                         CircleAvatar(
                           radius: 25,
                           backgroundImage: NetworkImage(
@@ -648,11 +688,15 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   Widget _buildRecentActivity() {
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <>[
+          children: [
             const Text(
               'Recent Activity',
               style: TextStyle(
@@ -661,19 +705,19 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               ),
             ),
             const SizedBox(height: 12),
-            ...List.generate(3, (int index) {
+            ...List.generate(3, (index) {
               return ListTile(
                 leading: CircleAvatar(
                   radius: 16,
-                  backgroundColor: <>[Colors.blue, Colors.green, Colors.purple][index],
+                  backgroundColor: [Colors.blue, Colors.green, Colors.purple][index],
                   child: Icon(
-                    <>[Icons.card_giftcard, Icons.favorite, Icons.comment][index],
+                    [Icons.card_giftcard, Icons.favorite, Icons.comment][index],
                     color: Colors.white,
                     size: 16,
                   ),
                 ),
                 title: Text(
-                  <String>[
+                  [
                     'Received a gift',
                     'Liked a post',
                     'Commented on a post',
@@ -681,7 +725,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                 ),
                 subtitle: Text('${index + 1} hour${index == 0 ? '' : 's'} ago'),
                 trailing: Text(
-                  <String>['🎁', '❤️', '💬'][index],
+                  ['🎁', '❤️', '💬'][index],
                   style: const TextStyle(fontSize: 16),
                 ),
               );
@@ -689,6 +733,27 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
           ],
         ),
       ),
+    );
+  }
+}
+
+// FadeAnimation Widget
+class FadeAnimation extends StatelessWidget {
+  final Widget child;
+  final Duration delay;
+
+  const FadeAnimation({
+    required this.child,
+    this.delay = Duration.zero,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: 1.0,
+      duration: const Duration(milliseconds: 500),
+      child: child,
     );
   }
 }

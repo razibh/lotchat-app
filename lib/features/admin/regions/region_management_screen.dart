@@ -12,7 +12,7 @@ class RegionManagementScreen extends StatefulWidget {
 }
 
 class _RegionManagementScreenState extends State<RegionManagementScreen> {
-  List<Region> _regions = <Region>[];
+  List<Region> _regions = [];
 
   @override
   void initState() {
@@ -21,11 +21,11 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
   }
 
   void _loadRegions() {
-    _regions = <Region>[
+    _regions = [
       Region(
         id: 'reg1',
         name: 'South Asia',
-        countries: <String>['Bangladesh', 'India', 'Pakistan', 'Nepal', 'Sri Lanka'],
+        countries: ['Bangladesh', 'India', 'Pakistan', 'Nepal', 'Sri Lanka'],
         totalAgencies: 203,
         totalHosts: 1560,
         totalRevenue: 1860000,
@@ -35,7 +35,7 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
       Region(
         id: 'reg2',
         name: 'Southeast Asia',
-        countries: <String>['Indonesia', 'Malaysia', 'Thailand', 'Vietnam', 'Philippines'],
+        countries: ['Indonesia', 'Malaysia', 'Thailand', 'Vietnam', 'Philippines'],
         totalAgencies: 145,
         totalHosts: 980,
         totalRevenue: 1250000,
@@ -45,7 +45,7 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
       Region(
         id: 'reg3',
         name: 'Middle East',
-        countries: <String>['UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain'],
+        countries: ['UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain'],
         totalAgencies: 89,
         totalHosts: 450,
         totalRevenue: 890000,
@@ -61,14 +61,14 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(20),
                   itemCount: _regions.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final Region region = _regions[index];
+                  itemBuilder: (context, index) {
+                    final region = _regions[index];
                     return _buildRegionCard(region);
                   },
                 ),
@@ -85,7 +85,7 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -109,18 +109,18 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           Row(
-            children: <>[
+            children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.2),
+                  color: Colors.green.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.public, color: Colors.green),
@@ -129,7 +129,7 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     Text(
                       region.name,
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -144,9 +144,9 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: region.status == 'Active' 
-                      ? Colors.green.withValues(alpha: 0.2) 
-                      : Colors.orange.withValues(alpha: 0.2),
+                  color: region.status == 'Active'
+                      ? Colors.green.withOpacity(0.2)
+                      : Colors.orange.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -163,11 +163,11 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: region.countries.map((String country) {
+            children: region.countries.map((country) {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.2),
+                  color: Colors.blue.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -180,7 +180,7 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <>[
+            children: [
               _buildStatItem('Agencies', '${region.totalAgencies}'),
               _buildStatItem('Hosts', '${region.totalHosts}'),
               _buildStatItem('Revenue', '৳${region.totalRevenue}'),
@@ -188,7 +188,7 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
           ),
           const SizedBox(height: 16),
           Row(
-            children: <>[
+            children: [
               Expanded(
                 child: _buildActionButton('Edit', Colors.blue, () {}),
               ),
@@ -205,7 +205,7 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
 
   Widget _buildStatItem(String label, String value) {
     return Column(
-      children: <>[
+      children: [
         Text(
           value,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -224,9 +224,9 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
+          color: color.withOpacity(0.2),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.5)),
+          border: Border.all(color: color.withOpacity(0.5)),
         ),
         child: Center(
           child: Text(
@@ -248,7 +248,7 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
           child: const Center(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: <>[
+              children: [
                 Icon(Icons.add, color: Colors.white),
                 SizedBox(width: 8),
                 Text(
@@ -264,8 +264,8 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
   }
 
   void _showAddRegionDialog() {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController managerController = TextEditingController();
+    final nameController = TextEditingController();
+    final managerController = TextEditingController();
 
     showDialog(
       context: context,
@@ -274,7 +274,7 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
         title: const Text('Add New Region', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             NeumorphicTextField(
               controller: nameController,
               hintText: 'Region Name',
@@ -286,7 +286,7 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
@@ -310,6 +310,14 @@ class _RegionManagementScreenState extends State<RegionManagementScreen> {
 }
 
 class Region {
+  final String id;
+  final String name;
+  final List<String> countries;
+  final int totalAgencies;
+  final int totalHosts;
+  final double totalRevenue;
+  final String manager;
+  final String status;
 
   Region({
     required this.id,
@@ -321,12 +329,4 @@ class Region {
     required this.manager,
     required this.status,
   });
-  final String id;
-  final String name;
-  final List<String> countries;
-  final int totalAgencies;
-  final int totalHosts;
-  final double totalRevenue;
-  final String manager;
-  final String status;
 }

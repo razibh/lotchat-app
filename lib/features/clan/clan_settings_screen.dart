@@ -1,10 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 import '../../core/di/service_locator.dart';
-import '../../core/services/clan_service.dart';
+import '../clan/services/clan_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/utils/image_picker_helper.dart';
+import '../../core/models/clan_model.dart'; // ClanModel এর জন্য
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../mixins/dialog_mixin.dart';
@@ -13,9 +15,9 @@ import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_field.dart';
 
 class ClanSettingsScreen extends StatefulWidget {
+  final ClanModel clan;
 
   const ClanSettingsScreen({required this.clan, super.key});
-  final ClanModel clan;
 
   @override
   State<ClanSettingsScreen> createState() => _ClanSettingsScreenState();
@@ -27,12 +29,12 @@ class ClanSettingsScreen extends StatefulWidget {
   }
 }
 
-class _ClanSettingsScreenState extends State<ClanSettingsScreen> 
+class _ClanSettingsScreenState extends State<ClanSettingsScreen>
     with LoadingMixin, ToastMixin, DialogMixin, FormMixin {
-  
+
   final ClanService _clanService = ServiceLocator().get<ClanService>();
   final AuthService _authService = ServiceLocator().get<AuthService>();
-  
+
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late TextEditingController _rulesController;
@@ -45,8 +47,8 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.clan.name);
-    _descriptionController = TextEditingController(text: widget.clan.description);
-    _rulesController = TextEditingController(text: widget.clan.rules);
+    _descriptionController = TextEditingController(text: widget.clan.description ?? '');
+    _rulesController = TextEditingController(text: widget.clan.rules ?? '');
     _joinType = widget.clan.joinType;
     _maxMembers = widget.clan.maxMembers;
     _tags = List.from(widget.clan.tags);
@@ -74,20 +76,17 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
 
     await runWithLoading(() async {
       await Future.delayed(const Duration(seconds: 1));
-      
-      // Upload new emblem if changed
+
       String? emblemUrl = widget.clan.emblem;
       if (_newEmblem != null) {
-        // Upload to storage
-        emblemUrl = _newEmblem; // Placeholder
+        emblemUrl = _newEmblem;
       }
 
-      // Update clan
-      const bool success = true; // await _clanService.updateClan(...);
-      
+      final bool success = true;
+
       if (success) {
         showSuccess('Settings saved');
-        Navigator.pop(context, true);
+        if (mounted) Navigator.pop(context, true);
       } else {
         showError('Failed to save settings');
       }
@@ -120,6 +119,7 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
                   backgroundImage: member.avatar != null
                       ? NetworkImage(member.avatar!)
                       : null,
+                  backgroundColor: Colors.deepPurple.shade100,
                   child: member.avatar == null
                       ? Text(member.username[0].toUpperCase())
                       : null,
@@ -144,7 +144,9 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
         await runWithLoading(() async {
           await Future.delayed(const Duration(seconds: 1));
           showSuccess('Leadership transferred');
-          Navigator.pop(context, true);
+          if (mounted) {
+            Navigator.pop(context, true);
+          }
         });
       }
     }
@@ -161,8 +163,10 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
       await runWithLoading(() async {
         await Future.delayed(const Duration(seconds: 1));
         showSuccess('Clan disbanded');
-        Navigator.pop(context, true);
-        Navigator.pop(context, true); // Go back to clan home
+        if (mounted) {
+          Navigator.pop(context, true);
+          Navigator.pop(context, true);
+        }
       });
     }
   }
@@ -173,6 +177,7 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
       appBar: AppBar(
         title: const Text('Clan Settings'),
         backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -180,18 +185,18 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
           key: formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: <>[
+            children: [
               // Emblem
               Center(
                 child: GestureDetector(
                   onTap: _pickEmblem,
                   child: Stack(
-                    children: <>[
+                    children: [
                       Container(
                         width: 120,
                         height: 120,
                         decoration: BoxDecoration(
-                          color: Colors.deepPurple.withValues(alpha: 0.1),
+                          color: Colors.deepPurple.withOpacity(0.1),
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: Colors.deepPurple,
@@ -199,22 +204,22 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
                           ),
                           image: _newEmblem != null
                               ? DecorationImage(
-                                  image: FileImage(File(_newEmblem!)),
-                                  fit: BoxFit.cover,
-                                )
+                            image: FileImage(File(_newEmblem!)),
+                            fit: BoxFit.cover,
+                          )
                               : (widget.clan.emblem != null
-                                  ? DecorationImage(
-                                      image: NetworkImage(widget.clan.emblem!),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null),
+                              ? DecorationImage(
+                            image: NetworkImage(widget.clan.emblem!),
+                            fit: BoxFit.cover,
+                          )
+                              : null),
                         ),
                         child: widget.clan.emblem == null && _newEmblem == null
                             ? const Icon(
-                                Icons.groups,
-                                size: 60,
-                                color: Colors.deepPurple,
-                              )
+                          Icons.groups,
+                          size: 60,
+                          color: Colors.deepPurple,
+                        )
                             : null,
                       ),
                       Positioned(
@@ -301,7 +306,7 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
               ),
               const SizedBox(height: 8),
               Row(
-                children: <int>[10, 25, 50, 100, 200].map((int max) {
+                children: [10, 25, 50, 100, 200].map((int max) {
                   return Expanded(
                     child: Padding(
                       padding: const EdgeInsets.only(right: 8),
@@ -337,8 +342,12 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
               const SizedBox(height: 8),
               Card(
                 color: Colors.red.shade50,
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Column(
-                  children: <>[
+                  children: [
                     ListTile(
                       leading: const Icon(Icons.swap_horiz, color: Colors.orange),
                       title: const Text('Transfer Leadership'),
@@ -358,11 +367,29 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
               const SizedBox(height: 24),
 
               // Save Button
-              CustomButton(
-                text: 'Save Settings',
-                onPressed: _saveSettings,
-                isLoading: isLoading,
-                color: Colors.deepPurple,
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : _saveSettings,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                      : const Text('Save Settings'),
+                ),
               ),
             ],
           ),
@@ -377,9 +404,9 @@ class _ClanSettingsScreenState extends State<ClanSettingsScreen>
       subtitle: Text(subtitle),
       value: type,
       groupValue: _joinType,
-      onChanged: (Object? value) {
+      onChanged: (ClanJoinType? value) {
         setState(() {
-          _joinType = value;
+          _joinType = value!;
         });
       },
       activeColor: Colors.deepPurple,

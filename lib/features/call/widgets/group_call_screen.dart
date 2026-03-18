@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/services/call_service.dart';
 import '../../../core/services/socket_service.dart';
-import '../../../core/models/user_model.dart';
+import '../../../core/models/user_models.dart' as app;
 import '../../../mixins/loading_mixin.dart';
 import '../../../mixins/toast_mixin.dart';
-import '../participant_grid.dart';
-import '../call_controls.dart';
-import '../call_timer.dart';
-import '../beauty_filter_panel.dart';
-import '../audio_wave.dart';
+import 'participant_grid.dart';
+import '../../../widgets/call_controls.dart'; // CallTimer এই ফাইলেই আছে
+
+// এই লাইনগুলো কমেন্ট বা ডিলিট করুন
+// import 'call_timer.dart';
+import 'beauty_filter_panel.dart';
+import 'audio_wave.dart';
 
 class GroupCallScreen extends StatefulWidget {
-
-  const GroupCallScreen({
-    required this.participants, required this.isVideoCall, required this.roomId, super.key,
-  });
-  final List<UserModel> participants;
+  final List<app.User> participants;
   final bool isVideoCall;
   final String roomId;
+
+  const GroupCallScreen({
+    required this.participants,
+    required this.isVideoCall,
+    required this.roomId,
+    super.key,
+  });
 
   @override
   State<GroupCallScreen> createState() => _GroupCallScreenState();
@@ -26,16 +32,16 @@ class GroupCallScreen extends StatefulWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<UserModel>('participants', participants));
+    properties.add(IterableProperty<app.User>('participants', participants));
     properties.add(DiagnosticsProperty<bool>('isVideoCall', isVideoCall));
     properties.add(StringProperty('roomId', roomId));
   }
 }
 
 class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, ToastMixin {
-  final CallService _callService = ServiceLocator().get<CallService>();
-  final SocketService _socketService = ServiceLocator().get<SocketService>();
-  
+  final CallService _callService = ServiceLocator.instance.get<CallService>();
+  final SocketService _socketService = ServiceLocator.instance.get<SocketService>();
+
   late List<Participant> _participants;
   bool _isMicMuted = false;
   bool _isSpeakerOn = false;
@@ -57,11 +63,10 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
   Future<void> _initializeCall() async {
     await runWithLoading(() async {
       await _callService.initialize();
-      
-      // Convert users to participants
-      _participants = widget.participants.map((UserModel user) {
+
+      _participants = widget.participants.map((user) {
         return Participant(
-          userId: user.uid,
+          userId: user.id,
           name: user.username,
           avatar: user.photoURL,
           hasVideo: false,
@@ -71,8 +76,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
           audioLevel: 0.0,
         );
       }).toList();
-      
-      // Add local user
+
       _participants.add(Participant(
         userId: 'local',
         name: 'You',
@@ -81,8 +85,8 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
         isSpeaking: false,
         isPinned: false,
         audioLevel: 0.0,
-      ),);
-      
+      ));
+
       _startCallTimer();
     });
   }
@@ -99,20 +103,20 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
           isSpeaking: false,
           isPinned: false,
           audioLevel: 0.0,
-        ),);
+        ));
       });
     });
 
     _socketService.on('user-left', (data) {
       setState(() {
-        _participants.removeWhere((Object? p) => p.userId == data['userId']);
+        _participants.removeWhere((p) => p.userId == data['userId']);
       });
     });
 
     _socketService.on('audio-level', (data) {
       setState(() {
         final participant = _participants.firstWhere(
-          (Object? p) => p.userId == data['userId'],
+              (p) => p.userId == data['userId'],
           orElse: () => Participant(userId: '', name: ''),
         );
         if (participant.userId.isNotEmpty) {
@@ -125,7 +129,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
     _socketService.on('mute-state-changed', (data) {
       setState(() {
         final participant = _participants.firstWhere(
-          (Object? p) => p.userId == data['userId'],
+              (p) => p.userId == data['userId'],
           orElse: () => Participant(userId: '', name: ''),
         );
         if (participant.userId.isNotEmpty) {
@@ -151,8 +155,8 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
       _isMicMuted = !_isMicMuted;
     });
     _callService.toggleMic(_isMicMuted);
-    
-    _socketService.emit('mute-state-changed', <String, Object>{
+
+    _socketService.emit('mute-state-changed', {
       'userId': 'local',
       'isMuted': _isMicMuted,
     });
@@ -200,7 +204,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
       } else {
         _pinnedUserId = userId;
       }
-      
+
       for (final p in _participants) {
         p.isPinned = p.userId == _pinnedUserId;
       }
@@ -212,14 +216,14 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
   }
 
   void _showRaiseHand() {
-    _socketService.emit('raise-hand', <String, String>{
+    _socketService.emit('raise-hand', {
       'userId': 'local',
     });
     showInfo('Hand raised');
   }
 
   void _showReaction(String reaction) {
-    _socketService.emit('reaction', <String, String>{
+    _socketService.emit('reaction', {
       'userId': 'local',
       'reaction': reaction,
     });
@@ -230,16 +234,16 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
-        children: <>[
+        children: [
           // Main content
           Column(
-            children: <>[
+            children: [
               // Header
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 color: Colors.black54,
                 child: Row(
-                  children: <>[
+                  children: [
                     const Icon(Icons.group, color: Colors.white),
                     const SizedBox(width: 8),
                     Text(
@@ -247,7 +251,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
                       style: const TextStyle(color: Colors.white),
                     ),
                     const Spacer(),
-                    CallTimer(duration: _callDuration),
+                    CallTimer(duration: Duration(seconds: _callDuration)), // Duration object পাঠান
                   ],
                 ),
               ),
@@ -257,12 +261,12 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
                 child: _pinnedUserId != null
                     ? _buildPinnedView()
                     : ParticipantGrid(
-                        participants: _participants,
-                        localUserId: 'local',
-                        onParticipantTap: _onParticipantTap,
-                        onMuteParticipant: _onMuteParticipant,
-                        onPinParticipant: _onPinParticipant,
-                      ),
+                  participants: _participants,
+                  localUserId: 'local',
+                  onParticipantTap: _onParticipantTap,
+                  onMuteParticipant: _onMuteParticipant,
+                  onPinParticipant: _onPinParticipant,
+                ),
               ),
 
               // Controls
@@ -287,7 +291,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
             top: 60,
             right: 16,
             child: Column(
-              children: <>[
+              children: [
                 _buildFloatingButton(
                   icon: Icons.group_add,
                   onPressed: _showAddParticipant,
@@ -334,12 +338,12 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
                 width: 300,
                 color: Colors.white,
                 child: Column(
-                  children: <>[
+                  children: [
                     Container(
                       padding: const EdgeInsets.all(16),
                       color: Colors.green,
                       child: Row(
-                        children: <>[
+                        children: [
                           const Text(
                             'Chat',
                             style: TextStyle(
@@ -364,7 +368,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
                       child: ListView.builder(
                         padding: const EdgeInsets.all(8),
                         itemCount: 10,
-                        itemBuilder: (BuildContext context, int index) {
+                        itemBuilder: (context, index) {
                           return ListTile(
                             leading: CircleAvatar(
                               child: Text('U${index + 1}'),
@@ -378,7 +382,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
                     Padding(
                       padding: const EdgeInsets.all(8),
                       child: Row(
-                        children: <>[
+                        children: [
                           Expanded(
                             child: TextField(
                               decoration: InputDecoration(
@@ -418,7 +422,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
 
           // Loading indicator
           if (isLoading)
-            ColoredBox(
+            Container(
               color: Colors.black54,
               child: const Center(
                 child: CircularProgressIndicator(
@@ -451,12 +455,12 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
 
   Widget _buildPinnedView() {
     final pinnedUser = _participants.firstWhere(
-      (Object? p) => p.userId == _pinnedUserId,
+          (p) => p.userId == _pinnedUserId,
       orElse: () => _participants.first,
     );
 
     return Column(
-      children: <>[
+      children: [
         Expanded(
           flex: 3,
           child: Container(
@@ -469,7 +473,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: <>[
+                children: [
                   CircleAvatar(
                     radius: 50,
                     backgroundImage: pinnedUser.avatar != null
@@ -477,9 +481,9 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
                         : null,
                     child: pinnedUser.avatar == null
                         ? Text(
-                            pinnedUser.name[0].toUpperCase(),
-                            style: const TextStyle(fontSize: 40),
-                          )
+                      pinnedUser.name[0].toUpperCase(),
+                      style: const TextStyle(fontSize: 40),
+                    )
                         : null,
                   ),
                   const SizedBox(height: 16),
@@ -503,7 +507,7 @@ class _GroupCallScreenState extends State<GroupCallScreen> with LoadingMixin, To
         ),
         Expanded(
           child: ParticipantGrid(
-            participants: _participants.where((Object? p) => p.userId != _pinnedUserId).toList(),
+            participants: _participants.where((p) => p.userId != _pinnedUserId).toList(),
             localUserId: 'local',
             onParticipantTap: _onParticipantTap,
             onMuteParticipant: _onMuteParticipant,

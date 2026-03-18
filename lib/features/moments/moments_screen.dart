@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 import '../../core/di/service_locator.dart';
 import '../../core/services/moments_service.dart';
 import '../../core/services/auth_service.dart';
@@ -9,6 +10,7 @@ import '../../widgets/animation/fade_animation.dart';
 import '../../widgets/common/custom_button.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
+import '../../models/moment_model.dart';
 
 class MomentsScreen extends StatefulWidget {
   const MomentsScreen({super.key});
@@ -17,17 +19,20 @@ class MomentsScreen extends StatefulWidget {
   State<MomentsScreen> createState() => _MomentsScreenState();
 }
 
-class _MomentsScreenState extends State<MomentsScreen> 
+class _MomentsScreenState extends State<MomentsScreen>
     with LoadingMixin, ToastMixin {
-  
-  final _momentsService = ServiceLocator().get<MomentsService>();
+
+  final MomentsService _momentsService = ServiceLocator().get<MomentsService>();
   final AuthService _authService = ServiceLocator().get<AuthService>();
-  
-  final List<Moment> _moments = <Moment>[];
-  List<Moment> _myStory = <Moment>[];
-  Map<String, List<Moment>> _friendsStories = <String, List<Moment>>{};
+
+  List<Moment> _moments = [];
+  List<Moment> _myStory = [];
+  Map<String, List<Moment>> _friendsStories = {};
   int _currentStoryIndex = 0;
   String? _currentUserId;
+
+  // Loading state
+  bool _isLoading = true; // Add this line
 
   @override
   void initState() {
@@ -44,10 +49,14 @@ class _MomentsScreenState extends State<MomentsScreen>
   }
 
   Future<void> _loadMoments() async {
-    await runWithLoading(() async {
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // Mock data
+    setState(() {
+      _isLoading = true;
+    });
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    // Mock data
+    setState(() {
       _myStory = List.generate(3, (int index) => Moment(
         id: 'my_$index',
         userId: _currentUserId ?? 'user1',
@@ -59,9 +68,10 @@ class _MomentsScreenState extends State<MomentsScreen>
         views: 120 + (index * 50),
         likes: 45 + (index * 20),
         comments: 12 + index,
-      ),);
+        userAvatar: null,
+      ));
 
-      _friendsStories = <String, List<Moment>>{
+      _friendsStories = {
         'user2': List.generate(4, (int index) => Moment(
           id: 'u2_$index',
           userId: 'user2',
@@ -73,7 +83,8 @@ class _MomentsScreenState extends State<MomentsScreen>
           views: 200 + (index * 30),
           likes: 80 + (index * 15),
           comments: 20 + index,
-        ),),
+          userAvatar: null,
+        )),
         'user3': List.generate(2, (int index) => Moment(
           id: 'u3_$index',
           userId: 'user3',
@@ -85,7 +96,8 @@ class _MomentsScreenState extends State<MomentsScreen>
           views: 150 + (index * 20),
           likes: 60 + (index * 10),
           comments: 10 + index,
-        ),),
+          userAvatar: null,
+        )),
         'user4': List.generate(5, (int index) => Moment(
           id: 'u4_$index',
           userId: 'user4',
@@ -97,8 +109,11 @@ class _MomentsScreenState extends State<MomentsScreen>
           views: 300 + (index * 50),
           likes: 120 + (index * 25),
           comments: 30 + index,
-        ),),
+          userAvatar: null,
+        )),
       };
+
+      _isLoading = false;
     });
   }
 
@@ -135,7 +150,7 @@ class _MomentsScreenState extends State<MomentsScreen>
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             const Text(
               'Add to Story',
               style: TextStyle(
@@ -176,7 +191,7 @@ class _MomentsScreenState extends State<MomentsScreen>
 
   void _showTextPostDialog() {
     final TextEditingController controller = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -189,7 +204,7 @@ class _MomentsScreenState extends State<MomentsScreen>
             border: OutlineInputBorder(),
           ),
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
@@ -227,7 +242,7 @@ class _MomentsScreenState extends State<MomentsScreen>
       appBar: AppBar(
         title: const Text('Moments'),
         backgroundColor: Colors.pink,
-        actions: <>[
+        actions: [
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: _createMoment,
@@ -237,207 +252,212 @@ class _MomentsScreenState extends State<MomentsScreen>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <>[
-                  // Your Story
-                  const Text(
-                    'Your Story',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 120,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: <>[
-                        // Add Story Button
-                        Container(
-                          width: 80,
-                          margin: const EdgeInsets.only(right: 12),
-                          child: GestureDetector(
-                            onTap: _createMoment,
-                            child: Column(
-                              children: <>[
-                                Container(
-                                  width: 80,
-                                  height: 80,
-                                  decoration: const BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: <>[Colors.pink, Colors.purple],
-                                    ),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.add,
-                                    color: Colors.white,
-                                    size: 40,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Add Story',
-                                  style: TextStyle(fontSize: 10),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        
-                        // My Story Items
-                        ..._myStory.map((Moment moment) => Container(
-                          width: 80,
-                          margin: const EdgeInsets.only(right: 12),
-                          child: GestureDetector(
-                            onTap: () => _viewStory(_currentUserId ?? '', _myStory),
-                            child: Column(
-                              children: <>[
-                                Container(
-                                  width: 80,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: <>[Colors.orange, Colors.pink],
-                                    ),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.pink,
-                                      width: 3,
-                                    ),
-                                  ),
-                                  child: ClipOval(
-                                    child: moment.type == 'image' && moment.mediaUrl != null
-                                        ? Image.network(
-                                            moment.mediaUrl!,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : const Icon(
-                                            Icons.video_library,
-                                            color: Colors.white,
-                                            size: 30,
-                                          ),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _formatTime(moment.timestamp),
-                                  style: const TextStyle(fontSize: 8, color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Friends Stories
-                  const Text(
-                    'Friends Stories',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ..._friendsStories.entries.map((MapEntry<String, List<Moment>> entry) {
-                    final String userId = entry.key;
-                    final List<Moment> story = entry.value;
-                    final Moment firstMoment = story.first;
-                    
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: Row(
-                        children: <>[
-                          GestureDetector(
-                            onTap: () => _viewStory(userId, story),
-                            child: Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: <>[Colors.pink, Colors.purple],
-                                ),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.pink,
-                                  width: 2,
-                                ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Your Story
+            const Text(
+              'Your Story',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 120,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  // Add Story Button
+                  Container(
+                    width: 80,
+                    margin: const EdgeInsets.only(right: 12),
+                    child: GestureDetector(
+                      onTap: _createMoment,
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.pink, Colors.purple],
                               ),
-                              child: ClipOval(
-                                child: firstMoment.userAvatar != null
-                                    ? Image.network(
-                                        firstMoment.userAvatar!,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Center(
-                                        child: Text(
-                                          firstMoment.username[0].toUpperCase(),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 20,
-                                          ),
-                                        ),
-                                      ),
-                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 40,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <>[
-                                Text(
-                                  firstMoment.username,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${story.length} stories • ${_formatTime(story.last.timestamp)}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          CustomButton(
-                            text: 'View',
-                            onPressed: () => _viewStory(userId, story),
-                            color: Colors.pink,
-                            height: 36,
-                            isFullWidth: false,
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Add Story',
+                            style: TextStyle(fontSize: 10),
                           ),
                         ],
                       ),
-                    );
-                  }),
+                    ),
+                  ),
+
+                  // My Story Items
+                  ..._myStory.map((Moment moment) => Container(
+                    width: 80,
+                    margin: const EdgeInsets.only(right: 12),
+                    child: GestureDetector(
+                      onTap: () => _viewStory(_currentUserId ?? '', _myStory),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Colors.orange, Colors.pink],
+                              ),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.pink,
+                                width: 3,
+                              ),
+                            ),
+                            child: ClipOval(
+                              child: moment.type == 'image' && moment.mediaUrl != null
+                                  ? Image.network(
+                                moment.mediaUrl!,
+                                fit: BoxFit.cover,
+                              )
+                                  : const Icon(
+                                Icons.video_library,
+                                color: Colors.white,
+                                size: 30,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _formatTime(moment.timestamp),
+                            style: const TextStyle(fontSize: 8, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )).toList(),
                 ],
               ),
             ),
+            const SizedBox(height: 24),
+
+            // Friends Stories
+            const Text(
+              'Friends Stories',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ..._friendsStories.entries.map((MapEntry<String, List<Moment>> entry) {
+              final String userId = entry.key;
+              final List<Moment> story = entry.value;
+              final Moment firstMoment = story.first;
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => _viewStory(userId, story),
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Colors.pink, Colors.purple],
+                          ),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.pink,
+                            width: 2,
+                          ),
+                        ),
+                        child: ClipOval(
+                          child: firstMoment.userAvatar != null
+                              ? Image.network(
+                            firstMoment.userAvatar!,
+                            fit: BoxFit.cover,
+                          )
+                              : Center(
+                            child: Text(
+                              firstMoment.username[0].toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            firstMoment.username,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${story.length} stories • ${_formatTime(story.last.timestamp)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    CustomButton(
+                      text: 'View',
+                      onPressed: () => _viewStory(userId, story),
+                      color: Colors.pink,
+                      height: 36,
+                      isFullWidth: false,
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
     );
   }
 }
 
 class StoryViewer extends StatefulWidget {
-
-  const StoryViewer({
-    required this.userId, required this.story, required this.onClose, required this.onNext, required this.onPrevious, super.key,
-  });
   final String userId;
   final List<Moment> story;
   final VoidCallback onClose;
   final VoidCallback onNext;
   final VoidCallback onPrevious;
+
+  const StoryViewer({
+    required this.userId,
+    required this.story,
+    required this.onClose,
+    required this.onNext,
+    required this.onPrevious,
+    super.key,
+  });
 
   @override
   State<StoryViewer> createState() => _StoryViewerState();
@@ -469,7 +489,7 @@ class _StoryViewerState extends State<StoryViewer> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(seconds: 5),
     );
-    
+
     _progressController.addStatusListener((AnimationStatus status) {
       if (status == AnimationStatus.completed) {
         _nextStory();
@@ -555,7 +575,7 @@ class _StoryViewerState extends State<StoryViewer> with SingleTickerProviderStat
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
-        children: <>[
+        children: [
           // Story Content
           PageView.builder(
             controller: _pageController,
@@ -580,19 +600,19 @@ class _StoryViewerState extends State<StoryViewer> with SingleTickerProviderStat
                   color: Colors.black,
                   child: m.type == 'image' && m.mediaUrl != null
                       ? Image.network(
-                          m.mediaUrl!,
-                          fit: BoxFit.contain,
-                        )
+                    m.mediaUrl!,
+                    fit: BoxFit.contain,
+                  )
                       : ColoredBox(
-                          color: Colors.grey.shade900,
-                          child: const Center(
-                            child: Icon(
-                              Icons.video_library,
-                              color: Colors.white,
-                              size: 50,
-                            ),
-                          ),
-                        ),
+                    color: Colors.grey.shade900,
+                    child: const Center(
+                      child: Icon(
+                        Icons.video_library,
+                        color: Colors.white,
+                        size: 50,
+                      ),
+                    ),
+                  ),
                 ),
               );
             },
@@ -608,13 +628,13 @@ class _StoryViewerState extends State<StoryViewer> with SingleTickerProviderStat
                 final int index = entry.key;
                 final bool isCurrent = index == _currentIndex;
                 final bool isPast = index < _currentIndex;
-                
+
                 return Expanded(
                   child: Container(
                     height: 2,
                     margin: const EdgeInsets.symmetric(horizontal: 2),
                     child: Stack(
-                      children: <>[
+                      children: [
                         Container(
                           color: Colors.white.withValues(alpha: 0.3),
                         ),
@@ -648,7 +668,7 @@ class _StoryViewerState extends State<StoryViewer> with SingleTickerProviderStat
             left: 10,
             right: 10,
             child: Row(
-              children: <>[
+              children: [
                 CircleAvatar(
                   radius: 16,
                   backgroundImage: moment.userAvatar != null
@@ -662,7 +682,7 @@ class _StoryViewerState extends State<StoryViewer> with SingleTickerProviderStat
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <>[
+                    children: [
                       Text(
                         moment.username,
                         style: const TextStyle(
@@ -717,7 +737,7 @@ class _StoryViewerState extends State<StoryViewer> with SingleTickerProviderStat
             right: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <>[
+              children: [
                 _buildActionButton(
                   icon: Icons.favorite_border,
                   label: '${moment.likes}',
@@ -754,7 +774,7 @@ class _StoryViewerState extends State<StoryViewer> with SingleTickerProviderStat
     return GestureDetector(
       onTap: onTap,
       child: Column(
-        children: <>[
+        children: [
           Icon(icon, color: Colors.white, size: 24),
           const SizedBox(height: 4),
           Text(
@@ -780,16 +800,8 @@ class _StoryViewerState extends State<StoryViewer> with SingleTickerProviderStat
   }
 }
 
+// Moment class (temporary, should be in models)
 class Moment {
-
-  Moment({
-    required this.id,
-    required this.userId,
-    required this.username,
-    required this.type, required this.timestamp, required this.views, required this.likes, required this.comments, this.userAvatar,
-    this.mediaUrl,
-    this.caption,
-  });
   final String id;
   final String userId;
   final String username;
@@ -801,4 +813,18 @@ class Moment {
   final int views;
   final int likes;
   final int comments;
+
+  Moment({
+    required this.id,
+    required this.userId,
+    required this.username,
+    this.userAvatar,
+    required this.type,
+    this.mediaUrl,
+    this.caption,
+    required this.timestamp,
+    required this.views,
+    required this.likes,
+    required this.comments,
+  });
 }

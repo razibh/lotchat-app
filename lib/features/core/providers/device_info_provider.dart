@@ -4,29 +4,42 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../core/di/service_locator.dart';
 import '../../../core/services/logger_service.dart';
+import '../../../core/services/navigation_service.dart';
 
 class DeviceInfoProvider extends ChangeNotifier {
-
-  DeviceInfoProvider() {
-    _loadDeviceInfo();
-    _loadAppInfo();
-  }
   final LoggerService _logger = ServiceLocator().get<LoggerService>();
   final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
-  
-  Map<String, dynamic> _deviceInfoData = <String, dynamic>{};
-  Map<String, dynamic> _appInfoData = <String, dynamic>{};
+
+  Map<String, dynamic> _deviceInfoData = {};
+  Map<String, dynamic> _appInfoData = {};
   bool _isLoading = true;
 
   Map<String, dynamic> get deviceInfo => _deviceInfoData;
   Map<String, dynamic> get appInfo => _appInfoData;
   bool get isLoading => _isLoading;
 
+  DeviceInfoProvider() {
+    _loadDeviceInfo();
+    _loadAppInfo();
+  }
+
+  BuildContext? _getContext() {
+    // NavigationService এর navigatorKey static
+    return NavigationService.navigatorKey.currentContext;
+  }
+
   Future<void> _loadDeviceInfo() async {
     try {
-      if (Theme.of(_getContext()).platform == TargetPlatform.android) {
+      final context = _getContext();
+
+      TargetPlatform? platform;
+      if (context != null) {
+        platform = Theme.of(context).platform;
+      }
+
+      if (platform == TargetPlatform.android) {
         final AndroidDeviceInfo androidInfo = await _deviceInfo.androidInfo;
-        _deviceInfoData = <String, dynamic>{
+        _deviceInfoData = {
           'model': androidInfo.model,
           'brand': androidInfo.brand,
           'manufacturer': androidInfo.manufacturer,
@@ -39,10 +52,12 @@ class DeviceInfoProvider extends ChangeNotifier {
           'tags': androidInfo.tags,
           'type': androidInfo.type,
           'isPhysicalDevice': androidInfo.isPhysicalDevice,
+          'id': androidInfo.id,
+          'platform': 'android',
         };
-      } else if (Theme.of(_getContext()).platform == TargetPlatform.iOS) {
+      } else if (platform == TargetPlatform.iOS) {
         final IosDeviceInfo iosInfo = await _deviceInfo.iosInfo;
-        _deviceInfoData = <String, dynamic>{
+        _deviceInfoData = {
           'model': iosInfo.model,
           'name': iosInfo.name,
           'systemName': iosInfo.systemName,
@@ -50,9 +65,22 @@ class DeviceInfoProvider extends ChangeNotifier {
           'localizedModel': iosInfo.localizedModel,
           'identifierForVendor': iosInfo.identifierForVendor,
           'isPhysicalDevice': iosInfo.isPhysicalDevice,
-          'utsname': iosInfo.utsname,
+          'utsname': iosInfo.utsname.machine,
+          'platform': 'ios',
         };
+      } else {
+        // Web, Windows, macOS, Linux এর জন্য platform detection
+        if (context != null) {
+          _deviceInfoData = {
+            'platform': platform?.name ?? 'unknown',
+          };
+        } else {
+          _deviceInfoData = {
+            'platform': 'unknown',
+          };
+        }
       }
+
       _logger.info('Device info loaded successfully');
     } catch (e) {
       _logger.error('Failed to load device info', error: e);
@@ -65,7 +93,7 @@ class DeviceInfoProvider extends ChangeNotifier {
   Future<void> _loadAppInfo() async {
     try {
       final PackageInfo packageInfo = await PackageInfo.fromPlatform();
-      _appInfoData = <String, dynamic>{
+      _appInfoData = {
         'appName': packageInfo.appName,
         'packageName': packageInfo.packageName,
         'version': packageInfo.version,
@@ -81,10 +109,15 @@ class DeviceInfoProvider extends ChangeNotifier {
   // Get device ID (for analytics)
   Future<String?> getDeviceId() async {
     try {
-      if (Theme.of(_getContext()).platform == TargetPlatform.android) {
+      final context = _getContext();
+      if (context == null) return null;
+
+      final platform = Theme.of(context).platform;
+
+      if (platform == TargetPlatform.android) {
         final AndroidDeviceInfo androidInfo = await _deviceInfo.androidInfo;
         return androidInfo.id;
-      } else if (Theme.of(_getContext()).platform == TargetPlatform.iOS) {
+      } else if (platform == TargetPlatform.iOS) {
         final IosDeviceInfo iosInfo = await _deviceInfo.iosInfo;
         return iosInfo.identifierForVendor;
       }
@@ -98,8 +131,8 @@ class DeviceInfoProvider extends ChangeNotifier {
   // Check if device is tablet
   bool isTablet(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
-    final diagonal = (size.width * size.width + size.height * size.height).sqrt();
-    return diagonal > 1100; // Approx 7 inches
+    final double shortestSide = size.shortestSide;
+    return shortestSide > 600; // 600dp is typical tablet threshold
   }
 
   // Get device type
@@ -117,8 +150,32 @@ class DeviceInfoProvider extends ChangeNotifier {
     return 'xlarge';
   }
 
-  BuildContext? _getContext() {
-    // This would need navigation service
-    return null;
+  // Get platform name
+  String getPlatformName(BuildContext context) {
+    final platform = Theme.of(context).platform;
+    return platform.name;
+  }
+
+  // Check if running on web
+  bool get isWeb => _deviceInfoData['platform'] == 'web';
+
+  // Get device name
+  String getDeviceName() {
+    if (_deviceInfoData.containsKey('model')) {
+      return _deviceInfoData['model'] as String;
+    } else if (_deviceInfoData.containsKey('name')) {
+      return _deviceInfoData['name'] as String;
+    }
+    return 'Unknown Device';
+  }
+
+  // Get OS version
+  String getOsVersion() {
+    if (_deviceInfoData.containsKey('version')) {
+      return _deviceInfoData['version'] as String;
+    } else if (_deviceInfoData.containsKey('systemVersion')) {
+      return _deviceInfoData['systemVersion'] as String;
+    }
+    return 'Unknown';
   }
 }

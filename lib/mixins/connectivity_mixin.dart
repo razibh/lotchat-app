@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 
 mixin ConnectivityMixin {
   final Connectivity _connectivity = Connectivity();
   bool _isConnected = true;
+  ConnectivityResult? _connectionType;
 
   void initConnectivity() {
     _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
@@ -15,24 +17,42 @@ mixin ConnectivityMixin {
     _updateConnectionStatus(result);
   }
 
-  void _updateConnectionStatus(ConnectivityResult result) {
-    _isConnected = result != ConnectivityResult.none;
+  // 🟢 Updated to accept List<ConnectivityResult>
+  void _updateConnectionStatus(List<ConnectivityResult> results) {
+    _isConnected = !results.contains(ConnectivityResult.none);
+    if (results.isNotEmpty) {
+      _connectionType = results.first;
+    } else {
+      _connectionType = ConnectivityResult.none;
+    }
+    if (kDebugMode) {
+      print('Connection status: $_isConnected, Type: $_connectionType');
+    }
   }
 
   bool get isConnected => _isConnected;
 
   Future<bool> checkConnection() async {
     final List<ConnectivityResult> result = await _connectivity.checkConnectivity();
-    return result != ConnectivityResult.none;
+    return !result.contains(ConnectivityResult.none);
   }
 
-  Future<ConnectivityResult> getConnectionType() async {
+  // 🟢 Updated return type to List<ConnectivityResult>
+  Future<List<ConnectivityResult>> getConnectionType() async {
     return await _connectivity.checkConnectivity();
   }
 
-  bool get isOnWifi => _isConnected; // You'll need to track actual type
+  // 🟢 Check if on wifi
+  bool get isOnWifi => _connectionType == ConnectivityResult.wifi;
 
-  bool get isOnMobile => _isConnected; // You'll need to track actual type
+  // 🟢 Check if on mobile data
+  bool get isOnMobile => _connectionType == ConnectivityResult.mobile;
+
+  // 🟢 Check if on ethernet
+  bool get isOnEthernet => _connectionType == ConnectivityResult.ethernet;
+
+  // 🟢 Check if on vpn
+  bool get isOnVpn => _connectionType == ConnectivityResult.vpn;
 
   // Show no internet dialog
   Future<void> showNoInternetDialog(BuildContext context) async {
@@ -42,7 +62,7 @@ mixin ConnectivityMixin {
       builder: (BuildContext context) => AlertDialog(
         title: const Text('No Internet'),
         content: const Text('Please check your internet connection.'),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
@@ -50,7 +70,7 @@ mixin ConnectivityMixin {
           TextButton(
             onPressed: () async {
               final bool connected = await checkConnection();
-              if (connected) {
+              if (connected && context.mounted) {
                 Navigator.pop(context);
               }
             },

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 
 class MessageDeleteDialog extends StatelessWidget {
-
   const MessageDeleteDialog({
-    required this.onDeleteForMe, required this.onDeleteForEveryone, super.key,
+    super.key,
+    required this.onDeleteForMe,
+    required this.onDeleteForEveryone,
   });
+
   final VoidCallback onDeleteForMe;
   final VoidCallback onDeleteForEveryone;
 
@@ -14,7 +17,7 @@ class MessageDeleteDialog extends StatelessWidget {
       title: const Text('Delete Message'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
+        children: [
           ListTile(
             leading: const Icon(Icons.delete_outline),
             title: const Text('Delete for me'),
@@ -25,7 +28,10 @@ class MessageDeleteDialog extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: const Text('Delete for everyone', style: TextStyle(color: Colors.red)),
+            title: const Text(
+                'Delete for everyone',
+                style: TextStyle(color: Colors.red)
+            ),
             onTap: () {
               Navigator.pop(context);
               onDeleteForEveryone();

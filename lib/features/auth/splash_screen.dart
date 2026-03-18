@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
-import '../../core/providers/auth_provider.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../../core/providers/country_provider.dart';
 import '../../core/providers/notification_provider.dart';
 import '../../core/providers/theme_provider.dart';
@@ -42,17 +42,17 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       duration: const Duration(seconds: 2),
     );
 
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0, 0.5, curve: Curves.easeIn),
+        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
       ),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.5, end: 1).animate(
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0, 0.5, curve: Curves.easeOutBack),
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOutBack),
       ),
     );
 
@@ -72,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Future<void> _initializeApp() async {
     try {
       // Initialize all providers
-      await Future.wait(<Future<void>>[
+      await Future.wait([
         _initializeAuth(),
         _initializeCountry(),
         _initializeNotifications(),
@@ -112,7 +112,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _initializeTheme() async {
-    final ThemeProvider themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     await themeProvider.loadTheme();
   }
 
@@ -159,7 +159,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           'Failed to initialize the app. Please check your internet connection and try again.',
           style: TextStyle(color: Colors.white70),
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
@@ -175,12 +175,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DecoratedBox(
+      body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: <>[
+            colors: [
               AppColors.accentPurple,
               AppColors.accentBlue,
             ],
@@ -188,15 +188,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         ),
         child: SafeArea(
           child: Stack(
-            children: <>[
+            children: [
               // Animated Background Elements
               _buildAnimatedBackground(),
-              
+
               // Main Content
               Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: <>[
+                  children: [
                     // Logo with Animation
                     FadeTransition(
                       opacity: _fadeAnimation,
@@ -205,25 +205,25 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         child: _buildLogo(),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 30),
-                    
+
                     // App Name with Animation
                     SlideTransition(
                       position: _slideAnimation,
                       child: _buildAppName(),
                     ),
-                    
+
                     const SizedBox(height: 50),
-                    
+
                     // Loading Indicator
                     FadeTransition(
                       opacity: _fadeAnimation,
                       child: _buildLoadingIndicator(),
                     ),
-                    
+
                     const SizedBox(height: 30),
-                    
+
                     // Version Info
                     FadeTransition(
                       opacity: _fadeAnimation,
@@ -241,17 +241,17 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Widget _buildAnimatedBackground() {
     return Stack(
-      children: <>[
+      children: [
         // Animated circles
-        ...List.generate(5, (int index) {
+        ...List.generate(5, (index) {
           return Positioned(
             top: (index * 100.0) % MediaQuery.of(context).size.height,
             left: (index * 80.0) % MediaQuery.of(context).size.width,
-            child: TweenAnimationBuilder(
-              tween: Tween<double>(begin: 0, end: 1),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.0, end: 1.0),
               duration: Duration(seconds: 3 + index),
               curve: Curves.easeInOut,
-              builder: (BuildContext context, value, Widget? child) {
+              builder: (context, value, child) {
                 return Opacity(
                   opacity: 0.1 + (value * 0.1),
                   child: Transform.translate(
@@ -260,11 +260,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       value * 20,
                     ),
                     child: Container(
-                      width: 100 + (index * 50),
-                      height: 100 + (index * 50),
+                      width: 100 + (index * 50).toDouble(),
+                      height: 100 + (index * 50).toDouble(),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: Colors.white.withOpacity(0.1),
                       ),
                     ),
                   ),
@@ -283,15 +283,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       height: 120,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <>[
-            Colors.white.withValues(alpha: 0.3),
-            Colors.white.withValues(alpha: 0.1),
+          colors: [
+            Colors.white.withOpacity(0.3),
+            Colors.white.withOpacity(0.1),
           ],
         ),
         shape: BoxShape.circle,
-        boxShadow: <>[
+        boxShadow: [
           BoxShadow(
-            color: Colors.white.withValues(alpha: 0.3),
+            color: Colors.white.withOpacity(0.3),
             blurRadius: 30,
             spreadRadius: 5,
           ),
@@ -307,15 +307,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Widget _buildAppName() {
     return Column(
-      children: <>[
-        const Text(
+      children: [
+        Text(
           AppConstants.appName,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 32,
             fontWeight: FontWeight.bold,
             letterSpacing: 2,
-            shadows: <>[
+            shadows: [
               Shadow(
                 color: Colors.black26,
                 blurRadius: 10,
@@ -328,7 +328,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Text(
@@ -346,7 +346,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Widget _buildLoadingIndicator() {
     return Column(
-      children: <>[
+      children: [
         const SizedBox(
           width: 50,
           height: 50,
@@ -356,10 +356,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           ),
         ),
         const SizedBox(height: 16),
-        TweenAnimationBuilder(
+        TweenAnimationBuilder<int>(
           tween: IntTween(begin: 0, end: 100),
           duration: const Duration(milliseconds: 1500),
-          builder: (BuildContext context, value, Widget? child) {
+          builder: (context, value, child) {
             return Text(
               '$value%',
               style: const TextStyle(
@@ -376,11 +376,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Widget _buildVersionInfo() {
     return Column(
-      children: <>[
+      children: [
         Text(
           'Version ${AppConstants.version}',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
+            color: Colors.white.withOpacity(0.5),
             fontSize: 12,
           ),
         ),
@@ -388,7 +388,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         Text(
           '© 2024 ${AppConstants.appName}. All rights reserved.',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.3),
+            color: Colors.white.withOpacity(0.3),
             fontSize: 10,
           ),
         ),
@@ -399,24 +399,17 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
 // Additional helper widget for loading states
 class AnimatedSplashLogo extends StatefulWidget {
+  final Duration duration;
+  final VoidCallback? onComplete;
 
   const AnimatedSplashLogo({
     super.key,
     this.duration = const Duration(seconds: 2),
     this.onComplete,
   });
-  final Duration duration;
-  final VoidCallback? onComplete;
 
   @override
-  State<AnimatedSplashLogo> createState() => _AnimatedSplashLogoState();
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<Duration>('duration', duration));
-    properties.add(ObjectFlagProperty<VoidCallback?>.has('onComplete', onComplete));
-  }
+  State<AnimatedSplashLogo> createState() => _AnimatedSplashLogoState();  // ← এই লাইন গুরুত্বপূর্ণ
 }
 
 class _AnimatedSplashLogoState extends State<AnimatedSplashLogo> with SingleTickerProviderStateMixin {
@@ -431,14 +424,14 @@ class _AnimatedSplashLogoState extends State<AnimatedSplashLogo> with SingleTick
       duration: widget.duration,
     )..forward();
 
-    _animation = Tween<double>(begin: 0, end: 1).animate(
+    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
         curve: Curves.elasticOut,
       ),
     );
 
-    _controller.addStatusListener((AnimationStatus status) {
+    _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed && widget.onComplete != null) {
         widget.onComplete!();
       }
@@ -455,7 +448,7 @@ class _AnimatedSplashLogoState extends State<AnimatedSplashLogo> with SingleTick
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _animation,
-      builder: (BuildContext context, Widget? child) {
+      builder: (context, child) {
         return Transform.scale(
           scale: _animation.value,
           child: Opacity(
@@ -465,15 +458,15 @@ class _AnimatedSplashLogoState extends State<AnimatedSplashLogo> with SingleTick
               height: 100,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: <>[
+                  colors: [
                     AppColors.accentPurple,
                     AppColors.accentBlue,
                   ],
                 ),
                 shape: BoxShape.circle,
-                boxShadow: <>[
+                boxShadow: [
                   BoxShadow(
-                    color: AppColors.accentPurple.withValues(alpha: 0.5),
+                    color: AppColors.accentPurple.withOpacity(0.5),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -494,43 +487,46 @@ class _AnimatedSplashLogoState extends State<AnimatedSplashLogo> with SingleTick
 
 // Splash screen with branded background image
 class BrandedSplashScreen extends StatelessWidget {
-
-  const BrandedSplashScreen({
-    required this.backgroundImage, super.key,
-    this.logo,
-    this.title,
-    this.onLoadComplete,
-  });
   final String backgroundImage;
   final Widget? logo;
   final String? title;
   final VoidCallback? onLoadComplete;
+
+  const BrandedSplashScreen({
+    required this.backgroundImage,
+    super.key,
+    this.logo,
+    this.title,
+    this.onLoadComplete,
+  });
+
+  // debugFillProperties সরিয়ে দেওয়া হয়েছে
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
-        children: <>[
+        children: [
           // Background Image
           Image.asset(
             backgroundImage,
             fit: BoxFit.cover,
           ),
-          
+
           // Overlay
           Container(
-            color: Colors.black.withValues(alpha: 0.5),
+            color: Colors.black.withOpacity(0.5),
           ),
-          
+
           // Content
           SafeArea(
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: <>[
+                children: [
                   if (logo != null) logo!,
-                  if (title != null) ...<>[
+                  if (title != null) ...[
                     const SizedBox(height: 20),
                     Text(
                       title!,
@@ -553,36 +549,31 @@ class BrandedSplashScreen extends StatelessWidget {
       ),
     );
   }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(StringProperty('backgroundImage', backgroundImage));
-    properties.add(StringProperty('title', title));
-    properties.add(ObjectFlagProperty<VoidCallback?>.has('onLoadComplete', onLoadComplete));
-  }
 }
 
 // Preloader widget for showing progress
 class SplashPreloader extends StatelessWidget {
-
-  const SplashPreloader({
-    required this.progress, super.key,
-    this.message,
-  });
   final double progress;
   final String? message;
+
+  const SplashPreloader({
+    required this.progress,
+    super.key,
+    this.message,
+  });
+
+  // debugFillProperties সরিয়ে দেওয়া হয়েছে
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: <>[
+      children: [
         SizedBox(
           width: 200,
           child: LinearProgressIndicator(
             value: progress,
-            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            backgroundColor: Colors.white.withOpacity(0.2),
             valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
             minHeight: 4,
           ),
@@ -606,12 +597,5 @@ class SplashPreloader extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DoubleProperty('progress', progress));
-    properties.add(StringProperty('message', message));
   }
 }

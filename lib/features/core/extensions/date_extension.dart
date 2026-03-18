@@ -156,8 +156,10 @@ extension DateTimeExtension on DateTime {
 
   // Get date range
   List<DateTime> get daysInMonth {
-    final List<DateTime> days = <DateTime>[];
-    for (var i = 1; i <= daysInMonth; i++) {
+    final List<DateTime> days = [];
+    final int lastDay = DateTime(year, month + 1, 0).day; // মাসের শেষ দিন
+
+    for (var i = 1; i <= lastDay; i++) {
       days.add(DateTime(year, month, i));
     }
     return days;

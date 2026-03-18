@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import '../models/seller_models.dart';
+import 'package:flutter/foundation.dart';
+import '../../coin_seller/models/seller_models.dart';
 
 class SellerBadgeWidget extends StatelessWidget {
-
-  const SellerBadgeWidget({
-    required this.badge, super.key,
-    this.onTap,
-    this.showDetails = false,
-  });
   final SellerBadge badge;
   final VoidCallback? onTap;
   final bool showDetails;
+
+  const SellerBadgeWidget({
+    required this.badge,
+    this.onTap,
+    this.showDetails = false,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +22,7 @@ class SellerBadgeWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: <>[
+            colors: [
               badge.tierColor.withOpacity(0.3),
               badge.tierColor,
             ],
@@ -31,7 +33,7 @@ class SellerBadgeWidget extends StatelessWidget {
           border: Border.all(
             color: badge.tierColor.withOpacity(0.5),
           ),
-          boxShadow: <>[
+          boxShadow: [
             BoxShadow(
               color: badge.tierColor.withOpacity(0.3),
               blurRadius: 8,
@@ -41,7 +43,7 @@ class SellerBadgeWidget extends StatelessWidget {
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Icon(
               _getTierIcon(badge.tier),
               color: Colors.white,
@@ -56,7 +58,7 @@ class SellerBadgeWidget extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            if (badge.isVerified) ...<>[
+            if (badge.isVerified) ...[
               const SizedBox(width: 4),
               const Icon(
                 Icons.verified,
@@ -68,7 +70,7 @@ class SellerBadgeWidget extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               margin: const EdgeInsets.only(left: 4),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -79,7 +81,7 @@ class SellerBadgeWidget extends StatelessWidget {
                 ),
               ),
             ),
-            if (showDetails) ...<>[
+            if (showDetails) ...[
               const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -128,29 +130,35 @@ class SellerBadgeWidget extends StatelessWidget {
 }
 
 class SellerRatingBadge extends StatelessWidget {
-
-  const SellerRatingBadge({
-    required this.rating, required this.totalSales, super.key,
-  });
   final double rating;
   final int totalSales;
+
+  const SellerRatingBadge({
+    required this.rating,
+    required this.totalSales,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.2),
+        color: Colors.amber.withOpacity(0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
+        children: [
           const Icon(Icons.star, color: Colors.amber, size: 12),
           const SizedBox(width: 2),
           Text(
             rating.toStringAsFixed(1),
-            style: const TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.amber,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(width: 4),
           Container(

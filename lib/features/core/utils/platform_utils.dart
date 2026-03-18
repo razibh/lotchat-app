@@ -1,33 +1,34 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class PlatformUtils {
   // Check if platform is Android
-  static bool get isAndroid => Platform.isAndroid;
+  static bool get isAndroid => !kIsWeb && Platform.isAndroid;
 
   // Check if platform is iOS
-  static bool get isIOS => Platform.isIOS;
+  static bool get isIOS => !kIsWeb && Platform.isIOS;
 
   // Check if platform is Web
   static bool get isWeb => kIsWeb;
 
   // Check if platform is macOS
-  static bool get isMacOS => Platform.isMacOS;
+  static bool get isMacOS => !kIsWeb && Platform.isMacOS;
 
   // Check if platform is Windows
-  static bool get isWindows => Platform.isWindows;
+  static bool get isWindows => !kIsWeb && Platform.isWindows;
 
   // Check if platform is Linux
-  static bool get isLinux => Platform.isLinux;
+  static bool get isLinux => !kIsWeb && Platform.isLinux;
 
   // Check if platform is Fuchsia
-  static bool get isFuchsia => Platform.isFuchsia;
+  static bool get isFuchsia => !kIsWeb && Platform.isFuchsia;
 
   // Check if platform is mobile (Android or iOS)
-  static bool get isMobile => isAndroid || isIOS;
+  static bool get isMobile => (isAndroid || isIOS) && !isWeb;
 
   // Check if platform is desktop (macOS, Windows, Linux)
-  static bool get isDesktop => isMacOS || isWindows || isLinux;
+  static bool get isDesktop => (isMacOS || isWindows || isLinux) && !isWeb;
 
   // Get platform name
   static String get platformName {
@@ -143,5 +144,41 @@ class PlatformUtils {
   // Get bottom safe area height
   static double getBottomSafeArea(BuildContext context) {
     return MediaQuery.of(context).padding.bottom;
+  }
+
+  // Get keyboard height
+  static double getKeyboardHeight(BuildContext context) {
+    return MediaQuery.of(context).viewInsets.bottom;
+  }
+
+  // Check if keyboard is visible
+  static bool isKeyboardVisible(BuildContext context) {
+    return MediaQuery.of(context).viewInsets.bottom > 0;
+  }
+
+  // Get screen width
+  static double getScreenWidth(BuildContext context) {
+    return MediaQuery.of(context).size.width;
+  }
+
+  // Get screen height
+  static double getScreenHeight(BuildContext context) {
+    return MediaQuery.of(context).size.height;
+  }
+
+  // Get shortest side (for responsive design)
+  static double getShortestSide(BuildContext context) {
+    return MediaQuery.of(context).size.shortestSide;
+  }
+
+  // Check if device is tablet (based on screen size)
+  static bool isTablet(BuildContext context) {
+    final double shortestSide = getShortestSide(context);
+    return shortestSide > 600;
+  }
+
+  // Check if device is phone (based on screen size)
+  static bool isPhone(BuildContext context) {
+    return !isTablet(context);
   }
 }

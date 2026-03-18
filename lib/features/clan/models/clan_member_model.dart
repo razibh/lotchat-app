@@ -1,58 +1,16 @@
-enum ClanRole { leader, coLeader, elder, member }
-enum MemberStatus { online, offline, away, busy }
+import 'package:flutter/material.dart';
+
+// Enum গুলোকে clash এড়ানোর জন্য আলাদা নাম দিন
+enum MemberClanRole { leader, coLeader, elder, member }  // নাম পরিবর্তন করে MemberClanRole
+enum MemberOnlineStatus { online, offline, away, busy }  // নাম পরিবর্তন করে MemberOnlineStatus
 
 class ClanMemberModel {
-
-  ClanMemberModel({
-    required this.userId,
-    required this.username,
-    required this.role, required this.status, required this.joinedAt, this.displayName,
-    this.avatar,
-    this.lastActive,
-    this.activityPoints = 0,
-    this.donations = 0,
-    this.warPoints = 0,
-    this.giftsReceived = 0,
-    this.giftsSent = 0,
-    this.messagesCount = 0,
-    this.voiceMinutes = 0,
-    this.badges = const <String>[],
-    this.stats = const <String, dynamic>{},
-    this.isFavorite = false,
-    this.note,
-  });
-
-  factory ClanMemberModel.fromJson(Map<String, dynamic> json) {
-    return ClanMemberModel(
-      userId: json['userId'],
-      username: json['username'],
-      displayName: json['displayName'],
-      avatar: json['avatar'],
-      role: ClanRole.values[json['role']],
-      status: MemberStatus.values[json['status'] ?? 0],
-      joinedAt: DateTime.parse(json['joinedAt']),
-      lastActive: json['lastActive'] != null
-          ? DateTime.parse(json['lastActive'])
-          : null,
-      activityPoints: json['activityPoints'] ?? 0,
-      donations: json['donations'] ?? 0,
-      warPoints: json['warPoints'] ?? 0,
-      giftsReceived: json['giftsReceived'] ?? 0,
-      giftsSent: json['giftsSent'] ?? 0,
-      messagesCount: json['messagesCount'] ?? 0,
-      voiceMinutes: json['voiceMinutes'] ?? 0,
-      badges: List<String>.from(json['badges'] ?? <dynamic>[]),
-      stats: json['stats'] ?? <String, dynamic>{},
-      isFavorite: json['isFavorite'] ?? false,
-      note: json['note'],
-    );
-  }
   final String userId;
   final String username;
   final String? displayName;
   final String? avatar;
-  final ClanRole role;
-  final MemberStatus status;
+  final MemberClanRole role;  // এখানে MemberClanRole ব্যবহার করুন
+  final MemberOnlineStatus status;  // এখানে MemberOnlineStatus ব্যবহার করুন
   final DateTime joinedAt;
   final DateTime? lastActive;
   final int activityPoints;
@@ -67,72 +25,124 @@ class ClanMemberModel {
   final bool isFavorite;
   final String? note;
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'userId': userId,
-    'username': username,
-    'displayName': displayName,
-    'avatar': avatar,
-    'role': role.index,
-    'status': status.index,
-    'joinedAt': joinedAt.toIso8601String(),
-    'lastActive': lastActive?.toIso8601String(),
-    'activityPoints': activityPoints,
-    'donations': donations,
-    'warPoints': warPoints,
-    'giftsReceived': giftsReceived,
-    'giftsSent': giftsSent,
-    'messagesCount': messagesCount,
-    'voiceMinutes': voiceMinutes,
-    'badges': badges,
-    'stats': stats,
-    'isFavorite': isFavorite,
-    'note': note,
-  };
+  ClanMemberModel({
+    required this.userId,
+    required this.username,
+    required this.role,
+    required this.status,
+    required this.joinedAt,
+    this.displayName,
+    this.avatar,
+    this.lastActive,
+    this.activityPoints = 0,
+    this.donations = 0,
+    this.warPoints = 0,
+    this.giftsReceived = 0,
+    this.giftsSent = 0,
+    this.messagesCount = 0,
+    this.voiceMinutes = 0,
+    this.badges = const [],
+    this.stats = const {},
+    this.isFavorite = false,
+    this.note,
+  });
+
+  factory ClanMemberModel.fromJson(Map<String, dynamic> json) {
+    return ClanMemberModel(
+      userId: json['userId'] ?? '',
+      username: json['username'] ?? '',
+      displayName: json['displayName'],
+      avatar: json['avatar'],
+      role: MemberClanRole.values[json['role'] ?? 0],
+      status: MemberOnlineStatus.values[json['status'] ?? 0],
+      joinedAt: json['joinedAt'] != null
+          ? DateTime.parse(json['joinedAt'])
+          : DateTime.now(),
+      lastActive: json['lastActive'] != null
+          ? DateTime.parse(json['lastActive'])
+          : null,
+      activityPoints: json['activityPoints'] ?? 0,
+      donations: json['donations'] ?? 0,
+      warPoints: json['warPoints'] ?? 0,
+      giftsReceived: json['giftsReceived'] ?? 0,
+      giftsSent: json['giftsSent'] ?? 0,
+      messagesCount: json['messagesCount'] ?? 0,
+      voiceMinutes: json['voiceMinutes'] ?? 0,
+      badges: List<String>.from(json['badges'] ?? []),
+      stats: json['stats'] ?? {},
+      isFavorite: json['isFavorite'] ?? false,
+      note: json['note'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'username': username,
+      'displayName': displayName,
+      'avatar': avatar,
+      'role': role.index,
+      'status': status.index,
+      'joinedAt': joinedAt.toIso8601String(),
+      'lastActive': lastActive?.toIso8601String(),
+      'activityPoints': activityPoints,
+      'donations': donations,
+      'warPoints': warPoints,
+      'giftsReceived': giftsReceived,
+      'giftsSent': giftsSent,
+      'messagesCount': messagesCount,
+      'voiceMinutes': voiceMinutes,
+      'badges': badges,
+      'stats': stats,
+      'isFavorite': isFavorite,
+      'note': note,
+    };
+  }
 
   // Computed properties
   String get displayNameOrUsername => displayName ?? username;
-  
-  bool get isOnline => status == MemberStatus.online;
-  
+
+  bool get isOnline => status == MemberOnlineStatus.online;
+
   int get totalContribution => activityPoints + donations * 10 + warPoints * 5;
-  
-  double get activityLevel => activityPoints / 1000; // Normalized to 0-1
-  
+
+  double get activityLevel => activityPoints / 1000;
+
   String get roleDisplay {
     switch (role) {
-      case ClanRole.leader:
+      case MemberClanRole.leader:
         return 'Leader';
-      case ClanRole.coLeader:
+      case MemberClanRole.coLeader:
         return 'Co-Leader';
-      case ClanRole.elder:
+      case MemberClanRole.elder:
         return 'Elder';
-      case ClanRole.member:
+      case MemberClanRole.member:
         return 'Member';
     }
   }
 
   Color get roleColor {
     switch (role) {
-      case ClanRole.leader:
-        return const Color(0xFFEF4444); // Red
-      case ClanRole.coLeader:
-        return const Color(0xFFF59E0B); // Orange
-      case ClanRole.elder:
-        return const Color(0xFF3B82F6); // Blue
-      case ClanRole.member:
-        return const Color(0xFF6B7280); // Gray
+      case MemberClanRole.leader:
+        return const Color(0xFFEF4444);
+      case MemberClanRole.coLeader:
+        return const Color(0xFFF59E0B);
+      case MemberClanRole.elder:
+        return const Color(0xFF3B82F6);
+      case MemberClanRole.member:
+        return const Color(0xFF6B7280);
     }
   }
 
   String get roleIcon {
     switch (role) {
-      case ClanRole.leader:
+      case MemberClanRole.leader:
         return '👑';
-      case ClanRole.coLeader:
+      case MemberClanRole.coLeader:
         return '⭐';
-      case ClanRole.elder:
+      case MemberClanRole.elder:
         return '🔰';
-      case ClanRole.member:
+      case MemberClanRole.member:
         return '👤';
     }
   }
@@ -143,8 +153,8 @@ class ClanMemberModel {
     String? username,
     String? displayName,
     String? avatar,
-    ClanRole? role,
-    MemberStatus? status,
+    MemberClanRole? role,
+    MemberOnlineStatus? status,
     DateTime? joinedAt,
     DateTime? lastActive,
     int? activityPoints,
@@ -184,9 +194,9 @@ class ClanMemberModel {
 
   // Get rank in clan
   int getRank(List<ClanMemberModel> members) {
-    final List<ClanMemberModel> sorted = List<ClanMemberModel>.from(members)
-      ..sort((ClanMemberModel a, ClanMemberModel b) => b.activityPoints.compareTo(a.activityPoints));
-    return sorted.indexWhere((ClanMemberModel m) => m.userId == userId) + 1;
+    final sorted = List<ClanMemberModel>.from(members)
+      ..sort((a, b) => b.activityPoints.compareTo(a.activityPoints));
+    return sorted.indexWhere((m) => m.userId == userId) + 1;
   }
 
   // Get contribution level
@@ -200,6 +210,12 @@ class ClanMemberModel {
 }
 
 class ClanMemberStats {
+  final int totalMembers;
+  final int onlineNow;
+  final int activeToday;
+  final int activeThisWeek;
+  final int newMembers;
+  final Map<MemberClanRole, int> roleDistribution;  // এখানেও MemberClanRole
 
   ClanMemberStats({
     required this.totalMembers,
@@ -212,27 +228,23 @@ class ClanMemberStats {
 
   factory ClanMemberStats.fromJson(Map<String, dynamic> json) {
     return ClanMemberStats(
-      totalMembers: json['totalMembers'],
-      onlineNow: json['onlineNow'],
-      activeToday: json['activeToday'],
-      activeThisWeek: json['activeThisWeek'],
-      newMembers: json['newMembers'],
-      roleDistribution: Map<ClanRole, int>.from(json['roleDistribution']),
+      totalMembers: json['totalMembers'] ?? 0,
+      onlineNow: json['onlineNow'] ?? 0,
+      activeToday: json['activeToday'] ?? 0,
+      activeThisWeek: json['activeThisWeek'] ?? 0,
+      newMembers: json['newMembers'] ?? 0,
+      roleDistribution: Map<MemberClanRole, int>.from(json['roleDistribution'] ?? {}),
     );
   }
-  final int totalMembers;
-  final int onlineNow;
-  final int activeToday;
-  final int activeThisWeek;
-  final int newMembers;
-  final Map<ClanRole, int> roleDistribution;
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'totalMembers': totalMembers,
-    'onlineNow': onlineNow,
-    'activeToday': activeToday,
-    'activeThisWeek': activeThisWeek,
-    'newMembers': newMembers,
-    'roleDistribution': roleDistribution,
-  };
+  Map<String, dynamic> toJson() {
+    return {
+      'totalMembers': totalMembers,
+      'onlineNow': onlineNow,
+      'activeToday': activeToday,
+      'activeThisWeek': activeThisWeek,
+      'newMembers': newMembers,
+      'roleDistribution': roleDistribution,
+    };
+  }
 }

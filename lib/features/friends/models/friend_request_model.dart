@@ -1,37 +1,8 @@
+import 'package:flutter/material.dart'; // Color এর জন্য এই import যোগ করুন
+
 enum FriendRequestStatus { pending, accepted, rejected, cancelled, blocked }
 
 class FriendRequestModel {
-
-  FriendRequestModel({
-    required this.id,
-    required this.senderId,
-    required this.senderName,
-    required this.receiverId, required this.receiverName, required this.status, required this.sentAt, required this.mutualFriends, this.senderAvatar,
-    this.receiverAvatar,
-    this.message,
-    this.respondedAt,
-    this.commonInterests = const <String>[],
-  });
-
-  factory FriendRequestModel.fromJson(Map<String, dynamic> json) {
-    return FriendRequestModel(
-      id: json['id'],
-      senderId: json['senderId'],
-      senderName: json['senderName'],
-      senderAvatar: json['senderAvatar'],
-      receiverId: json['receiverId'],
-      receiverName: json['receiverName'],
-      receiverAvatar: json['receiverAvatar'],
-      status: FriendRequestStatus.values[json['status']],
-      message: json['message'],
-      sentAt: DateTime.parse(json['sentAt']),
-      respondedAt: json['respondedAt'] != null 
-          ? DateTime.parse(json['respondedAt']) 
-          : null,
-      mutualFriends: json['mutualFriends'] ?? 0,
-      commonInterests: List<String>.from(json['commonInterests'] ?? <dynamic>[]),
-    );
-  }
   final String id;
   final String senderId;
   final String senderName;
@@ -46,7 +17,45 @@ class FriendRequestModel {
   final int mutualFriends;
   final List<String> commonInterests;
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
+  FriendRequestModel({
+    required this.id,
+    required this.senderId,
+    required this.senderName,
+    this.senderAvatar,
+    required this.receiverId,
+    required this.receiverName,
+    this.receiverAvatar,
+    required this.status,
+    this.message,
+    required this.sentAt,
+    this.respondedAt,
+    required this.mutualFriends,
+    this.commonInterests = const [],
+  });
+
+  factory FriendRequestModel.fromJson(Map<String, dynamic> json) {
+    return FriendRequestModel(
+      id: json['id'] ?? '',
+      senderId: json['senderId'] ?? '',
+      senderName: json['senderName'] ?? '',
+      senderAvatar: json['senderAvatar'],
+      receiverId: json['receiverId'] ?? '',
+      receiverName: json['receiverName'] ?? '',
+      receiverAvatar: json['receiverAvatar'],
+      status: FriendRequestStatus.values[json['status'] ?? 0],
+      message: json['message'],
+      sentAt: json['sentAt'] != null
+          ? DateTime.parse(json['sentAt'])
+          : DateTime.now(),
+      respondedAt: json['respondedAt'] != null
+          ? DateTime.parse(json['respondedAt'])
+          : null,
+      mutualFriends: json['mutualFriends'] ?? 0,
+      commonInterests: List<String>.from(json['commonInterests'] ?? []),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
     'id': id,
     'senderId': senderId,
     'senderName': senderName,
@@ -100,6 +109,12 @@ class FriendRequestModel {
 }
 
 class FriendRequestStats {
+  final int totalReceived;
+  final int totalSent;
+  final int pendingReceived;
+  final int pendingSent;
+  final int accepted;
+  final int rejected;
 
   FriendRequestStats({
     required this.totalReceived,
@@ -112,22 +127,16 @@ class FriendRequestStats {
 
   factory FriendRequestStats.fromJson(Map<String, dynamic> json) {
     return FriendRequestStats(
-      totalReceived: json['totalReceived'],
-      totalSent: json['totalSent'],
-      pendingReceived: json['pendingReceived'],
-      pendingSent: json['pendingSent'],
-      accepted: json['accepted'],
-      rejected: json['rejected'],
+      totalReceived: json['totalReceived'] ?? 0,
+      totalSent: json['totalSent'] ?? 0,
+      pendingReceived: json['pendingReceived'] ?? 0,
+      pendingSent: json['pendingSent'] ?? 0,
+      accepted: json['accepted'] ?? 0,
+      rejected: json['rejected'] ?? 0,
     );
   }
-  final int totalReceived;
-  final int totalSent;
-  final int pendingReceived;
-  final int pendingSent;
-  final int accepted;
-  final int rejected;
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
+  Map<String, dynamic> toJson() => {
     'totalReceived': totalReceived,
     'totalSent': totalSent,
     'pendingReceived': pendingReceived,

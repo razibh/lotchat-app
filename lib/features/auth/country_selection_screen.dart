@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/gradient_background.dart';
-import '../../core/models/country_models.dart';
+import '../../core/models/country_model.dart';  // ← এই ইম্পোর্ট ঠিক আছে
 import '../../core/utils/country_helper.dart';
 import '../home/recommended_rooms_screen.dart';
 
@@ -14,7 +14,7 @@ class CountrySelectionScreen extends StatefulWidget {
 
 class _CountrySelectionScreenState extends State<CountrySelectionScreen> {
   String? _selectedCountryId;
-  List<Country> _countries = <Country>[];
+  List<CountryModel> _countries = [];  // ← Country → CountryModel
   bool _isLoading = true;
 
   @override
@@ -25,7 +25,7 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen> {
 
   void _loadCountries() {
     setState(() {
-      _countries = Country.getSupportedCountries();
+      _countries = CountryModel.getCountries();  // ← Country → CountryModel
       _isLoading = false;
     });
   }
@@ -38,9 +38,9 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen> {
       return;
     }
 
-    // Save selected country (you can save to SharedPreferences or user profile)
+    // Save selected country
     CountryHelper.setSelectedCountry(_selectedCountryId!);
-    
+
     // Navigate to home with country-specific recommendations
     Navigator.pushReplacement(
       context,
@@ -58,12 +58,15 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen> {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
-              children: <>[
+              children: [
                 _buildHeader(),
                 const SizedBox(height: 40),
                 _buildTitle(),
                 const SizedBox(height: 40),
-                if (_isLoading) const Center(child: CircularProgressIndicator()) else _buildCountryGrid(),
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator())
+                else
+                  _buildCountryGrid(),
                 const Spacer(),
                 _buildContinueButton(),
               ],
@@ -76,7 +79,7 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen> {
 
   Widget _buildHeader() {
     return Row(
-      children: <>[
+      children: [
         IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -87,7 +90,7 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen> {
 
   Widget _buildTitle() {
     return Column(
-      children: <>[
+      children: [
         const Icon(
           Icons.public,
           size: 80,
@@ -106,7 +109,7 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen> {
         Text(
           'Choose your country to see local rooms\nand connect with people near you',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+            color: Colors.white.withOpacity(0.7),
             fontSize: 14,
           ),
           textAlign: TextAlign.center,
@@ -126,27 +129,27 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen> {
         mainAxisSpacing: 16,
       ),
       itemCount: _countries.length,
-      itemBuilder: (BuildContext context, int index) {
-        final Country country = _countries[index];
-        final bool isSelected = _selectedCountryId == country.id;
-        
+      itemBuilder: (context, index) {
+        final country = _countries[index];  // ← এখন CountryModel
+        final bool isSelected = _selectedCountryId == country.code;  // ← id → code
+
         return GestureDetector(
           onTap: () {
             setState(() {
-              _selectedCountryId = country.id;
+              _selectedCountryId = country.code;  // ← id → code
             });
           },
-          child: DecoratedBox(
+          child: Container(  // ← DecoratedBox → Container (সরলতার জন্য)
             decoration: BoxDecoration(
               gradient: isSelected
                   ? const LinearGradient(
-                      colors: <>[
-                        AppColors.accentPurple,
-                        AppColors.accentBlue,
-                      ],
-                    )
+                colors: [
+                  AppColors.accentPurple,
+                  AppColors.accentBlue,
+                ],
+              )
                   : null,
-              color: isSelected ? null : Colors.white.withValues(alpha: 0.1),
+              color: isSelected ? null : Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isSelected ? Colors.white : Colors.transparent,
@@ -155,7 +158,7 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen> {
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: <>[
+              children: [
                 Text(
                   country.flag,
                   style: const TextStyle(fontSize: 48),

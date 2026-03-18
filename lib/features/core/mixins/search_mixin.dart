@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async'; // Timer এর জন্য
 
 typedef SearchPredicate<T> = bool Function(T item, String query);
 typedef SearchFilter<T> = List<T> Function(List<T> items, String query);
@@ -6,9 +7,9 @@ typedef SearchFilter<T> = List<T> Function(List<T> items, String query);
 mixin SearchMixin<T> on State {
   final TextEditingController searchController = TextEditingController();
   final FocusNode searchFocusNode = FocusNode();
-  
-  List<T> _allItems = <Object?>[];
-  List<T> _searchResults = <Object?>[];
+
+  List<T> _allItems = [];
+  List<T> _searchResults = [];
   String _searchQuery = '';
   bool _isSearching = false;
   bool _hasSearchResults = false;
@@ -51,7 +52,7 @@ mixin SearchMixin<T> on State {
 
   void _performSearch() {
     if (_searchQuery.isEmpty) {
-      _searchResults = <Object?>[];
+      _searchResults = [];
       _isSearching = false;
       _hasSearchResults = false;
       return;
@@ -98,7 +99,7 @@ mixin SearchMixin<T> on State {
     searchController.clear();
     setState(() {
       _searchQuery = '';
-      _searchResults = <Object?>[];
+      _searchResults = [];
       _isSearching = false;
       _hasSearchResults = false;
     });
@@ -126,10 +127,10 @@ mixin SearchMixin<T> on State {
 
   // Get search suggestions
   List<String> getSuggestions({int limit = 5}) {
-    if (_searchQuery.isEmpty) return <String>[];
-    
-    final Set<String> suggestions = <String>{};
-    for (final Object? item in _allItems) {
+    if (_searchQuery.isEmpty) return [];
+
+    final Set<String> suggestions = {};
+    for (final item in _allItems) {
       final String itemStr = item.toString();
       if (itemStr.toLowerCase().contains(_searchQuery.toLowerCase())) {
         // Extract relevant part
@@ -160,7 +161,7 @@ mixin SearchMixin<T> on State {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       color: backgroundColor ?? Theme.of(context).primaryColor,
       child: Row(
-        children: <>[
+        children: [
           Expanded(
             child: TextField(
               controller: searchController,
@@ -172,16 +173,16 @@ mixin SearchMixin<T> on State {
                 prefixIcon: const Icon(Icons.search, color: Colors.white),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.white),
-                        onPressed: clearSearch,
-                      )
+                  icon: const Icon(Icons.clear, color: Colors.white),
+                  onPressed: clearSearch,
+                )
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Colors.white.withValues(alpha: 0.2),
+                fillColor: Colors.white.withOpacity(0.2),
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
               style: const TextStyle(color: Colors.white),
@@ -195,8 +196,8 @@ mixin SearchMixin<T> on State {
 
   // Build search results count
   Widget buildResultsCount() {
-    if (!_hasSearchQuery) return const SizedBox.shrink();
-    
+    if (!hasSearchQuery) return const SizedBox.shrink();
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Text(
@@ -218,9 +219,9 @@ mixin SearchMixin<T> on State {
     int limit = 5,
   }) {
     final List<String> suggestions = getSuggestions(limit: limit);
-    
+
     if (suggestions.isEmpty) return const SizedBox.shrink();
-    
+
     return Card(
       margin: const EdgeInsets.all(8),
       child: Column(
@@ -248,7 +249,7 @@ mixin SearchMixin<T> on State {
   TextSpan _highlightText(String text) {
     final String lowerText = text.toLowerCase();
     final String lowerQuery = _searchQuery.toLowerCase();
-    final List<TextSpan> matches = <TextSpan>[];
+    final List<TextSpan> matches = [];
     int start = 0;
 
     while (true) {
@@ -270,7 +271,7 @@ mixin SearchMixin<T> on State {
           backgroundColor: Colors.yellow,
           fontWeight: FontWeight.bold,
         ),
-      ),);
+      ));
 
       start = index + _searchQuery.length;
     }
@@ -285,15 +286,15 @@ mixin SearchMixin<T> on State {
     required VoidCallback onClear,
   }) {
     if (history.isEmpty) return const SizedBox.shrink();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <>[
+            children: [
               const Text(
                 'Recent Searches',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -323,10 +324,10 @@ mixin SearchMixin<T> on State {
     required Function(String) onTap,
   }) {
     if (popular.isEmpty) return const SizedBox.shrink();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         const Padding(
           padding: EdgeInsets.all(16),
           child: Text(
@@ -354,8 +355,8 @@ mixin SearchMixin<T> on State {
   // Highlight search term in text
   Text highlightText(String text) {
     if (_searchQuery.isEmpty) return Text(text);
-    
-    final List<TextSpan> spans = <TextSpan>[];
+
+    final List<TextSpan> spans = [];
     final String lowerText = text.toLowerCase();
     final String lowerQuery = _searchQuery.toLowerCase();
     int start = 0;
@@ -379,7 +380,7 @@ mixin SearchMixin<T> on State {
           backgroundColor: Colors.yellow,
           fontWeight: FontWeight.bold,
         ),
-      ),);
+      ));
 
       start = index + _searchQuery.length;
     }

@@ -16,11 +16,11 @@ class WalletScreen extends StatefulWidget {
   State<WalletScreen> createState() => _WalletScreenState();
 }
 
-class _WalletScreenState extends State<WalletScreen> 
+class _WalletScreenState extends State<WalletScreen>
     with LoadingMixin, ToastMixin {
-  
-  final PaymentService _paymentService = ServiceLocator().get<PaymentService>();
-  
+
+  final PaymentService _paymentService = ServiceLocator.instance.get<PaymentService>();
+
   final int _coins = 15000;
   final int _diamonds = 500;
 
@@ -30,7 +30,7 @@ class _WalletScreenState extends State<WalletScreen>
       appBar: AppBar(
         title: const Text('Wallet'),
         backgroundColor: Colors.purple,
-        actions: <>[
+        actions: [
           IconButton(
             icon: const Icon(Icons.history),
             onPressed: () {
@@ -46,17 +46,17 @@ class _WalletScreenState extends State<WalletScreen>
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: <>[
+        children: [
           // Balance Card
           FadeAnimation(
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: <>[Colors.purple, Colors.pink],
+                  colors: [Colors.purple, Colors.pink],
                 ),
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: <>[
+                boxShadow: [
                   BoxShadow(
                     color: Colors.purple.withValues(alpha: 0.3),
                     blurRadius: 10,
@@ -65,7 +65,7 @@ class _WalletScreenState extends State<WalletScreen>
                 ],
               ),
               child: Column(
-                children: <>[
+                children: [
                   const Text(
                     'Total Balance',
                     style: TextStyle(
@@ -76,7 +76,7 @@ class _WalletScreenState extends State<WalletScreen>
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: <>[
+                    children: [
                       const Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
                       const SizedBox(width: 8),
                       Text(
@@ -92,7 +92,7 @@ class _WalletScreenState extends State<WalletScreen>
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: <>[
+                    children: [
                       const Icon(Icons.diamond, color: Colors.cyan, size: 20),
                       const SizedBox(width: 4),
                       Text(
@@ -114,7 +114,7 @@ class _WalletScreenState extends State<WalletScreen>
           FadeAnimation(
             delay: const Duration(milliseconds: 100),
             child: Row(
-              children: <>[
+              children: [
                 Expanded(
                   child: _buildActionCard(
                     icon: Icons.add_circle,
@@ -165,8 +165,10 @@ class _WalletScreenState extends State<WalletScreen>
           const SizedBox(height: 12),
 
           ...List.generate(4, (int index) {
-            final int coins = <int>[10000, 50000, 100000, 500000][index];
-            final double price = <double>[1, 5, 10, 50][index];
+            final List<int> coinsList = [10000, 50000, 100000, 500000];
+            final List<double> priceList = [1, 5, 10, 50];
+            final int coins = coinsList[index];
+            final double price = priceList[index];
             final bool popular = index == 1;
 
             return FadeAnimation(
@@ -187,7 +189,7 @@ class _WalletScreenState extends State<WalletScreen>
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  children: <>[
+                  children: [
                     const Text(
                       'Exchange Diamonds',
                       style: TextStyle(
@@ -232,7 +234,7 @@ class _WalletScreenState extends State<WalletScreen>
           border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
-          children: <>[
+          children: [
             Icon(icon, color: color, size: 30),
             const SizedBox(height: 8),
             Text(
@@ -263,7 +265,7 @@ class _WalletScreenState extends State<WalletScreen>
         borderRadius: BorderRadius.circular(12),
       ),
       child: Stack(
-        children: <>[
+        children: [
           if (popular)
             Positioned(
               top: 0,
@@ -319,7 +321,7 @@ class _WalletScreenState extends State<WalletScreen>
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             const Text(
               'Select Payment Method',
               style: TextStyle(

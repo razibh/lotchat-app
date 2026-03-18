@@ -17,19 +17,19 @@ mixin DialogMixin {
 
   // Show confirmation dialog
   Future<bool?> showConfirmDialog(
-    BuildContext context, {
-    required String title,
-    required String message,
-    String confirmText = 'Confirm',
-    String cancelText = 'Cancel',
-    Color confirmColor = Colors.green,
-  }) {
+      BuildContext context, {
+        required String title,
+        required String message,
+        String confirmText = 'Confirm',
+        String cancelText = 'Cancel',
+        Color confirmColor = Colors.green,
+      }) {
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
         title: Text(title),
         content: Text(message),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(cancelText),
@@ -48,17 +48,17 @@ mixin DialogMixin {
 
   // Show info dialog
   void showInfoDialog(
-    BuildContext context, {
-    required String title,
-    required String message,
-    String buttonText = 'OK',
-  }) {
+      BuildContext context, {
+        required String title,
+        required String message,
+        String buttonText = 'OK',
+      }) {
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
         title: Text(title),
         content: Text(message),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(buttonText),
@@ -70,14 +70,14 @@ mixin DialogMixin {
 
   // Show input dialog
   Future<String?> showInputDialog(
-    BuildContext context, {
-    required String title,
-    String? initialValue,
-    String hintText = 'Enter value',
-    TextInputType keyboardType = TextInputType.text,
-  }) {
+      BuildContext context, {
+        required String title,
+        String? initialValue,
+        String hintText = 'Enter value',
+        TextInputType keyboardType = TextInputType.text,
+      }) {
     final TextEditingController controller = TextEditingController(text: initialValue);
-    
+
     return showDialog<String>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -93,7 +93,7 @@ mixin DialogMixin {
           keyboardType: keyboardType,
           autofocus: true,
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
@@ -109,10 +109,10 @@ mixin DialogMixin {
 
   // Show bottom sheet
   Future<T?> showBottomSheet<T>(
-    BuildContext context, {
-    required Widget child,
-    bool isScrollControlled = false,
-  }) {
+      BuildContext context, {
+        required Widget child,
+        bool isScrollControlled = false,
+      }) {
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: isScrollControlled,
@@ -125,6 +125,19 @@ mixin DialogMixin {
         ),
         child: child,
       ),
+    );
+  }
+
+  // Show menu
+  Future<T?> showMenuDialog<T>({
+    required BuildContext context,
+    required List<PopupMenuEntry<T>> items,
+    required Widget child,
+  }) {
+    return showMenu<T>(
+      context: context,
+      position: const RelativeRect.fromLTRB(0, 0, 0, 0),
+      items: items,
     );
   }
 }

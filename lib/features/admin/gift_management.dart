@@ -15,16 +15,16 @@ class GiftManagement extends StatefulWidget {
   State<GiftManagement> createState() => _GiftManagementState();
 }
 
-class _GiftManagementState extends State<GiftManagement> 
+class _GiftManagementState extends State<GiftManagement>
     with LoadingMixin, ToastMixin, DialogMixin {
-  
+
   final AdminService _adminService = ServiceLocator().get<AdminService>();
-  
-  List<GiftModel> _gifts = <GiftModel>[];
+
+  List<GiftModel> _gifts = [];
   String _selectedCategory = 'All';
   bool _isLoading = true;
 
-  final List<String> _categories = <String>['All', 'Cute', 'Luxury', 'VIP', 'SVIP', 'Special'];
+  final List<String> _categories = ['All', 'Cute', 'Luxury', 'VIP', 'SVIP', 'Special'];
 
   @override
   void initState() {
@@ -35,7 +35,7 @@ class _GiftManagementState extends State<GiftManagement>
   Future<void> _loadGifts() async {
     await runWithLoading(() async {
       try {
-        _gifts = GiftModel.getGifts();
+        _gifts = GiftModel.getMockGifts(); // getGifts() এর পরিবর্তে getMockGifts()
       } catch (e) {
         showError('Failed to load gifts: $e');
       } finally {
@@ -50,7 +50,7 @@ class _GiftManagementState extends State<GiftManagement>
     if (_selectedCategory == 'All') {
       return _gifts;
     }
-    return _gifts.where((GiftModel g) => g.category == _selectedCategory).toList();
+    return _gifts.where((g) => g.category == _selectedCategory).toList();
   }
 
   Future<void> _addGift() async {
@@ -113,7 +113,7 @@ class _GiftManagementState extends State<GiftManagement>
       appBar: AppBar(
         title: const Text('Gift Management'),
         backgroundColor: Colors.purple,
-        actions: <>[
+        actions: [
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: _addGift,
@@ -127,19 +127,19 @@ class _GiftManagementState extends State<GiftManagement>
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
-              itemBuilder: (BuildContext context, int index) {
-                final String category = _categories[index];
+              itemBuilder: (context, index) {
+                final category = _categories[index];
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: FilterChip(
                     label: Text(category),
                     selected: _selectedCategory == category,
-                    onSelected: (bool selected) {
+                    onSelected: (selected) {
                       setState(() {
                         _selectedCategory = category;
                       });
                     },
-                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    backgroundColor: Colors.white.withOpacity(0.2),
                     selectedColor: Colors.white,
                     labelStyle: TextStyle(
                       color: _selectedCategory == category ? Colors.purple : Colors.white,
@@ -154,19 +154,19 @@ class _GiftManagementState extends State<GiftManagement>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.8,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: _filteredGifts.length,
-              itemBuilder: (BuildContext context, int index) {
-                final GiftModel gift = _filteredGifts[index];
-                return _buildGiftCard(gift);
-              },
-            ),
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.8,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        itemCount: _filteredGifts.length,
+        itemBuilder: (context, index) {
+          final gift = _filteredGifts[index];
+          return _buildGiftCard(gift);
+        },
+      ),
     );
   }
 
@@ -174,13 +174,13 @@ class _GiftManagementState extends State<GiftManagement>
     return Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <>[
+        children: [
           // Gift Preview
           Expanded(
             flex: 3,
-            child: DecoratedBox(
+            child: Container(
               decoration: BoxDecoration(
-                color: _getCategoryColor(gift.category).withValues(alpha: 0.2),
+                color: _getCategoryColor(gift.category).withOpacity(0.2),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
               ),
               child: Center(
@@ -200,9 +200,9 @@ class _GiftManagementState extends State<GiftManagement>
               padding: const EdgeInsets.all(8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <>[
+                children: [
                   Row(
-                    children: <>[
+                    children: [
                       Expanded(
                         child: Text(
                           gift.name,
@@ -231,7 +231,7 @@ class _GiftManagementState extends State<GiftManagement>
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: <>[Colors.purple, Colors.pink],
+                              colors: [Colors.purple, Colors.pink],
                             ),
                             borderRadius: BorderRadius.circular(4),
                           ),
@@ -261,7 +261,7 @@ class _GiftManagementState extends State<GiftManagement>
                   // Actions
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: <>[
+                    children: [
                       IconButton(
                         icon: const Icon(Icons.edit, size: 16),
                         onPressed: () => _editGift(gift),
@@ -339,11 +339,11 @@ class _AddGiftDialogState extends State<AddGiftDialog> {
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: <>[
+            children: [
               CustomTextField(
                 controller: _nameController,
                 label: 'Gift Name',
-                validator: (String? value) {
+                validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter gift name';
                   }
@@ -355,7 +355,7 @@ class _AddGiftDialogState extends State<AddGiftDialog> {
                 controller: _priceController,
                 label: 'Price (coins)',
                 keyboardType: TextInputType.number,
-                validator: (String? value) {
+                validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter price';
                   }
@@ -367,15 +367,15 @@ class _AddGiftDialogState extends State<AddGiftDialog> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: _selectedCategory,
+                value: _selectedCategory,
                 decoration: const InputDecoration(labelText: 'Category'),
-                items: <String>['Cute', 'Luxury', 'VIP', 'SVIP', 'Special'].map((String cat) {
+                items: ['Cute', 'Luxury', 'VIP', 'SVIP', 'Special'].map((cat) {
                   return DropdownMenuItem(
                     value: cat,
                     child: Text(cat),
                   );
                 }).toList(),
-                onChanged: (String? value) {
+                onChanged: (value) {
                   setState(() {
                     _selectedCategory = value!;
                   });
@@ -385,7 +385,7 @@ class _AddGiftDialogState extends State<AddGiftDialog> {
               SwitchListTile(
                 title: const Text('VIP Gift'),
                 value: _isVip,
-                onChanged: (bool value) {
+                onChanged: (value) {
                   setState(() {
                     _isVip = value;
                     if (value) _isSvip = false;
@@ -395,7 +395,7 @@ class _AddGiftDialogState extends State<AddGiftDialog> {
               SwitchListTile(
                 title: const Text('SVIP Gift'),
                 value: _isSvip,
-                onChanged: (bool value) {
+                onChanged: (value) {
                   setState(() {
                     _isSvip = value;
                     if (value) _isVip = false;
@@ -406,7 +406,7 @@ class _AddGiftDialogState extends State<AddGiftDialog> {
           ),
         ),
       ),
-      actions: <>[
+      actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
@@ -426,18 +426,12 @@ class _AddGiftDialogState extends State<AddGiftDialog> {
 
 // Edit Gift Dialog
 class EditGiftDialog extends StatefulWidget {
+  final GiftModel gift;
 
   const EditGiftDialog({required this.gift, super.key});
-  final GiftModel gift;
 
   @override
   State<EditGiftDialog> createState() => _EditGiftDialogState();
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<GiftModel>('gift', gift));
-  }
 }
 
 class _EditGiftDialogState extends State<EditGiftDialog> {
@@ -464,7 +458,7 @@ class _EditGiftDialogState extends State<EditGiftDialog> {
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             CustomTextField(
               controller: _nameController,
               label: 'Gift Name',
@@ -477,15 +471,15 @@ class _EditGiftDialogState extends State<EditGiftDialog> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              initialValue: _selectedCategory,
+              value: _selectedCategory,
               decoration: const InputDecoration(labelText: 'Category'),
-              items: <String>['Cute', 'Luxury', 'VIP', 'SVIP', 'Special'].map((String cat) {
+              items: ['Cute', 'Luxury', 'VIP', 'SVIP', 'Special'].map((cat) {
                 return DropdownMenuItem(
                   value: cat,
                   child: Text(cat),
                 );
               }).toList(),
-              onChanged: (String? value) {
+              onChanged: (value) {
                 setState(() {
                   _selectedCategory = value!;
                 });
@@ -495,7 +489,7 @@ class _EditGiftDialogState extends State<EditGiftDialog> {
             SwitchListTile(
               title: const Text('VIP Gift'),
               value: _isVip,
-              onChanged: (bool value) {
+              onChanged: (value) {
                 setState(() {
                   _isVip = value;
                   if (value) _isSvip = false;
@@ -505,7 +499,7 @@ class _EditGiftDialogState extends State<EditGiftDialog> {
             SwitchListTile(
               title: const Text('SVIP Gift'),
               value: _isSvip,
-              onChanged: (bool value) {
+              onChanged: (value) {
                 setState(() {
                   _isSvip = value;
                   if (value) _isVip = false;
@@ -515,7 +509,7 @@ class _EditGiftDialogState extends State<EditGiftDialog> {
           ],
         ),
       ),
-      actions: <>[
+      actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),

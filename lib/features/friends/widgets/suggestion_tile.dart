@@ -1,33 +1,39 @@
 import 'package:flutter/material.dart';
-import '../../../core/utils/date_formatter.dart';
+import 'package:flutter/foundation.dart';
+import '../../core/utils/date_utils.dart';
 import '../../profile/profile_screen.dart';
 
 class SuggestionTile extends StatelessWidget {
-
-  const SuggestionTile({
-    required this.suggestion, super.key,
-    this.onAdd,
-    this.onDismiss,
-  });
   final Map<String, dynamic> suggestion;
   final VoidCallback? onAdd;
   final VoidCallback? onDismiss;
+
+  const SuggestionTile({
+    required this.suggestion,
+    this.onAdd,
+    this.onDismiss,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
-          children: <>[
+          children: [
             // Avatar
             GestureDetector(
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (BuildContext context) => ProfileScreen(userId: suggestion['userId']),
+                    builder: (context) => ProfileScreen(userId: suggestion['userId'] ?? ''),
                   ),
                 );
               },
@@ -36,8 +42,17 @@ class SuggestionTile extends StatelessWidget {
                 backgroundImage: suggestion['avatar'] != null
                     ? NetworkImage(suggestion['avatar'])
                     : null,
+                backgroundColor: Colors.grey.shade200,
                 child: suggestion['avatar'] == null
-                    ? Text(suggestion['name'][0].toUpperCase())
+                    ? Text(
+                  suggestion['name'] != null && suggestion['name'].toString().isNotEmpty
+                      ? suggestion['name'][0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
                     : null,
               ),
             ),
@@ -47,9 +62,9 @@ class SuggestionTile extends StatelessWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <>[
+                children: [
                   Text(
-                    suggestion['name'],
+                    suggestion['name'] ?? 'Unknown',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -57,7 +72,7 @@ class SuggestionTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '@${suggestion['username']}',
+                    '@${suggestion['username'] ?? 'unknown'}',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Colors.grey,
@@ -65,7 +80,7 @@ class SuggestionTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Row(
-                    children: <>[
+                    children: [
                       Icon(
                         Icons.people,
                         size: 12,
@@ -73,7 +88,7 @@ class SuggestionTile extends StatelessWidget {
                       ),
                       const SizedBox(width: 2),
                       Text(
-                        '${suggestion['mutualFriends']} mutual friends',
+                        '${suggestion['mutualFriends'] ?? 0} mutual friends',
                         style: const TextStyle(
                           fontSize: 10,
                           color: Colors.grey,
@@ -82,22 +97,24 @@ class SuggestionTile extends StatelessWidget {
                     ],
                   ),
                   if (suggestion['commonInterests'] != null &&
-                      suggestion['commonInterests'].isNotEmpty) ...<>[
+                      (suggestion['commonInterests'] as List).isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Wrap(
                       spacing: 4,
-                      children: suggestion['commonInterests'].take(2).map<Widget>((interest) {
+                      children: (suggestion['commonInterests'] as List)
+                          .take(2)
+                          .map<Widget>((interest) {
                         return Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.1),
+                            color: Colors.blue.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            interest,
+                            interest.toString(),
                             style: const TextStyle(
                               fontSize: 8,
                               color: Colors.blue,
@@ -107,7 +124,7 @@ class SuggestionTile extends StatelessWidget {
                       }).toList(),
                     ),
                   ],
-                  if (suggestion['reason'] != null) ...<>[
+                  if (suggestion['reason'] != null) ...[
                     const SizedBox(height: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -115,11 +132,11 @@ class SuggestionTile extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.1),
+                        color: Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        suggestion['reason'],
+                        suggestion['reason'].toString(),
                         style: const TextStyle(
                           fontSize: 8,
                           color: Colors.green,
@@ -134,15 +151,17 @@ class SuggestionTile extends StatelessWidget {
             // Actions
             Row(
               mainAxisSize: MainAxisSize.min,
-              children: <>[
+              children: [
                 IconButton(
                   icon: const Icon(Icons.person_add, color: Colors.green),
                   onPressed: onAdd,
+                  tooltip: 'Add Friend',
                 ),
                 if (onDismiss != null)
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.red),
                     onPressed: onDismiss,
+                    tooltip: 'Dismiss',
                   ),
               ],
             ),
@@ -162,33 +181,56 @@ class SuggestionTile extends StatelessWidget {
 }
 
 class CompactSuggestionTile extends StatelessWidget {
-
-  const CompactSuggestionTile({
-    required this.suggestion, required this.onAdd, super.key,
-  });
   final Map<String, dynamic> suggestion;
   final VoidCallback onAdd;
+
+  const CompactSuggestionTile({
+    required this.suggestion,
+    required this.onAdd,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: ListTile(
         leading: CircleAvatar(
+          radius: 25,
           backgroundImage: suggestion['avatar'] != null
               ? NetworkImage(suggestion['avatar'])
               : null,
+          backgroundColor: Colors.grey.shade200,
           child: suggestion['avatar'] == null
-              ? Text(suggestion['name'][0].toUpperCase())
+              ? Text(
+            suggestion['name'] != null && suggestion['name'].toString().isNotEmpty
+                ? suggestion['name'][0].toUpperCase()
+                : '?',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          )
               : null,
         ),
-        title: Text(suggestion['name']),
-        subtitle: Text('${suggestion['mutualFriends']} mutual friends'),
+        title: Text(
+          suggestion['name'] ?? 'Unknown',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text('${suggestion['mutualFriends'] ?? 0} mutual friends'),
         trailing: ElevatedButton(
           onPressed: onAdd,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
             minimumSize: const Size(80, 36),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
           child: const Text('Add'),
         ),

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/gradient_background.dart';
 import '../../../core/widgets/neumorphic_button.dart';
 
 class AgencyEarningsScreen extends StatefulWidget {
+  final String agencyId;
 
   const AgencyEarningsScreen({required this.agencyId, super.key});
-  final String agencyId;
 
   @override
   State<AgencyEarningsScreen> createState() => _AgencyEarningsScreenState();
@@ -21,16 +22,16 @@ class AgencyEarningsScreen extends StatefulWidget {
 class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
-  
+
   final double _totalEarnings = 850000;
   final double _monthlyEarnings = 125000;
   final double _weeklyEarnings = 32000;
   final double _todayEarnings = 4500;
   final double _pendingCommission = 25000;
   final double _withdrawnCommission = 125000;
-  
-  List<AgencyCommission> _commissions = <AgencyCommission>[];
-  List<HostEarningSummary> _hostEarnings = <HostEarningSummary>[];
+
+  List<AgencyCommission> _commissions = [];
+  List<HostEarningSummary> _hostEarnings = [];
 
   @override
   void initState() {
@@ -57,7 +58,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
   }
 
   List<AgencyCommission> _generateCommissions() {
-    return <AgencyCommission>[
+    return [
       AgencyCommission(
         id: 'comm_001',
         hostName: 'Sarah Rahman',
@@ -102,7 +103,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
   }
 
   List<HostEarningSummary> _generateHostEarnings() {
-    return <HostEarningSummary>[
+    return [
       HostEarningSummary(
         hostId: 'host_001',
         hostName: 'Sarah Rahman',
@@ -144,7 +145,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildBalanceCard(),
               _buildTabBar(),
@@ -152,13 +153,13 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : TabBarView(
-                        controller: _tabController,
-                        children: <>[
-                          _buildOverviewTab(),
-                          _buildCommissionsTab(),
-                          _buildHostEarningsTab(),
-                        ],
-                      ),
+                  controller: _tabController,
+                  children: [
+                    _buildOverviewTab(),
+                    _buildCommissionsTab(),
+                    _buildHostEarningsTab(),
+                  ],
+                ),
               ),
             ],
           ),
@@ -171,7 +172,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -196,18 +197,18 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <>[
-            Colors.purple.withValues(alpha: 0.3),
-            Colors.blue.withValues(alpha: 0.3),
+          colors: [
+            Colors.purple.withOpacity(0.3),
+            Colors.blue.withOpacity(0.3),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
-        children: <>[
+        children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <>[
+            children: [
               const Text(
                 'Total Earnings',
                 style: TextStyle(color: Colors.white70),
@@ -215,7 +216,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.2),
+                  color: Colors.green.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(
@@ -237,7 +238,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <>[
+            children: [
               _buildBalanceItem('Monthly', '৳$_monthlyEarnings'),
               _buildBalanceItem('Weekly', '৳$_weeklyEarnings'),
               _buildBalanceItem('Today', '৳$_todayEarnings'),
@@ -245,17 +246,17 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
           ),
           const SizedBox(height: 12),
           Row(
-            children: <>[
+            children: [
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.2),
+                    color: Colors.orange.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: <>[
+                    children: [
                       const Icon(Icons.hourglass_bottom, color: Colors.orange, size: 14),
                       const SizedBox(width: 4),
                       Text(
@@ -271,12 +272,12 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.2),
+                    color: Colors.green.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: <>[
+                    children: [
                       const Icon(Icons.check_circle, color: Colors.green, size: 14),
                       const SizedBox(width: 4),
                       Text(
@@ -296,7 +297,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
 
   Widget _buildBalanceItem(String label, String value) {
     return Column(
-      children: <>[
+      children: [
         Text(
           value,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -313,7 +314,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
     return Container(
       margin: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(30),
       ),
       child: TabBar(
@@ -324,7 +325,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
         ),
         labelColor: Colors.white,
         unselectedLabelColor: Colors.white70,
-        tabs: const <>[
+        tabs: const [
           Tab(text: 'Overview'),
           Tab(text: 'Commissions'),
           Tab(text: 'Hosts'),
@@ -338,7 +339,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           const Text(
             'Earnings Overview',
             style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -351,7 +352,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
             style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          ..._commissions.take(3).map(_buildRecentTransaction),
+          ..._commissions.take(3).map((c) => _buildRecentTransaction(c)).toList(),
         ],
       ),
     );
@@ -362,12 +363,12 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
       height: 200,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <>[
+        children: [
           _buildChartBar('Mon', 40),
           _buildChartBar('Tue', 65),
           _buildChartBar('Wed', 55),
@@ -383,7 +384,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
   Widget _buildChartBar(String day, double height) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
-      children: <>[
+      children: [
         Container(
           width: 20,
           height: height,
@@ -406,15 +407,15 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.2),
+              color: Colors.green.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.money, color: Colors.green, size: 12),
@@ -423,7 +424,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   commission.hostName,
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -437,7 +438,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: <>[
+            children: [
               Text(
                 '৳${commission.commissionAmount}',
                 style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
@@ -445,9 +446,9 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: commission.status == 'Paid' 
-                      ? Colors.green.withValues(alpha: 0.2) 
-                      : Colors.orange.withValues(alpha: 0.2),
+                  color: commission.status == 'Paid'
+                      ? Colors.green.withOpacity(0.2)
+                      : Colors.orange.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -469,8 +470,8 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: _commissions.length,
-      itemBuilder: (BuildContext context, int index) {
-        final AgencyCommission commission = _commissions[index];
+      itemBuilder: (context, index) {
+        final commission = _commissions[index];
         return _buildCommissionTile(commission);
       },
     );
@@ -481,11 +482,11 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
-        children: <>[
+        children: [
           CircleAvatar(
             radius: 20,
             backgroundColor: Colors.purple,
@@ -498,7 +499,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   commission.hostName,
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -512,7 +513,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: <>[
+            children: [
               Text(
                 '৳${commission.commissionAmount}',
                 style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
@@ -524,9 +525,9 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: commission.status == 'Paid' 
-                      ? Colors.green.withValues(alpha: 0.2) 
-                      : Colors.orange.withValues(alpha: 0.2),
+                  color: commission.status == 'Paid'
+                      ? Colors.green.withOpacity(0.2)
+                      : Colors.orange.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -548,8 +549,8 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: _hostEarnings.length,
-      itemBuilder: (BuildContext context, int index) {
-        final HostEarningSummary host = _hostEarnings[index];
+      itemBuilder: (context, index) {
+        final host = _hostEarnings[index];
         return _buildHostEarningTile(host);
       },
     );
@@ -560,13 +561,13 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        children: <>[
+        children: [
           Row(
-            children: <>[
+            children: [
               CircleAvatar(
                 radius: 20,
                 backgroundColor: Colors.blue,
@@ -591,7 +592,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <>[
+            children: [
               _buildHostStat('Total', '৳${host.totalEarnings}'),
               _buildHostStat('Commission', '৳${host.commissionPaid}'),
               _buildHostStat('Pending', '৳${host.commissionPending}'),
@@ -604,7 +605,7 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
 
   Widget _buildHostStat(String label, String value) {
     return Column(
-      children: <>[
+      children: [
         Text(
           value,
           style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
@@ -623,6 +624,14 @@ class _AgencyEarningsScreenState extends State<AgencyEarningsScreen> with Single
 }
 
 class AgencyCommission {
+  final String id;
+  final String hostName;
+  final String hostId;
+  final double amount;
+  final double commissionRate;
+  final double commissionAmount;
+  final DateTime date;
+  final String status;
 
   AgencyCommission({
     required this.id,
@@ -634,17 +643,15 @@ class AgencyCommission {
     required this.date,
     required this.status,
   });
-  final String id;
-  final String hostName;
-  final String hostId;
-  final double amount;
-  final double commissionRate;
-  final double commissionAmount;
-  final DateTime date;
-  final String status;
 }
 
 class HostEarningSummary {
+  final String hostId;
+  final String hostName;
+  final double totalEarnings;
+  final double commissionPaid;
+  final double commissionPending;
+  final double thisMonthEarnings;
 
   HostEarningSummary({
     required this.hostId,
@@ -654,10 +661,4 @@ class HostEarningSummary {
     required this.commissionPending,
     required this.thisMonthEarnings,
   });
-  final String hostId;
-  final String hostName;
-  final double totalEarnings;
-  final double commissionPaid;
-  final double commissionPending;
-  final double thisMonthEarnings;
 }

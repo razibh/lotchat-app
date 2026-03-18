@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
+import 'dart:io';
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/upload_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/utils/image_picker_helper.dart';
-import '../../core/utils/file_utils.dart';
-import '../../widgets/common/custom_button.dart';
-import '../../widgets/common/custom_text_field.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
-import 'dart:io';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -19,20 +16,20 @@ class CreatePostScreen extends StatefulWidget {
   State<CreatePostScreen> createState() => _CreatePostScreenState();
 }
 
-class _CreatePostScreenState extends State<CreatePostScreen> 
+class _CreatePostScreenState extends State<CreatePostScreen>
     with LoadingMixin, ToastMixin {
-  
+
   final UploadService _uploadService = ServiceLocator().get<UploadService>();
   final NotificationService _notificationService = ServiceLocator().get<NotificationService>();
-  
+
   final TextEditingController _contentController = TextEditingController();
-  final List<File> _selectedMedia = <File>[];
-  List<String> _uploadedMediaUrls = <String>[];
+  final List<File> _selectedMedia = [];
+  List<String> _uploadedMediaUrls = [];
   String _selectedPrivacy = 'Public';
   bool _allowComments = true;
   bool _allowGifts = true;
 
-  final List<String> _privacyOptions = <String>['Public', 'Friends Only', 'Private'];
+  final List<String> _privacyOptions = ['Public', 'Friends Only', 'Private'];
 
   @override
   void dispose() {
@@ -47,7 +44,7 @@ class _CreatePostScreenState extends State<CreatePostScreen>
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             const Text(
               'Add Media',
               style: TextStyle(
@@ -58,7 +55,7 @@ class _CreatePostScreenState extends State<CreatePostScreen>
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: <>[
+              children: [
                 _buildMediaOption(
                   icon: Icons.photo_library,
                   label: 'Gallery',
@@ -103,12 +100,12 @@ class _CreatePostScreenState extends State<CreatePostScreen>
     return InkWell(
       onTap: onTap,
       child: Column(
-        children: <>[
+        children: [
           Container(
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 30),
@@ -165,7 +162,7 @@ class _CreatePostScreenState extends State<CreatePostScreen>
     await runWithLoading(() async {
       try {
         // Upload media if any
-        _uploadedMediaUrls = <String>[];
+        _uploadedMediaUrls = [];
         for (File media in _selectedMedia) {
           final String? url = await _uploadService.uploadFile(
             filePath: media.path,
@@ -179,8 +176,10 @@ class _CreatePostScreenState extends State<CreatePostScreen>
         // Create post (would integrate with backend)
         await Future.delayed(const Duration(seconds: 2));
 
-        _notificationService.showSuccess('Post created successfully!');
-        Navigator.pop(context, true);
+        // Fix: showSuccess এর পরিবর্তে showSuccess ব্যবহার করুন (toast mixin থেকে)
+        showSuccess('Post created successfully!');
+
+        if (mounted) Navigator.pop(context, true);
       } catch (e) {
         showError('Failed to create post: $e');
       }
@@ -193,7 +192,8 @@ class _CreatePostScreenState extends State<CreatePostScreen>
       appBar: AppBar(
         title: const Text('Create Post'),
         backgroundColor: Colors.purple,
-        actions: <>[
+        foregroundColor: Colors.white,
+        actions: [
           TextButton(
             onPressed: _createPost,
             child: const Text(
@@ -209,10 +209,10 @@ class _CreatePostScreenState extends State<CreatePostScreen>
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: <>[
+          children: [
             // User Info
             Row(
-              children: <>[
+              children: [
                 const CircleAvatar(
                   radius: 25,
                   backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=current'),
@@ -220,7 +220,7 @@ class _CreatePostScreenState extends State<CreatePostScreen>
                 const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     const Text(
                       'John Doe',
                       style: TextStyle(
@@ -239,7 +239,7 @@ class _CreatePostScreenState extends State<CreatePostScreen>
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
-                        children: <>[
+                        children: [
                           Icon(
                             Icons.public,
                             size: 14,
@@ -265,9 +265,15 @@ class _CreatePostScreenState extends State<CreatePostScreen>
             const SizedBox(height: 20),
 
             // Content Input
-            CustomTextField(
+            TextField(
               controller: _contentController,
-              label: "What's on your mind?",
+              decoration: InputDecoration(
+                hintText: "What's on your mind?",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.all(12),
+              ),
               maxLines: 5,
               maxLength: 500,
             ),
@@ -275,7 +281,7 @@ class _CreatePostScreenState extends State<CreatePostScreen>
             const SizedBox(height: 16),
 
             // Media Preview
-            if (_selectedMedia.isNotEmpty) ...<>[
+            if (_selectedMedia.isNotEmpty) ...[
               const Text(
                 'Media',
                 style: TextStyle(
@@ -289,10 +295,10 @@ class _CreatePostScreenState extends State<CreatePostScreen>
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: _selectedMedia.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final File media = _selectedMedia[index];
+                  itemBuilder: (context, index) {
+                    final media = _selectedMedia[index];
                     return Stack(
-                      children: <>[
+                      children: [
                         Container(
                           width: 200,
                           margin: const EdgeInsets.only(right: 8),
@@ -350,7 +356,7 @@ class _CreatePostScreenState extends State<CreatePostScreen>
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     const Text(
                       'Privacy Settings',
                       style: TextStyle(
@@ -362,7 +368,7 @@ class _CreatePostScreenState extends State<CreatePostScreen>
 
                     // Privacy Level
                     DropdownButtonFormField<String>(
-                      initialValue: _selectedPrivacy,
+                      value: _selectedPrivacy,
                       decoration: const InputDecoration(
                         labelText: 'Who can see this post?',
                         border: OutlineInputBorder(),
@@ -391,7 +397,7 @@ class _CreatePostScreenState extends State<CreatePostScreen>
                           _allowComments = value;
                         });
                       },
-                      activeThumbColor: Colors.purple,
+                      activeColor: Colors.purple,
                     ),
 
                     // Allow Gifts
@@ -403,7 +409,7 @@ class _CreatePostScreenState extends State<CreatePostScreen>
                           _allowGifts = value;
                         });
                       },
-                      activeThumbColor: Colors.purple,
+                      activeColor: Colors.purple,
                     ),
                   ],
                 ),
@@ -413,11 +419,32 @@ class _CreatePostScreenState extends State<CreatePostScreen>
             const SizedBox(height: 24),
 
             // Post Button
-            CustomButton(
-              text: 'Post',
-              onPressed: _createPost,
-              isLoading: isLoading,
-              color: Colors.purple,
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: isLoading ? null : _createPost,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+                    : const Text(
+                  'Post',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
             ),
           ],
         ),

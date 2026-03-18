@@ -1,4 +1,4 @@
-import '../../core/models/user_model.dart';
+import '../../core/models/user_models.dart'; // user_model.dart এর পরিবর্তে user_models.dart
 
 enum ProfileVisibility {
   public,
@@ -7,81 +7,6 @@ enum ProfileVisibility {
 }
 
 class ProfileModel {
-
-  ProfileModel({
-    required this.userId,
-    required this.username,
-    required this.joinedAt, this.displayName,
-    this.bio,
-    this.avatar,
-    this.coverImage,
-    this.location,
-    this.website,
-    this.birthDate,
-    this.gender,
-    this.interests = const <String>[],
-    this.visibility = ProfileVisibility.public,
-    this.privacySettings = const <String, bool>{},
-    this.lastActive,
-    this.isOnline = false,
-    this.followersCount = 0,
-    this.followingCount = 0,
-    this.friendsCount = 0,
-    this.postsCount = 0,
-    this.giftsReceived = 0,
-    this.giftsSent = 0,
-    this.gamesPlayed = 0,
-    this.gamesWon = 0,
-    this.totalCoins = 0,
-    this.totalDiamonds = 0,
-    this.level = 1,
-    this.xp = 0,
-    this.xpToNextLevel = 1000,
-    this.badges = const <String>[],
-    this.currentFrame,
-    this.customFields = const <String, dynamic>{},
-  });
-
-  factory ProfileModel.fromJson(Map<String, dynamic> json) {
-    return ProfileModel(
-      userId: json['userId'],
-      username: json['username'],
-      displayName: json['displayName'],
-      bio: json['bio'],
-      avatar: json['avatar'],
-      coverImage: json['coverImage'],
-      location: json['location'],
-      website: json['website'],
-      birthDate: json['birthDate'] != null 
-          ? DateTime.parse(json['birthDate']) 
-          : null,
-      gender: json['gender'],
-      interests: List<String>.from(json['interests'] ?? <dynamic>[]),
-      visibility: ProfileVisibility.values[json['visibility'] ?? 0],
-      privacySettings: Map<String, bool>.from(json['privacySettings'] ?? <dynamic, dynamic>{}),
-      joinedAt: DateTime.parse(json['joinedAt']),
-      lastActive: json['lastActive'] != null 
-          ? DateTime.parse(json['lastActive']) 
-          : null,
-      isOnline: json['isOnline'] ?? false,
-      followersCount: json['followersCount'] ?? 0,
-      followingCount: json['followingCount'] ?? 0,
-      friendsCount: json['friendsCount'] ?? 0,
-      postsCount: json['postsCount'] ?? 0,
-      giftsReceived: json['giftsReceived'] ?? 0,
-      giftsSent: json['giftsSent'] ?? 0,
-      gamesPlayed: json['gamesPlayed'] ?? 0,
-      gamesWon: json['gamesWon'] ?? 0,
-      totalCoins: json['totalCoins'] ?? 0,
-      totalDiamonds: json['totalDiamonds'] ?? 0,
-      level: json['level'] ?? 1,
-      xp: json['xp'] ?? 0,
-      xpToNextLevel: json['xpToNextLevel'] ?? 1000,
-      badges: List<String>.from(json['badges'] ?? <dynamic>[]),
-      currentFrame: json['currentFrame'],
-      customFields: json['customFields'] ?? <String, dynamic>{},
-    );
-  }
   final String userId;
   final String username;
   final String? displayName;
@@ -115,56 +40,134 @@ class ProfileModel {
   final String? currentFrame;
   final Map<String, dynamic> customFields;
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'userId': userId,
-    'username': username,
-    'displayName': displayName,
-    'bio': bio,
-    'avatar': avatar,
-    'coverImage': coverImage,
-    'location': location,
-    'website': website,
-    'birthDate': birthDate?.toIso8601String(),
-    'gender': gender,
-    'interests': interests,
-    'visibility': visibility.index,
-    'privacySettings': privacySettings,
-    'joinedAt': joinedAt.toIso8601String(),
-    'lastActive': lastActive?.toIso8601String(),
-    'isOnline': isOnline,
-    'followersCount': followersCount,
-    'followingCount': followingCount,
-    'friendsCount': friendsCount,
-    'postsCount': postsCount,
-    'giftsReceived': giftsReceived,
-    'giftsSent': giftsSent,
-    'gamesPlayed': gamesPlayed,
-    'gamesWon': gamesWon,
-    'totalCoins': totalCoins,
-    'totalDiamonds': totalDiamonds,
-    'level': level,
-    'xp': xp,
-    'xpToNextLevel': xpToNextLevel,
-    'badges': badges,
-    'currentFrame': currentFrame,
-    'customFields': customFields,
-  };
+  ProfileModel({
+    required this.userId,
+    required this.username,
+    required this.joinedAt,
+    this.displayName,
+    this.bio,
+    this.avatar,
+    this.coverImage,
+    this.location,
+    this.website,
+    this.birthDate,
+    this.gender,
+    this.interests = const [],
+    this.visibility = ProfileVisibility.public,
+    this.privacySettings = const {},
+    this.lastActive,
+    this.isOnline = false,
+    this.followersCount = 0,
+    this.followingCount = 0,
+    this.friendsCount = 0,
+    this.postsCount = 0,
+    this.giftsReceived = 0,
+    this.giftsSent = 0,
+    this.gamesPlayed = 0,
+    this.gamesWon = 0,
+    this.totalCoins = 0,
+    this.totalDiamonds = 0,
+    this.level = 1,
+    this.xp = 0,
+    this.xpToNextLevel = 1000,
+    this.badges = const [],
+    this.currentFrame,
+    this.customFields = const {},
+  });
+
+  factory ProfileModel.fromJson(Map<String, dynamic> json) {
+    return ProfileModel(
+      userId: json['userId'] ?? '',
+      username: json['username'] ?? '',
+      displayName: json['displayName'],
+      bio: json['bio'],
+      avatar: json['avatar'],
+      coverImage: json['coverImage'],
+      location: json['location'],
+      website: json['website'],
+      birthDate: json['birthDate'] != null
+          ? DateTime.parse(json['birthDate'])
+          : null,
+      gender: json['gender'],
+      interests: List<String>.from(json['interests'] ?? []),
+      visibility: ProfileVisibility.values[json['visibility'] ?? 0],
+      privacySettings: Map<String, bool>.from(json['privacySettings'] ?? {}),
+      joinedAt: DateTime.parse(json['joinedAt'] ?? DateTime.now().toIso8601String()),
+      lastActive: json['lastActive'] != null
+          ? DateTime.parse(json['lastActive'])
+          : null,
+      isOnline: json['isOnline'] ?? false,
+      followersCount: json['followersCount'] ?? 0,
+      followingCount: json['followingCount'] ?? 0,
+      friendsCount: json['friendsCount'] ?? 0,
+      postsCount: json['postsCount'] ?? 0,
+      giftsReceived: json['giftsReceived'] ?? 0,
+      giftsSent: json['giftsSent'] ?? 0,
+      gamesPlayed: json['gamesPlayed'] ?? 0,
+      gamesWon: json['gamesWon'] ?? 0,
+      totalCoins: json['totalCoins'] ?? 0,
+      totalDiamonds: json['totalDiamonds'] ?? 0,
+      level: json['level'] ?? 1,
+      xp: json['xp'] ?? 0,
+      xpToNextLevel: json['xpToNextLevel'] ?? 1000,
+      badges: List<String>.from(json['badges'] ?? []),
+      currentFrame: json['currentFrame'],
+      customFields: json['customFields'] ?? {},
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'username': username,
+      'displayName': displayName,
+      'bio': bio,
+      'avatar': avatar,
+      'coverImage': coverImage,
+      'location': location,
+      'website': website,
+      'birthDate': birthDate?.toIso8601String(),
+      'gender': gender,
+      'interests': interests,
+      'visibility': visibility.index,
+      'privacySettings': privacySettings,
+      'joinedAt': joinedAt.toIso8601String(),
+      'lastActive': lastActive?.toIso8601String(),
+      'isOnline': isOnline,
+      'followersCount': followersCount,
+      'followingCount': followingCount,
+      'friendsCount': friendsCount,
+      'postsCount': postsCount,
+      'giftsReceived': giftsReceived,
+      'giftsSent': giftsSent,
+      'gamesPlayed': gamesPlayed,
+      'gamesWon': gamesWon,
+      'totalCoins': totalCoins,
+      'totalDiamonds': totalDiamonds,
+      'level': level,
+      'xp': xp,
+      'xpToNextLevel': xpToNextLevel,
+      'badges': badges,
+      'currentFrame': currentFrame,
+      'customFields': customFields,
+    };
+  }
 
   // Computed properties
   String get displayNameOrUsername => displayName ?? username;
-  
+
   double get xpProgress => xp / xpToNextLevel;
-  
+
   int get totalGifts => giftsReceived + giftsSent;
-  
+
   double get winRate => gamesPlayed > 0 ? gamesWon / gamesPlayed : 0;
 
   // Check if profile is complete
   bool get isProfileComplete {
     return avatar != null &&
-           bio != null &&
-           bio!.isNotEmpty &&
-           interests.isNotEmpty;
+        bio != null &&
+        bio!.isNotEmpty &&
+        interests.isNotEmpty;
   }
 
   // Get age
@@ -172,7 +175,7 @@ class ProfileModel {
     if (birthDate == null) return null;
     final DateTime now = DateTime.now();
     var age = now.year - birthDate!.year;
-    if (now.month < birthDate!.month || 
+    if (now.month < birthDate!.month ||
         (now.month == birthDate!.month && now.day < birthDate!.day)) {
       age--;
     }
@@ -197,12 +200,95 @@ class ProfileModel {
     if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) return 'Capricorn';
     if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) return 'Aquarius';
     if ((month == 2 && day >= 19) || (month == 3 && day <= 20)) return 'Pisces';
-    
+
     return null;
+  }
+
+  // Copy with method
+  ProfileModel copyWith({
+    String? userId,
+    String? username,
+    String? displayName,
+    String? bio,
+    String? avatar,
+    String? coverImage,
+    String? location,
+    String? website,
+    DateTime? birthDate,
+    String? gender,
+    List<String>? interests,
+    ProfileVisibility? visibility,
+    Map<String, bool>? privacySettings,
+    DateTime? joinedAt,
+    DateTime? lastActive,
+    bool? isOnline,
+    int? followersCount,
+    int? followingCount,
+    int? friendsCount,
+    int? postsCount,
+    int? giftsReceived,
+    int? giftsSent,
+    int? gamesPlayed,
+    int? gamesWon,
+    int? totalCoins,
+    int? totalDiamonds,
+    int? level,
+    int? xp,
+    int? xpToNextLevel,
+    List<String>? badges,
+    String? currentFrame,
+    Map<String, dynamic>? customFields,
+  }) {
+    return ProfileModel(
+      userId: userId ?? this.userId,
+      username: username ?? this.username,
+      displayName: displayName ?? this.displayName,
+      bio: bio ?? this.bio,
+      avatar: avatar ?? this.avatar,
+      coverImage: coverImage ?? this.coverImage,
+      location: location ?? this.location,
+      website: website ?? this.website,
+      birthDate: birthDate ?? this.birthDate,
+      gender: gender ?? this.gender,
+      interests: interests ?? this.interests,
+      visibility: visibility ?? this.visibility,
+      privacySettings: privacySettings ?? this.privacySettings,
+      joinedAt: joinedAt ?? this.joinedAt,
+      lastActive: lastActive ?? this.lastActive,
+      isOnline: isOnline ?? this.isOnline,
+      followersCount: followersCount ?? this.followersCount,
+      followingCount: followingCount ?? this.followingCount,
+      friendsCount: friendsCount ?? this.friendsCount,
+      postsCount: postsCount ?? this.postsCount,
+      giftsReceived: giftsReceived ?? this.giftsReceived,
+      giftsSent: giftsSent ?? this.giftsSent,
+      gamesPlayed: gamesPlayed ?? this.gamesPlayed,
+      gamesWon: gamesWon ?? this.gamesWon,
+      totalCoins: totalCoins ?? this.totalCoins,
+      totalDiamonds: totalDiamonds ?? this.totalDiamonds,
+      level: level ?? this.level,
+      xp: xp ?? this.xp,
+      xpToNextLevel: xpToNextLevel ?? this.xpToNextLevel,
+      badges: badges ?? this.badges,
+      currentFrame: currentFrame ?? this.currentFrame,
+      customFields: customFields ?? this.customFields,
+    );
   }
 }
 
 class ProfileUpdateModel {
+  String? displayName;
+  String? bio;
+  String? location;
+  String? website;
+  DateTime? birthDate;
+  String? gender;
+  List<String>? interests;
+  ProfileVisibility? visibility;
+  Map<String, bool>? privacySettings;
+  String? avatar;
+  String? coverImage;
+  Map<String, dynamic>? customFields;
 
   ProfileUpdateModel({
     this.displayName,
@@ -218,22 +304,10 @@ class ProfileUpdateModel {
     this.coverImage,
     this.customFields,
   });
-  String? displayName;
-  String? bio;
-  String? location;
-  String? website;
-  DateTime? birthDate;
-  String? gender;
-  List<String>? interests;
-  ProfileVisibility? visibility;
-  Map<String, bool>? privacySettings;
-  String? avatar;
-  String? coverImage;
-  Map<String, dynamic>? customFields;
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> json = <String, dynamic>{};
-    
+    final Map<String, dynamic> json = {};
+
     if (displayName != null) json['displayName'] = displayName;
     if (bio != null) json['bio'] = bio;
     if (location != null) json['location'] = location;
@@ -246,7 +320,38 @@ class ProfileUpdateModel {
     if (avatar != null) json['avatar'] = avatar;
     if (coverImage != null) json['coverImage'] = coverImage;
     if (customFields != null) json['customFields'] = customFields;
-    
+
     return json;
+  }
+
+  // Copy with method
+  ProfileUpdateModel copyWith({
+    String? displayName,
+    String? bio,
+    String? location,
+    String? website,
+    DateTime? birthDate,
+    String? gender,
+    List<String>? interests,
+    ProfileVisibility? visibility,
+    Map<String, bool>? privacySettings,
+    String? avatar,
+    String? coverImage,
+    Map<String, dynamic>? customFields,
+  }) {
+    return ProfileUpdateModel(
+      displayName: displayName ?? this.displayName,
+      bio: bio ?? this.bio,
+      location: location ?? this.location,
+      website: website ?? this.website,
+      birthDate: birthDate ?? this.birthDate,
+      gender: gender ?? this.gender,
+      interests: interests ?? this.interests,
+      visibility: visibility ?? this.visibility,
+      privacySettings: privacySettings ?? this.privacySettings,
+      avatar: avatar ?? this.avatar,
+      coverImage: coverImage ?? this.coverImage,
+      customFields: customFields ?? this.customFields,
+    );
   }
 }

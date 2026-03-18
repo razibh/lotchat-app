@@ -15,12 +15,12 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _accountNumberController = TextEditingController();
   final TextEditingController _accountNameController = TextEditingController();
-  
+
   String? _selectedMethod;
   final double _currentBalance = 250.50;
   final double _withdrawableBalance = 200; // After deducting pending etc.
-  
-  final List<WithdrawMethod> _withdrawMethods = <WithdrawMethod>[
+
+  final List<WithdrawMethod> _withdrawMethods = [
     WithdrawMethod(name: 'bKash', icon: Icons.phone_android, color: Colors.pink, minAmount: 50, maxAmount: 25000, charge: 0),
     WithdrawMethod(name: 'Nagad', icon: Icons.mobile_friendly, color: Colors.orange, minAmount: 50, maxAmount: 25000, charge: 0),
     WithdrawMethod(name: 'Rocket', icon: Icons.rocket_launch, color: Colors.red, minAmount: 50, maxAmount: 25000, charge: 0),
@@ -36,10 +36,13 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   }
 
   WithdrawMethod? get _selectedMethodObj {
-    return _withdrawMethods.firstWhere(
-      (WithdrawMethod m) => m.name == _selectedMethod,
-      orElse: () => _withdrawMethods.first,
-    );
+    try {
+      return _withdrawMethods.firstWhere(
+            (WithdrawMethod m) => m.name == _selectedMethod,
+      );
+    } catch (e) {
+      return null;
+    }
   }
 
   double get _withdrawAmount {
@@ -58,8 +61,8 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   bool get _isValidAmount {
     if (_selectedMethodObj == null) return false;
     return _withdrawAmount >= _selectedMethodObj!.minAmount &&
-           _withdrawAmount <= _selectedMethodObj!.maxAmount &&
-           _totalDeduction <= _withdrawableBalance;
+        _withdrawAmount <= _selectedMethodObj!.maxAmount &&
+        _totalDeduction <= _withdrawableBalance;
   }
 
   void _processWithdraw() {
@@ -96,7 +99,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
         title: const Text('Confirm Withdrawal', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             _buildConfirmRow('Amount', '৳${_withdrawAmount.toStringAsFixed(2)}'),
             _buildConfirmRow('Charge', '৳${_charge.toStringAsFixed(2)}'),
             const Divider(color: Colors.white24),
@@ -107,7 +110,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
             _buildConfirmRow('Name', _accountNameController.text),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
@@ -132,7 +135,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           Text(
             label,
             style: TextStyle(
@@ -161,7 +164,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
         title: const Icon(Icons.check_circle, color: Colors.green, size: 60),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             const Text(
               'Withdrawal Request Submitted!',
               style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
@@ -174,7 +177,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
@@ -196,7 +199,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildBalanceInfo(),
               Expanded(
@@ -204,7 +207,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <>[
+                    children: [
                       _buildWithdrawMethods(),
                       const SizedBox(height: 20),
                       _buildAmountInput(),
@@ -228,7 +231,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -237,9 +240,13 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
           Text(
             'Withdraw Funds',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ) ?? const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -252,7 +259,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <>[
+          colors: [
             Colors.orange.withValues(alpha: 0.3),
             Colors.red.withValues(alpha: 0.3),
           ],
@@ -263,11 +270,11 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
         border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Row(
-        children: <>[
+        children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 const Text(
                   'Withdrawable Balance',
                   style: TextStyle(color: Colors.white70, fontSize: 12),
@@ -303,20 +310,20 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   Widget _buildWithdrawMethods() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         const Text(
           'Withdraw Method',
           style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        ..._withdrawMethods.map(_buildMethodTile),
+        ..._withdrawMethods.map((method) => _buildMethodTile(method)).toList(),
       ],
     );
   }
 
   Widget _buildMethodTile(WithdrawMethod method) {
     final bool isSelected = _selectedMethod == method.name;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -327,7 +334,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected 
+          color: isSelected
               ? method.color.withValues(alpha: 0.2)
               : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
@@ -337,7 +344,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
           ),
         ),
         child: Row(
-          children: <>[
+          children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -350,7 +357,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <>[
+                children: [
                   Text(
                     method.name,
                     style: const TextStyle(color: Colors.white, fontSize: 16),
@@ -385,10 +392,10 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
 
   Widget _buildAmountInput() {
     if (_selectedMethod == null) return const SizedBox();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         const Text(
           'Withdraw Amount',
           style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -403,7 +410,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
             setState(() {});
           },
         ),
-        if (_selectedMethodObj != null && _amountController.text.isNotEmpty) ...<>[
+        if (_selectedMethodObj != null && _amountController.text.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(
             'Min: ৳${_selectedMethodObj!.minAmount} | Max: ৳${_selectedMethodObj!.maxAmount}',
@@ -419,10 +426,10 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
 
   Widget _buildAccountInfo() {
     if (_selectedMethod == null) return const SizedBox();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         const Text(
           'Account Information',
           style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -455,7 +462,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
-        children: <>[
+        children: [
           _buildSummaryRow('Withdraw Amount', '৳${_withdrawAmount.toStringAsFixed(2)}'),
           _buildSummaryRow('Charge', '৳${_charge.toStringAsFixed(2)}'),
           const Divider(color: Colors.white24, height: 24),
@@ -471,7 +478,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           Text(
             label,
             style: TextStyle(
@@ -517,6 +524,12 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
 }
 
 class WithdrawMethod {
+  final String name;
+  final IconData icon;
+  final Color color;
+  final double minAmount;
+  final double maxAmount;
+  final double charge;
 
   WithdrawMethod({
     required this.name,
@@ -526,10 +539,4 @@ class WithdrawMethod {
     required this.maxAmount,
     required this.charge,
   });
-  final String name;
-  final IconData icon;
-  final Color color;
-  final double minAmount;
-  final double maxAmount;
-  final double charge;
 }

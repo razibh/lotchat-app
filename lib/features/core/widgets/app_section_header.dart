@@ -1,18 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 
 class AppSectionHeader extends StatelessWidget {
-
-  const AppSectionHeader({
-    required this.title, super.key,
-    this.subtitle,
-    this.actionText,
-    this.onActionPressed,
-    this.padding = const EdgeInsets.all(16),
-    this.titleStyle,
-    this.subtitleStyle,
-    this.leading,
-    this.trailing,
-  });
   final String title;
   final String? subtitle;
   final String? actionText;
@@ -23,20 +12,33 @@ class AppSectionHeader extends StatelessWidget {
   final Widget? leading;
   final Widget? trailing;
 
+  const AppSectionHeader({
+    required this.title,
+    this.subtitle,
+    this.actionText,
+    this.onActionPressed,
+    this.padding = const EdgeInsets.all(16),
+    this.titleStyle,
+    this.subtitleStyle,
+    this.leading,
+    this.trailing,
+    super.key,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: padding,
       child: Row(
-        children: <>[
-          if (leading != null) ...<>[
-            leading,
+        children: [
+          if (leading != null) ...[
+            leading!,
             const SizedBox(width: 12),
           ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   title,
                   style: titleStyle ?? const TextStyle(
@@ -44,7 +46,7 @@ class AppSectionHeader extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (subtitle != null) ...<>[
+                if (subtitle != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     subtitle!,
@@ -82,13 +84,14 @@ class AppSectionHeader extends StatelessWidget {
 }
 
 class SectionTitle extends StatelessWidget {
-
-  const SectionTitle({
-    required this.title, super.key,
-    this.style,
-  });
   final String title;
   final TextStyle? style;
+
+  const SectionTitle({
+    required this.title,
+    this.style,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -113,16 +116,18 @@ class SectionTitle extends StatelessWidget {
 }
 
 class SectionWithIcon extends StatelessWidget {
-
-  const SectionWithIcon({
-    required this.title, required this.icon, super.key,
-    this.iconColor,
-    this.onTap,
-  });
   final String title;
   final IconData icon;
   final Color? iconColor;
   final VoidCallback? onTap;
+
+  const SectionWithIcon({
+    required this.title,
+    required this.icon,
+    this.iconColor,
+    this.onTap,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +136,7 @@ class SectionWithIcon extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
-          children: <>[
+          children: [
             Icon(
               icon,
               color: iconColor ?? Theme.of(context).primaryColor,
@@ -165,21 +170,23 @@ class SectionWithIcon extends StatelessWidget {
 }
 
 class SectionHeaderWithCount extends StatelessWidget {
-
-  const SectionHeaderWithCount({
-    required this.title, required this.count, super.key,
-    this.onViewAll,
-  });
   final String title;
   final int count;
   final VoidCallback? onViewAll;
+
+  const SectionHeaderWithCount({
+    required this.title,
+    required this.count,
+    this.onViewAll,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
-        children: <>[
+        children: [
           Text(
             title,
             style: const TextStyle(

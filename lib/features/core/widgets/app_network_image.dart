@@ -1,18 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 
 class AppNetworkImage extends StatelessWidget {
-
-  const AppNetworkImage({
-    required this.imageUrl, super.key,
-    this.width,
-    this.height,
-    this.fit = BoxFit.cover,
-    this.placeholder,
-    this.errorWidget,
-    this.borderRadius,
-    this.backgroundColor,
-  });
   final String imageUrl;
   final double? width;
   final double? height;
@@ -21,6 +11,18 @@ class AppNetworkImage extends StatelessWidget {
   final Widget? errorWidget;
   final BorderRadius? borderRadius;
   final Color? backgroundColor;
+
+  const AppNetworkImage({
+    required this.imageUrl,
+    this.width,
+    this.height,
+    this.fit = BoxFit.cover,
+    this.placeholder,
+    this.errorWidget,
+    this.borderRadius,
+    this.backgroundColor,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +51,7 @@ class AppNetworkImage extends StatelessWidget {
                 ),
               ),
           errorWidget: (BuildContext context, String url, Object error) => errorWidget ??
-              ColoredBox(
+              Container(
                 color: Colors.grey.shade300,
                 child: Center(
                   child: Icon(
@@ -77,23 +79,23 @@ class AppNetworkImage extends StatelessWidget {
 }
 
 class AppAvatar extends StatelessWidget {
-
-  const AppAvatar({
-    super.key,
-    this.imageUrl,
-    this.name,
-    this.radius = 20,
-    this.isOnline = false,
-  });
   final String? imageUrl;
   final String? name;
   final double radius;
   final bool isOnline;
 
+  const AppAvatar({
+    this.imageUrl,
+    this.name,
+    this.radius = 20,
+    this.isOnline = false,
+    super.key,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Stack(
-      children: <>[
+      children: [
         CircleAvatar(
           radius: radius,
           backgroundImage: imageUrl != null
@@ -102,12 +104,12 @@ class AppAvatar extends StatelessWidget {
           backgroundColor: Colors.grey.shade300,
           child: imageUrl == null && name != null
               ? Text(
-                  name![0].toUpperCase(),
-                  style: TextStyle(
-                    fontSize: radius * 0.6,
-                    fontWeight: FontWeight.bold,
-                  ),
-                )
+            name![0].toUpperCase(),
+            style: TextStyle(
+              fontSize: radius * 0.6,
+              fontWeight: FontWeight.bold,
+            ),
+          )
               : null,
         ),
         if (isOnline)
@@ -142,16 +144,6 @@ class AppAvatar extends StatelessWidget {
 }
 
 class AppCachedImage extends StatelessWidget {
-
-  const AppCachedImage({
-    required this.imageUrl, super.key,
-    this.width,
-    this.height,
-    this.fit = BoxFit.cover,
-    this.fadeInDuration = const Duration(milliseconds: 300),
-    this.memCacheHeight = false,
-    this.memCacheWidth = false,
-  });
   final String imageUrl;
   final double? width;
   final double? height;
@@ -159,6 +151,17 @@ class AppCachedImage extends StatelessWidget {
   final Duration fadeInDuration;
   final bool memCacheHeight;
   final bool memCacheWidth;
+
+  const AppCachedImage({
+    required this.imageUrl,
+    this.width,
+    this.height,
+    this.fit = BoxFit.cover,
+    this.fadeInDuration = const Duration(milliseconds: 300),
+    this.memCacheHeight = false,
+    this.memCacheWidth = false,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

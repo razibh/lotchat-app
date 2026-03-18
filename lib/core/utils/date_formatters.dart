@@ -1,82 +1,127 @@
-import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 
-class Formatters {
-  // Format number with commas (e.g., 1,000,000)
-  static String formatNumber(int number) {
-    final NumberFormat formatter = NumberFormat('#,###');
-    return formatter.format(number);
-  }
-
-  // Format coin amount (e.g., 1.2M, 500K)
-  static String formatCoinAmount(int amount) {
-    if (amount >= 1000000) {
-      final double millions = amount / 1000000;
-      return '${millions.toStringAsFixed(1)}M';
-    } else if (amount >= 1000) {
-      final double thousands = amount / 1000;
-      return '${thousands.toStringAsFixed(1)}K';
-    } else {
-      return amount.toString();
-    }
-  }
-
-  // Format date (e.g., Today, Yesterday, 2 days ago)
+class DateFormatter {
+  // Format date
   static String formatDate(DateTime date) {
-    final DateTime now = DateTime.now();
-    final Duration difference = now.difference(date);
+    return '${date.day}/${date.month}/${date.year}';
+  }
 
-    if (difference.inDays == 0) {
-      if (difference.inHours == 0) {
-        if (difference.inMinutes == 0) {
-          return 'Just now';
-        }
-        return '${difference.inMinutes} minutes ago';
-      }
-      return 'Today';
-    } else if (difference.inDays == 1) {
+  // Format time
+  static String formatTime(DateTime date) {
+    return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  // Format date and time
+  static String formatDateTime(DateTime date) {
+    return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  // Time ago format
+  static String timeAgo(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays > 365) {
+      return '${(difference.inDays / 365).floor()}y ago';
+    } else if (difference.inDays > 30) {
+      return '${(difference.inDays / 30).floor()}mo ago';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  // Format for chat
+  static String formatChatTime(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final dateOnly = DateTime(date.year, date.month, date.day);
+
+    if (dateOnly == today) {
+      return formatTime(date);
+    } else if (dateOnly == yesterday) {
       return 'Yesterday';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
     } else {
-      return DateFormat('MMM d, yyyy').format(date);
+      return formatDate(date);
     }
   }
 
-  // Format duration (e.g., 1:30:45)
-  static String formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final String hours = twoDigits(duration.inHours);
-    final String minutes = twoDigits(duration.inMinutes.remainder(60));
-    final String seconds = twoDigits(duration.inSeconds.remainder(60));
-
-    if (duration.inHours > 0) {
-      return '$hours:$minutes:$seconds';
-    } else {
-      return '$minutes:$seconds';
+  // Get day name
+  static String getDayName(DateTime date) {
+    switch (date.weekday) {
+      case 1:
+        return 'Monday';
+      case 2:
+        return 'Tuesday';
+      case 3:
+        return 'Wednesday';
+      case 4:
+        return 'Thursday';
+      case 5:
+        return 'Friday';
+      case 6:
+        return 'Saturday';
+      case 7:
+        return 'Sunday';
+      default:
+        return '';
     }
   }
 
-  // Format phone number (e.g., +1 (555) 123-4567)
-  static String formatPhoneNumber(String phone) {
-    // Remove all non-digits
-    final String digits = phone.replaceAll(RegExp(r'\D'), '');
-    
-    if (digits.length == 10) {
-      return '(${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}';
-    } else if (digits.length == 11) {
-      return '+${digits[0]} (${digits.substring(1, 4)}) ${digits.substring(4, 7)}-${digits.substring(7)}';
+  // Get month name
+  static String getMonthName(DateTime date) {
+    switch (date.month) {
+      case 1:
+        return 'January';
+      case 2:
+        return 'February';
+      case 3:
+        return 'March';
+      case 4:
+        return 'April';
+      case 5:
+        return 'May';
+      case 6:
+        return 'June';
+      case 7:
+        return 'July';
+      case 8:
+        return 'August';
+      case 9:
+        return 'September';
+      case 10:
+        return 'October';
+      case 11:
+        return 'November';
+      case 12:
+        return 'December';
+      default:
+        return '';
     }
-    
-    return phone;
   }
 
-  // Format file size (e.g., 1.5 MB)
-  static String formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  // Check if same day
+  static bool isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  // Check if today
+  static bool isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
+  }
+
+  // Check if yesterday
+  static bool isYesterday(DateTime date) {
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    return date.year == yesterday.year &&
+        date.month == yesterday.month &&
+        date.day == yesterday.day;
   }
 }

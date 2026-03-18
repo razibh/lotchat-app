@@ -18,15 +18,16 @@ extension FutureExtension<T> on Future<T> {
     Duration delay = const Duration(seconds: 1),
     bool Function(Object)? retryIf,
   }) {
-    return _retry(this, maxRetries, delay, retryIf);
+    // Future এর জন্য retry করার সঠিক পদ্ধতি
+    return _retry(() => this, maxRetries, delay, retryIf);
   }
 
   static Future<T> _retry<T>(
-    Future<T> Function() fn,
-    int maxRetries,
-    Duration delay,
-    bool Function(Object)? retryIf,
-  ) async {
+      Future<T> Function() fn,
+      int maxRetries,
+      Duration delay,
+      bool Function(Object)? retryIf,
+      ) async {
     int attempts = 0;
     while (true) {
       try {
@@ -43,9 +44,9 @@ extension FutureExtension<T> on Future<T> {
 
   // Execute with loading indicator
   Future<T> withLoading({
-    Function? onStart,
-    Function? onComplete,
-    Function(Object)? onError,
+    void Function()? onStart,
+    void Function()? onComplete,
+    void Function(Object)? onError,
   }) async {
     onStart?.call();
     try {
@@ -66,50 +67,16 @@ extension FutureExtension<T> on Future<T> {
     Duration? expiry,
   }) async {
     // Try to load from cache
-    final Object? cached = await load();
+    final cached = await load();
     if (cached != null) return cached;
 
     // Fetch from network
-    final Object? data = await fetch();
+    final data = await fetch();
 
     // Save to cache
     await save(data);
 
     return data;
-  }
-
-  // Execute with debounce
-  static Future<T?> debounce<T>(
-    Future<T> Function() action,
-    Duration duration,
-  ) {
-    final Completer<T?> completer = Completer<T?>();
-    Timer(duration, () async {
-      try {
-        final T result = await action();
-        completer.complete(result);
-      } catch (e) {
-        completer.completeError(e);
-      }
-    });
-    return completer.future;
-  }
-
-  // Execute with throttle
-  static Future<T?> throttle<T>(
-    Future<T> Function() action,
-    Duration duration,
-  ) {
-    final Completer<T?> completer = Completer<T?>();
-    Timer.run(() async {
-      try {
-        final T result = await action();
-        completer.complete(result);
-      } catch (e) {
-        completer.completeError(e);
-      }
-    });
-    return completer.future;
   }
 
   // Convert to stream
@@ -124,7 +91,7 @@ extension FutureExtension<T> on Future<T> {
 
   // Execute with logging
   Future<T> withLogging(String operation) {
-    final Stopwatch stopwatch = Stopwatch()..start();
+    final stopwatch = Stopwatch()..start();
     print('▶️ Starting: $operation');
     return then((value) {
       stopwatch.stop();
@@ -141,14 +108,14 @@ extension FutureExtension<T> on Future<T> {
   Future<T> withProgress(StreamController<double> progress) async {
     progress.add(0);
     try {
-      final Object? result = await this;
+      final result = await this;
       progress.add(1);
       return result;
     } catch (e) {
       progress.addError(e);
       rethrow;
     } finally {
-      progress.close();
+      await progress.close();
     }
   }
 
@@ -164,5 +131,93 @@ extension FutureExtension<T> on Future<T> {
     Duration retryDelay = const Duration(seconds: 1),
   }) {
     return withTimeout(timeout).retry(maxRetries: retries, delay: retryDelay);
+  }
+}
+
+// ================ Static utility methods ================
+
+// Debounce - একটানা কল থামানোর জন্য
+Future<T?> debounce<T>(
+    Future<T> Function() action,
+    Duration duration,
+    ) {
+  final completer = Completer<T?>();
+  Timer(duration, () async {
+    try {
+      final result = await action();
+      completer.complete(result);
+    } catch (e) {
+      completer.completeError(e);
+    }
+  });
+  return completer.future;
+}
+
+// Throttle - নির্দিষ্ট সময় পরপর কল করার জন্য
+Future<T?> throttle<T>(
+    Future<T> Function() action,
+    Duration duration,
+    ) {
+  final completer = Completer<T?>();
+  Timer.run(() async {
+    try {
+      final result = await action();
+      completer.complete(result);
+    } catch (e) {
+      completer.completeError(e);
+    }
+  });
+  return completer.future;
+}
+
+// Parallel execution
+Future<List<T>> parallel<T>(
+    List<Future<T>> futures, {
+      bool stopOnError = false,
+    }) async {
+  if (stopOnError) {
+    return Future.wait(futures);
+  } else {
+    final results = <T>[];
+    for (var future in futures) {
+      try {
+        results.add(await future);
+      } catch (e) {
+        // Skip errors
+      }
+    }
+    return results;
+  }
+}
+
+// Sequential execution
+Future<List<T>> sequential<T>(
+    List<Future<T> Function()> actions,
+    ) async {
+  final results = <T>[];
+  for (var action in actions) {
+    results.add(await action());
+  }
+  return results;
+}
+
+// Retry utility
+Future<T> retry<T>(
+    Future<T> Function() fn, {
+      int maxRetries = 3,
+      Duration delay = const Duration(seconds: 1),
+      bool Function(Object)? retryIf,
+    }) async {
+  int attempts = 0;
+  while (true) {
+    try {
+      return await fn();
+    } catch (e) {
+      attempts++;
+      if (attempts >= maxRetries || (retryIf != null && !retryIf(e))) {
+        rethrow;
+      }
+      await Future.delayed(delay * attempts);
+    }
   }
 }

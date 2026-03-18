@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive/hive.dart';
-import '../models/user_model.dart';
+import 'package:flutter/foundation.dart'; // 🟢 debugPrint এর জন্য
+
+import '../models/user_models.dart' as app; // 🟢 UserModel এর পরিবর্তে app.User
 import '../models/gift_model.dart';
 import '../constants/shared_preference_keys.dart';
 
@@ -136,53 +139,91 @@ class StorageService {
     await _hiveBox.clear();
   }
 
+  // ==================== FILE UPLOAD ====================
+
+  // Upload file (mock implementation for now)
+  Future<String?> uploadFile({
+    required File file,
+    required String path,
+    required String fileName,
+  }) async {
+    try {
+      debugPrint('Uploading file to $path/$fileName');
+
+      // TODO: Replace with actual file upload (Firebase Storage, AWS S3, etc.)
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Return mock URL
+      return 'https://example.com/storage/$path/$fileName';
+
+    } catch (e) {
+      debugPrint('Failed to upload file: $e');
+      return null;
+    }
+  }
+
   // ==================== USER DATA ====================
 
   // Save user
-  Future<void> saveUser(UserModel user) async {
+  Future<void> saveUser(app.User user) async {
     final String userJson = jsonEncode(user.toJson());
     await setString(PrefKeys.userData, userJson);
-    await setString(PrefKeys.userId, user.uid);
+    await setString(PrefKeys.userId, user.id);
     await setString(PrefKeys.userName, user.username);
     await setString(PrefKeys.userEmail, user.email);
     await setInt(PrefKeys.userCoins, user.coins);
     await setInt(PrefKeys.userDiamonds, user.diamonds);
-    await setInt(PrefKeys.userTier, user.tier.index);
+
+    // 🟢 Fix: UserTier enum to int
+    if (user.tier != null) {
+      await setInt(PrefKeys.userTier, user.tier!.index);
+    }
   }
 
   // Get user
-  UserModel? getUser() {
+  app.User? getUser() {
     final String? userJson = getString(PrefKeys.userData);
     if (userJson != null) {
       try {
         final Map<String, dynamic> userMap = jsonDecode(userJson);
-        return UserModel.fromJson(userMap);
+        return app.User.fromJson(userMap);
       } catch (e) {
-        print('Error parsing user: $e');
+        debugPrint('Error parsing user: $e');
       }
     }
     return null;
   }
 
+  // 🟢 Get user ID
+  Future<String?> getUserId() async {
+    return getString(PrefKeys.userId);
+  }
+
+  // 🟢 Set user ID
+  Future<void> setUserId(String userId) async {
+    await setString(PrefKeys.userId, userId);
+  }
+
   // Update user coins
   Future<void> updateUserCoins(int coins) async {
     await setInt(PrefKeys.userCoins, coins);
-    
-    final UserModel? user = getUser();
+
+    final app.User? user = getUser();
     if (user != null) {
-      user.coins = coins;
-      await saveUser(user);
+      // 🟢 Fix: coins is final, so create new user
+      final updatedUser = user.copyWith(coins: coins);
+      await saveUser(updatedUser);
     }
   }
 
   // Update user diamonds
   Future<void> updateUserDiamonds(int diamonds) async {
     await setInt(PrefKeys.userDiamonds, diamonds);
-    
-    final UserModel? user = getUser();
+
+    final app.User? user = getUser();
     if (user != null) {
-      user.diamonds = diamonds;
-      await saveUser(user);
+      final updatedUser = user.copyWith(diamonds: diamonds);
+      await saveUser(updatedUser);
     }
   }
 
@@ -287,13 +328,13 @@ class StorageService {
 
   // Save last location
   Future<void> saveLastLocation(Map<String, double> location) async {
-    await saveMap(PrefKeys.lastLocation, location);
+    await saveMap(PrefKeys.lastLocation, location.cast<String, dynamic>());
   }
 
   Map<String, double>? getLastLocation() {
     final Map<String, dynamic>? location = getMap(PrefKeys.lastLocation);
     if (location != null) {
-      return Map<String, double>.from(location);
+      return location.map((key, value) => MapEntry(key, (value as num).toDouble()));
     }
     return null;
   }
@@ -335,7 +376,7 @@ class StorageService {
   bool isCacheValid({int maxAgeHours = 24}) {
     final int? lastSync = getLastSyncTime();
     if (lastSync == null) return false;
-    
+
     final int age = DateTime.now().millisecondsSinceEpoch - lastSync;
     return age < (maxAgeHours * 60 * 60 * 1000);
   }
@@ -427,4 +468,35 @@ class StorageService {
     await clear();
     await clearHive();
   }
+}
+
+// PrefKeys class
+class PrefKeys {
+  static const String userData = 'user_data';
+  static const String userId = 'user_id';
+  static const String userName = 'user_name';
+  static const String userEmail = 'user_email';
+  static const String userCoins = 'user_coins';
+  static const String userDiamonds = 'user_diamonds';
+  static const String userTier = 'user_tier';
+  static const String authToken = 'auth_token';
+  static const String refreshToken = 'refresh_token';
+  static const String isLoggedIn = 'is_logged_in';
+  static const String themeMode = 'theme_mode';
+  static const String language = 'language';
+  static const String notificationsEnabled = 'notifications_enabled';
+  static const String soundEnabled = 'sound_enabled';
+  static const String vibrationEnabled = 'vibration_enabled';
+  static const String country = 'country';
+  static const String region = 'region';
+  static const String lastLocation = 'last_location';
+  static const String cachedRooms = 'cached_rooms';
+  static const String cachedGifts = 'cached_gifts';
+  static const String lastSync = 'last_sync';
+  static const String hasSeenOnboarding = 'has_seen_onboarding';
+  static const String hasCompletedProfile = 'has_completed_profile';
+  static const String gameStats = 'game_stats';
+  static const String lastGamePlayed = 'last_game_played';
+  static const String biometricEnabled = 'biometric_enabled';
+  static const String pinCode = 'pin_code';
 }

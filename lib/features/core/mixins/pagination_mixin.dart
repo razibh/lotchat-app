@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter/foundation.dart';
 mixin PaginationMixin<T> on State {
-  final List<T> _items = <Object?>[];
+  final List<T> _items = [];
   int _currentPage = 0;
   int _totalPages = 1;
   int _totalItems = 0;
@@ -35,10 +35,10 @@ mixin PaginationMixin<T> on State {
 
   void _onScroll() {
     if (!_hasMore || _isLoadingMore) return;
-    
+
     final double maxScroll = scrollController.position.maxScrollExtent;
     final double currentScroll = scrollController.position.pixels;
-    
+
     if (currentScroll >= maxScroll * 0.8) {
       _loadMore();
     }
@@ -52,7 +52,7 @@ mixin PaginationMixin<T> on State {
       _hasMore = true;
       _error = null;
     });
-    
+
     await _loadPage(0);
   }
 
@@ -80,7 +80,7 @@ mixin PaginationMixin<T> on State {
   // Load more (infinite scroll)
   Future<void> _loadMore() async {
     if (!_hasMore || _isLoadingMore) return;
-    
+
     setState(() {
       _isLoadingMore = true;
     });
@@ -99,8 +99,8 @@ mixin PaginationMixin<T> on State {
   // Load specific page
   Future<void> _loadPage(int page) async {
     try {
-      final PaginationResult<Object?> result = await fetchPage(page);
-      
+      final result = await fetchPage(page);
+
       setState(() {
         if (result.items.isEmpty) {
           _hasMore = false;
@@ -144,7 +144,7 @@ mixin PaginationMixin<T> on State {
       }
       return false;
     });
-    
+
     if (index != -1) {
       setState(() {
         _items[index] = updatedItem;
@@ -160,7 +160,7 @@ mixin PaginationMixin<T> on State {
       }
       return false;
     });
-    
+
     if (index != -1) {
       setState(() {
         _items.removeAt(index);
@@ -186,7 +186,7 @@ mixin PaginationMixin<T> on State {
   // Build loading indicator for list footer
   Widget buildLoadingIndicator() {
     if (!_isLoadingMore) return const SizedBox.shrink();
-    
+
     return const Padding(
       padding: EdgeInsets.all(16),
       child: Center(
@@ -198,12 +198,12 @@ mixin PaginationMixin<T> on State {
   // Build error widget
   Widget buildErrorWidget({VoidCallback? onRetry}) {
     if (_error == null) return const SizedBox.shrink();
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: <>[
+          children: [
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
             const Text(
@@ -237,13 +237,13 @@ mixin PaginationMixin<T> on State {
     String? actionLabel,
   }) {
     if (customWidget != null) return customWidget;
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
+          children: [
             Icon(icon, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
@@ -256,7 +256,7 @@ mixin PaginationMixin<T> on State {
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.grey),
             ),
-            if (onAction != null && actionLabel != null) ...<>[
+            if (onAction != null && actionLabel != null) ...[
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: onAction,
@@ -274,6 +274,10 @@ mixin PaginationMixin<T> on State {
 }
 
 class PaginationResult<T> {
+  final List<T> items;
+  final int totalPages;
+  final int totalItems;
+  final int currentPage;
 
   PaginationResult({
     required this.items,
@@ -283,30 +287,28 @@ class PaginationResult<T> {
   });
 
   factory PaginationResult.fromJson(
-    Map<String, dynamic> json,
-    T Function(Map<String, dynamic>) fromJson,
-  ) {
+      Map<String, dynamic> json,
+      T Function(Map<String, dynamic>) fromJson,
+      ) {
     return PaginationResult(
-      items: (json['items'] as List).map((e) => fromJson(e)).toList(),
-      totalPages: json['totalPages'],
-      totalItems: json['totalItems'],
-      currentPage: json['currentPage'],
+      items: (json['items'] as List).map((e) => fromJson(e as Map<String, dynamic>)).toList(),
+      totalPages: json['totalPages'] as int,
+      totalItems: json['totalItems'] as int,
+      currentPage: json['currentPage'] as int,
     );
   }
-  final List<T> items;
-  final int totalPages;
-  final int totalItems;
-  final int currentPage;
 }
 
 // Shimmer Loading Widget (can be used with the mixin)
 class ShimmerLoading extends StatelessWidget {
-
-  const ShimmerLoading({
-    required this.itemCount, required this.itemBuilder, super.key,
-  });
   final int itemCount;
   final Widget Function(int index) itemBuilder;
+
+  const ShimmerLoading({
+    required this.itemCount,
+    required this.itemBuilder,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

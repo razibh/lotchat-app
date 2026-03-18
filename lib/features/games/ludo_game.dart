@@ -1,30 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/game_service.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
-import '../../widgets/common/custom_button.dart';
 
 class LudoGame extends StatefulWidget {
-  const LudoGame({super.key});
+  final String? gameId;
+
+  const LudoGame({super.key, this.gameId});
 
   @override
   State<LudoGame> createState() => _LudoGameState();
 }
 
 class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
-  
+
   final GameService _gameService = ServiceLocator().get<GameService>();
-  
+
   int _betAmount = 100;
   int _playerCoins = 10000;
   bool _gameStarted = false;
   int _diceRoll = 0;
-  final int _playerPosition = 0;
-  final int _opponentPosition = 0;
   bool _isPlayerTurn = true;
-  List<Map<String, dynamic>> _playerPieces = <Map<String, dynamic>>[];
-  List<Map<String, dynamic>> _opponentPieces = <Map<String, dynamic>>[];
+  List<Map<String, dynamic>> _playerPieces = [];
+  List<Map<String, dynamic>> _opponentPieces = [];
 
   @override
   void initState() {
@@ -33,17 +34,17 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
   }
 
   void _initGame() {
-    _playerPieces = List.generate(4, (int index) => <String, dynamic>{
+    _playerPieces = List.generate(4, (index) => {
       'position': -1, // -1 means not started
       'isHome': false,
       'id': index,
-    },);
-    
-    _opponentPieces = List.generate(4, (int index) => <String, dynamic>{
+    });
+
+    _opponentPieces = List.generate(4, (index) => {
       'position': -1,
       'isHome': false,
       'id': index,
-    },);
+    });
   }
 
   void _startGame() {
@@ -56,6 +57,7 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
       _gameStarted = true;
       _initGame();
       _isPlayerTurn = true;
+      _diceRoll = 0;
     });
   }
 
@@ -65,8 +67,8 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
     });
 
     // Check if can move any piece
-    var canMove = false;
-    for (Map<String, dynamic> piece in _playerPieces) {
+    bool canMove = false;
+    for (var piece in _playerPieces) {
       if (piece['position'] == -1 && _diceRoll == 6) {
         canMove = true;
         break;
@@ -78,18 +80,23 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
 
     if (!canMove) {
       // Switch turn
-      setState(() {
-        _isPlayerTurn = false;
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          setState(() {
+            _isPlayerTurn = false;
+            _diceRoll = 0;
+          });
+          _opponentTurn();
+        }
       });
-      _opponentTurn();
     }
   }
 
   void _movePiece(int pieceIndex) {
     if (!_isPlayerTurn) return;
 
-    final var Map<String, dynamic> piece = _playerPieces[pieceIndex];
-    
+    final piece = _playerPieces[pieceIndex];
+
     if (piece['position'] == -1) {
       // Start piece
       if (_diceRoll == 6) {
@@ -101,7 +108,7 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
     } else if (!piece['isHome']) {
       // Move piece
       final int newPos = piece['position'] + _diceRoll;
-      
+
       if (newPos >= 57) {
         // Reached home
         setState(() {
@@ -117,13 +124,13 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
       }
 
       // Check win condition
-      if (_playerPieces.every((Map<String, dynamic> p) => p['isHome'])) {
+      if (_playerPieces.every((p) => p['isHome'] == true)) {
         _gameWon();
       }
     }
 
     // Switch turn if no extra turn
-    if (_diceRoll != 6) {
+    if (_diceRoll == 0) {
       setState(() {
         _isPlayerTurn = false;
       });
@@ -133,7 +140,7 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
 
   Future<void> _opponentTurn() async {
     await Future.delayed(const Duration(seconds: 1));
-    
+
     if (!mounted) return;
 
     setState(() {
@@ -153,13 +160,13 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
       }
     } else {
       // Move a random piece
-      final var List<Map<String, dynamic>> movablePieces = _opponentPieces.where((Map<String, dynamic> p) => 
-          p['position'] >= 0 && !p['isHome'],).toList();
-      
+      final movablePieces = _opponentPieces.where((p) =>
+      p['position'] >= 0 && !p['isHome']).toList();
+
       if (movablePieces.isNotEmpty) {
         final piece = movablePieces[DateTime.now().millisecondsSinceEpoch % movablePieces.length];
-        final var index = _opponentPieces.indexOf(piece);
-        
+        final index = _opponentPieces.indexOf(piece);
+
         final int newPos = piece['position'] + _diceRoll;
         if (newPos >= 57) {
           setState(() {
@@ -174,23 +181,36 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
       }
     }
 
-    setState(() {
-      _isPlayerTurn = true;
-      _diceRoll = 0;
-    });
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (mounted) {
+      setState(() {
+        _isPlayerTurn = true;
+        _diceRoll = 0;
+      });
+    }
   }
 
   void _gameWon() {
-    showInfoDialog(
-      context,
-      title: '🎉 You Won!',
-      message: 'Congratulations! You won $_betAmount coins!',
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('🎉 You Won!'),
+        content: Text('Congratulations! You won $_betAmount coins!'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _playerCoins += _betAmount * 2;
+                _gameStarted = false;
+              });
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
-    
-    setState(() {
-      _playerCoins += _betAmount * 2;
-      _gameStarted = false;
-    });
   }
 
   @override
@@ -199,19 +219,20 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
       appBar: AppBar(
         title: const Text('Ludo'),
         backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
       ),
-      body: ColoredBox(
+      body: Container(
         color: Colors.amber.shade100,
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               // Game Info
               Container(
                 padding: const EdgeInsets.all(16),
                 color: Colors.blue,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <>[
+                  children: [
                     const Text(
                       'Your Coins:',
                       style: TextStyle(color: Colors.white, fontSize: 16),
@@ -239,22 +260,22 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: <>[
+                    boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: Colors.black.withOpacity(0.1),
                         blurRadius: 10,
                       ),
                     ],
                   ),
                   child: Column(
-                    children: <>[
+                    children: [
                       // Opponent Home
                       Container(
                         height: 60,
                         color: Colors.red.shade100,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: _opponentPieces.map((Map<String, dynamic> piece) {
+                          children: _opponentPieces.map((piece) {
                             return Container(
                               width: 40,
                               height: 40,
@@ -270,34 +291,37 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
 
                       // Board Center
                       Expanded(
-                        child: ColoredBox(
+                        child: Container(
                           color: Colors.amber.shade50,
                           child: Center(
                             child: _diceRoll > 0
                                 ? Container(
-                                    width: 80,
-                                    height: 80,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: <>[
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.2),
-                                          blurRadius: 5,
-                                        ),
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '$_diceRoll',
-                                        style: const TextStyle(
-                                          fontSize: 40,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : const Text('LUDO'),
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 5,
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '$_diceRoll',
+                                  style: const TextStyle(
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            )
+                                : const Text(
+                              'LUDO',
+                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ),
@@ -308,10 +332,11 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
                         color: Colors.green.shade100,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: _playerPieces.map((Map<String, dynamic> piece) {
+                          children: _playerPieces.map((piece) {
+                            final index = _playerPieces.indexOf(piece);
                             return GestureDetector(
                               onTap: _isPlayerTurn && _diceRoll > 0
-                                  ? () => _movePiece(_playerPieces.indexOf(piece))
+                                  ? () => _movePiece(index)
                                   : null,
                               child: Container(
                                 width: 40,
@@ -341,26 +366,37 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
-                    children: <>[
+                    children: [
                       Wrap(
                         spacing: 10,
-                        children: <int>[100, 500, 1000].map((int amount) {
+                        children: [100, 500, 1000].map((amount) {
                           return FilterChip(
                             label: Text('$amount'),
                             selected: _betAmount == amount,
-                            onSelected: (bool selected) {
+                            onSelected: (selected) {
                               setState(() {
                                 _betAmount = amount;
                               });
                             },
+                            backgroundColor: Colors.white,
                           );
                         }).toList(),
                       ),
                       const SizedBox(height: 16),
-                      CustomButton(
-                        text: 'Start Game',
-                        onPressed: _startGame,
-                        color: Colors.blue,
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _startGame,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Start Game'),
+                        ),
                       ),
                     ],
                   ),
@@ -369,12 +405,21 @@ class _LudoGameState extends State<LudoGame> with LoadingMixin, ToastMixin {
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
-                    children: <>[
+                    children: [
                       Expanded(
-                        child: CustomButton(
-                          text: _isPlayerTurn ? 'Roll Dice' : "Opponent's Turn",
-                          onPressed: _isPlayerTurn ? _rollDice : null,
-                          color: Colors.blue,
+                        child: SizedBox(
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _isPlayerTurn ? _rollDice : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(_isPlayerTurn ? 'Roll Dice' : "Opponent's Turn"),
+                          ),
                         ),
                       ),
                     ],

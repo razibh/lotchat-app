@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/di/service_locator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/services/referral_service.dart';
-import '../../core/services/auth_service.dart';
-import '../../mixins/loading_mixin.dart';
-import '../../mixins/toast_mixin.dart';
-import '../../widgets/common/custom_button.dart';
-import '../../widgets/animation/fade_animation.dart';
-import 'dart:ui' as ui;
 
 class ReferralScreen extends StatefulWidget {
   const ReferralScreen({super.key});
@@ -15,58 +10,43 @@ class ReferralScreen extends StatefulWidget {
   State<ReferralScreen> createState() => _ReferralScreenState();
 }
 
-class _ReferralScreenState extends State<ReferralScreen> 
-    with LoadingMixin, ToastMixin {
-  
-  final ReferralService _referralService = ServiceLocator().get<ReferralService>();
-  final AuthService _authService = ServiceLocator().get<AuthService>();
-  
-  String? _referralCode;
-  int _totalReferrals = 0;
-  int _totalEarnings = 0;
-  List<Map<String, dynamic>> _referralHistory = <Map<String, dynamic>>[];
+class _ReferralScreenState extends State<ReferralScreen> {
+  late final ReferralService _referralService;
+  bool _isLoading = true;
+  Map<String, dynamic> _stats = {};
+  List<Map<String, dynamic>> _history = [];
+  Map<String, dynamic>? _referredBy;
+  final List<Map<String, dynamic>> _leaderboard = [];
 
   @override
   void initState() {
     super.initState();
+    _referralService = ReferralService();
     _loadReferralData();
   }
 
   Future<void> _loadReferralData() async {
-    await runWithLoading(() async {
-      await Future.delayed(const Duration(seconds: 1));
-      
-      setState(() {
-        _referralCode = 'LOTCHAT123';
-        _totalReferrals = 24;
-        _totalEarnings = 12500;
-        _referralHistory = List.generate(10, (int index) {
-          return <String, dynamic>{
-            'name': 'User ${index + 1}',
-            'date': DateTime.now().subtract(Duration(days: index)),
-            'earnings': 500,
-            'status': 'completed',
-          };
+    setState(() => _isLoading = true);
+
+    try {
+      final stats = await _referralService.getReferralStats();
+      final referredBy = await _referralService.getReferredBy();
+      final leaderboard = await _referralService.getReferralLeaderboard();
+
+      if (mounted) {
+        setState(() {
+          _stats = stats;
+          _referredBy = referredBy;
+          _leaderboard.addAll(leaderboard);
+          _isLoading = false;
         });
-      });
-    });
-  }
-
-  Future<void> _copyReferralCode() async {
-    if (_referralCode != null) {
-      await ui.TextureLayer.handle ??
-      // Copy to clipboard
-      showSuccess('Referral code copied!');
+      }
+    } catch (e) {
+      debugPrint('Error loading referral data: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-  }
-
-  Future<void> _shareReferral() async {
-    // Share referral link
-    showSuccess('Sharing referral link...');
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
   }
 
   @override
@@ -74,269 +54,176 @@ class _ReferralScreenState extends State<ReferralScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Refer & Earn'),
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.deepPurple,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: _showInfoDialog,
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: <>[
-                  // Header Card
-                  Card(
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: <>[Colors.green, Colors.lightGreen],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        children: <>[
-                          const Icon(
-                            Icons.card_giftcard,
-                            size: 60,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Invite Friends, Earn Coins!',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Get 500 coins for each friend who joins',
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                          const SizedBox(height: 24),
-                          
-                          // Referral Code
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: <>[
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: <>[
-                                      const Text(
-                                        'Your Referral Code',
-                                        style: TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        _referralCode ?? 'LOADING',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 2,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.copy, color: Colors.white),
-                                  onPressed: _copyReferralCode,
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.share, color: Colors.white),
-                                  onPressed: _shareReferral,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+          : RefreshIndicator(
+        onRefresh: _loadReferralData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildReferralCodeCard(),
+              const SizedBox(height: 16),
+              _buildStatsCard(),
+              const SizedBox(height: 16),
+              if (_referredBy != null) _buildReferredByCard(),
+              if (_referredBy != null) const SizedBox(height: 16),
+              _buildMilestoneCard(),
+              const SizedBox(height: 16),
+              _buildHowItWorks(),
+              const SizedBox(height: 16),
+              _buildReferralHistory(),
+              const SizedBox(height: 16),
+              _buildLeaderboard(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReferralCodeCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Colors.deepPurple, Colors.purple],
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.card_giftcard,
+                size: 48,
+                color: Colors.white,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Your Referral Code',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _stats['code'] ?? 'N/A',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _copyReferralCode,
+                    icon: const Icon(Icons.copy),
+                    label: const Text('Copy'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.deepPurple,
                     ),
                   ),
-                  const SizedBox(height: 20),
-
-                  // Stats
-                  Row(
-                    children: <>[
-                      Expanded(
-                        child: _buildStatCard(
-                          'Total Referrals',
-                          '$_totalReferrals',
-                          Icons.people,
-                          Colors.blue,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          'Total Earnings',
-                          '$_totalEarnings',
-                          Icons.monetization_on,
-                          Colors.amber,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // How it works
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <>[
-                          const Text(
-                            'How it works',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _buildStep(
-                            '1',
-                            'Share your code',
-                            'Send your referral code to friends',
-                            Icons.share,
-                            Colors.blue,
-                          ),
-                          _buildStep(
-                            '2',
-                            'Friend joins',
-                            'They sign up using your code',
-                            Icons.person_add,
-                            Colors.green,
-                          ),
-                          _buildStep(
-                            '3',
-                            'You earn coins',
-                            'Get 500 coins for each referral',
-                            Icons.monetization_on,
-                            Colors.amber,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Referral History
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <>[
-                          const Text(
-                            'Referral History',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          ..._referralHistory.map((Map<String, dynamic> ref) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Row(
-                              children: <>[
-                                const CircleAvatar(
-                                  radius: 16,
-                                  child: Icon(Icons.person, size: 16),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: <>[
-                                      Text(
-                                        ref['name'],
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        _formatDate(ref['date']),
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Row(
-                                    children: <>[
-                                      const Icon(
-                                        Icons.monetization_on,
-                                        size: 12,
-                                        color: Colors.green,
-                                      ),
-                                      const SizedBox(width: 2),
-                                      Text(
-                                        '+${ref['earnings']}',
-                                        style: const TextStyle(
-                                          color: Colors.green,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),),
-                        ],
-                      ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    onPressed: _shareReferralCode,
+                    icon: const Icon(Icons.share),
+                    label: const Text('Share'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.deepPurple,
                     ),
                   ),
                 ],
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatsCard() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: <>[
-            Icon(icon, color: color, size: 30),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 24,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Your Stats',
+              style: TextStyle(
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatItem(
+                  'Total',
+                  '${_stats['totalReferrals'] ?? 0}',
+                  Icons.people,
+                  Colors.blue,
+                ),
+                _buildStatItem(
+                  'This Month',
+                  '${_stats['monthReferrals'] ?? 0}',
+                  Icons.calendar_today,
+                  Colors.green,
+                ),
+                _buildStatItem(
+                  'This Week',
+                  '${_stats['weekReferrals'] ?? 0}',
+                  Icons.weekend,
+                  Colors.orange,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Total Earnings:'),
+                Text(
+                  '${_stats['totalEarnings'] ?? 0} coins',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -344,47 +231,409 @@ class _ReferralScreenState extends State<ReferralScreen>
     );
   }
 
-  Widget _buildStep(String number, String title, String description, IconData icon, Color color) {
+  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.grey, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReferredByCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Referred By',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundImage: _referredBy?['avatar'] != null
+                    ? NetworkImage(_referredBy!['avatar'])
+                    : null,
+                child: _referredBy?['avatar'] == null
+                    ? Text(_referredBy?['name'][0].toUpperCase() ?? 'U')
+                    : null,
+              ),
+              title: Text(_referredBy?['name'] ?? 'User'),
+              subtitle: Text('Joined on ${_formatDate(_referredBy?['referredAt'])}'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMilestoneCard() {
+    final milestone = _stats['nextMilestone'] as Map<String, dynamic>?;
+    if (milestone == null) return const SizedBox();
+
+    final progress = (_stats['totalReferrals'] ?? 0) / milestone['next'];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Next Milestone',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('${_stats['totalReferrals'] ?? 0}/${milestone['next']} referrals'),
+                Text('+${milestone['bonus']} coins', style: const TextStyle(color: Colors.green)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.grey[300],
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHowItWorks() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'How it Works',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildStep(1, 'Share your referral code with friends'),
+            _buildStep(2, 'They sign up using your code'),
+            _buildStep(3, 'You earn ${_stats['bonusPerReferral'] ?? 1000} coins'),
+            _buildStep(4, 'Withdraw your earnings anytime'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStep(int number, String description) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        children: <>[
+        children: [
           Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
+            width: 24,
+            height: 24,
+            decoration: const BoxDecoration(
+              color: Colors.deepPurple,
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
-                number,
-                style: TextStyle(
-                  color: color,
+                '$number',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  description,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-          Icon(icon, color: color, size: 20),
+          Expanded(child: Text(description)),
         ],
       ),
     );
+  }
+
+  Widget _buildReferralHistory() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Recent Referrals',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _referralService.getReferralHistory(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(
+                    child: Text('Error loading referrals'),
+                  );
+                }
+
+                if (!snapshot.hasData) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                final history = snapshot.data!;
+
+                if (history.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text(
+                        'No referrals yet',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: history.length > 5 ? 5 : history.length,
+                  itemBuilder: (context, index) {
+                    final item = history[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: item['referredAvatar'] != null
+                            ? NetworkImage(item['referredAvatar'])
+                            : null,
+                        child: item['referredAvatar'] == null
+                            ? Text(item['referredName'][0].toUpperCase())
+                            : null,
+                      ),
+                      title: Text(item['referredName']),
+                      subtitle: Text(_formatDate(item['timestamp'])),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '+${item['bonus']}',
+                          style: const TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLeaderboard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Top Referrers',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (_leaderboard.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'No data yet',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _leaderboard.length,
+                itemBuilder: (context, index) {
+                  final item = _leaderboard[index];
+                  final isCurrentUser = item['userId'] == FirebaseAuth.instance.currentUser?.uid;
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: isCurrentUser ? Colors.deepPurple.shade100 : null,
+                      backgroundImage: item['avatar'] != null
+                          ? NetworkImage(item['avatar'])
+                          : null,
+                      child: item['avatar'] == null
+                          ? Text(item['name'][0].toUpperCase())
+                          : null,
+                    ),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item['name'],
+                            style: TextStyle(
+                              fontWeight: isCurrentUser ? FontWeight.bold : null,
+                              color: isCurrentUser ? Colors.deepPurple : null,
+                            ),
+                          ),
+                        ),
+                        if (isCurrentUser)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.deepPurple.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'You',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.deepPurple,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.people, size: 16, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${item['totalReferrals']}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _copyReferralCode() async {
+    final code = _stats['code'];
+    if (code != null) {
+      await _referralService.getReferralLink();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Referral code copied!')),
+      );
+    }
+  }
+
+  void _shareReferralCode() {
+    _referralService.shareReferral();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Opening share dialog...')),
+    );
+  }
+
+  void _showInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('About Referrals'),
+        content: Text(
+          'Earn rewards by inviting your friends to join LotChat!\n\n'
+              '• You get ${_stats['bonusPerReferral'] ?? 1000} coins per referral\n'
+              '• Bonus rewards at referral milestones\n'
+              '• No limit on total referrals\n'
+              '• Withdraw earnings anytime\n\n'
+              'Your total earnings: ${_stats['totalEarnings'] ?? 0} coins',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(dynamic date) {
+    if (date == null) return 'Unknown';
+
+    final DateTime dt;
+    if (date is Timestamp) {
+      dt = date.toDate();
+    } else if (date is DateTime) {
+      dt = date;
+    } else {
+      return 'Unknown';
+    }
+
+    final now = DateTime.now();
+    final difference = now.difference(dt);
+
+    if (difference.inDays > 7) {
+      return '${dt.day}/${dt.month}/${dt.year}';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
   }
 }

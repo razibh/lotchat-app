@@ -15,12 +15,12 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> 
+class _SettingsScreenState extends State<SettingsScreen>
     with LoadingMixin, ToastMixin, DialogMixin {
-  
-  final AuthService _authService = ServiceLocator().get<AuthService>();
-  final StorageService _storageService = ServiceLocator().get<StorageService>();
-  
+
+  final AuthService _authService = ServiceLocator.instance.get<AuthService>();
+  final StorageService _storageService = ServiceLocator.instance.get<StorageService>();
+
   bool _notificationsEnabled = true;
   bool _soundEnabled = true;
   bool _vibrationEnabled = true;
@@ -56,7 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (BuildContext context) => const LoginScreen()),
-          (Route<dynamic> route) => false,
+              (Route<dynamic> route) => false,
         );
         showSuccess('Logged out successfully');
       });
@@ -85,21 +85,28 @@ class _SettingsScreenState extends State<SettingsScreen>
         title: const Text('Select Language'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <String>['English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Korean', 'Hindi', 'Bengali']
+          children: ['English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Korean', 'Hindi', 'Bengali']
               .map((String lang) => ListTile(
-                    title: Text(lang),
-                    onTap: () {
-                      setState(() {
-                        _language = lang;
-                        _storageService.setLanguage(lang);
-                      });
-                      Navigator.pop(context);
-                      showSuccess('Language changed to $lang');
-                    },
-                  ),)
-              .toList(),
+            title: Text(lang),
+            onTap: () {
+              setState(() {
+                _language = lang;
+                _storageService.setLanguage(lang);
+              });
+              Navigator.pop(context);
+              showSuccess('Language changed to $lang');
+            },
+          )).toList(),
         ),
       ),
+    );
+  }
+
+  void _showInfoDialog() {
+    showInfoDialog(
+      context,
+      title: 'About LotChat',
+      message: 'LotChat v1.0.0\n\nA social voice chat app where you can meet new people, play games, and have fun!',
     );
   }
 
@@ -112,7 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: <>[
+        children: [
           // Account Section
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
@@ -123,7 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           Card(
             child: Column(
-              children: <>[
+              children: [
                 ListTile(
                   leading: const Icon(Icons.person, color: Colors.blue),
                   title: const Text('Edit Profile'),
@@ -170,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           Card(
             child: Column(
-              children: <>[
+              children: [
                 ListTile(
                   leading: const Icon(Icons.brightness_4, color: Colors.purple),
                   title: const Text('Dark Mode'),
@@ -207,7 +214,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           Card(
             child: Column(
-              children: <>[
+              children: [
                 ListTile(
                   leading: const Icon(Icons.volume_up, color: Colors.blue),
                   title: const Text('Sound Effects'),
@@ -250,7 +257,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           Card(
             child: Column(
-              children: <>[
+              children: [
                 ListTile(
                   leading: const Icon(Icons.storage, color: Colors.green),
                   title: const Text('Clear Cache'),
@@ -283,18 +290,12 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           Card(
             child: Column(
-              children: <>[
+              children: [
                 ListTile(
                   leading: const Icon(Icons.info, color: Colors.grey),
                   title: const Text('About LotChat'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    showInfoDialog(
-                      context,
-                      title: 'About LotChat',
-                      message: 'LotChat v1.0.0\n\nA social voice chat app where you can meet new people, play games, and have fun!',
-                    );
-                  },
+                  onTap: _showInfoDialog,
                 ),
                 const Divider(height: 0),
                 ListTile(
@@ -338,7 +339,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           Card(
             child: Column(
-              children: <>[
+              children: [
                 ListTile(
                   leading: const Icon(Icons.help, color: Colors.purple),
                   title: const Text('Help Center'),

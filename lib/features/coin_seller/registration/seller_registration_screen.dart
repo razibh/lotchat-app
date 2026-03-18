@@ -3,7 +3,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/gradient_background.dart';
 import '../../../core/widgets/neumorphic_button.dart';
 import '../../../core/widgets/neumorphic_text_field.dart';
-import '../../../core/models/country_models.dart';
+import '../../../core/models/country_model.dart';
 
 class SellerRegistrationScreen extends StatefulWidget {
   const SellerRegistrationScreen({super.key});
@@ -14,20 +14,31 @@ class SellerRegistrationScreen extends StatefulWidget {
 
 class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  
+
   final TextEditingController _businessNameController = TextEditingController();
   final TextEditingController _ownerNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _nidController = TextEditingController();
-  
+
   String? _selectedCountry;
-  final List<String> _documents = <String>[];
+  final List<String> _documents = [];
   bool _agreeToTerms = false;
   int _currentStep = 0;
 
-  final List<Country> _countries = Country.getSupportedCountries();
+  // Country ক্লাসের পরিবর্তে Map ব্যবহার করুন
+  final List<Map<String, dynamic>> _countries = [
+    {'id': 'bd', 'name': 'Bangladesh', 'flag': '🇧🇩'},
+    {'id': 'in', 'name': 'India', 'flag': '🇮🇳'},
+    {'id': 'pk', 'name': 'Pakistan', 'flag': '🇵🇰'},
+    {'id': 'lk', 'name': 'Sri Lanka', 'flag': '🇱🇰'},
+    {'id': 'np', 'name': 'Nepal', 'flag': '🇳🇵'},
+    {'id': 'us', 'name': 'United States', 'flag': '🇺🇸'},
+    {'id': 'uk', 'name': 'United Kingdom', 'flag': '🇬🇧'},
+    {'id': 'ca', 'name': 'Canada', 'flag': '🇨🇦'},
+    {'id': 'au', 'name': 'Australia', 'flag': '🇦🇺'},
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +46,7 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               Expanded(
                 child: Stepper(
@@ -48,7 +59,7 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
                     return Container(
                       margin: const EdgeInsets.only(top: 20),
                       child: Row(
-                        children: <>[
+                        children: [
                           if (_currentStep > 0)
                             Expanded(
                               child: NeumorphicButton(
@@ -72,7 +83,7 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
-                                    colors: <>[
+                                    colors: [
                                       Colors.orange,
                                       Colors.deepOrange,
                                     ],
@@ -108,7 +119,7 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -128,7 +139,7 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
   }
 
   List<Step> _getSteps() {
-    return <>[
+    return [
       Step(
         title: const Text('Basic Info'),
         content: _buildBasicInfoStep(),
@@ -149,7 +160,7 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
 
   Widget _buildBasicInfoStep() {
     return Column(
-      children: <>[
+      children: [
         NeumorphicTextField(
           controller: _businessNameController,
           hintText: 'Business Name',
@@ -177,7 +188,7 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: Colors.white.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: DropdownButton<String>(
@@ -187,11 +198,11 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
             isExpanded: true,
             underline: const SizedBox(),
             icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-            items: _countries.map((Country country) {
-              return DropdownMenuItem(
-                value: country.id,
+            items: _countries.map((Map<String, dynamic> country) {
+              return DropdownMenuItem<String>(
+                value: country['id'] as String,
                 child: Text(
-                  '${country.flag} ${country.name}',
+                  '${country['flag']} ${country['name']}',
                   style: const TextStyle(color: Colors.white),
                 ),
               );
@@ -216,15 +227,15 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
 
   Widget _buildDocumentsStep() {
     return Column(
-      children: <>[
+      children: [
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: Colors.white.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
-            children: <>[
+            children: [
               _buildDocumentUpload('NID / Passport', Icons.badge),
               const SizedBox(height: 12),
               _buildDocumentUpload('Trade License', Icons.description),
@@ -245,11 +256,11 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
 
   Widget _buildDocumentUpload(String title, IconData icon) {
     return Row(
-      children: <>[
+      children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.orange.withValues(alpha: 0.2),
+            color: Colors.orange.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: Colors.orange),
@@ -262,7 +273,15 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
           ),
         ),
         NeumorphicButton(
-          onPressed: () {},
+          onPressed: () {
+            // Document upload logic
+            setState(() {
+              _documents.add(title);
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$title uploaded successfully')),
+            );
+          },
           child: const Text(
             'Upload',
             style: TextStyle(color: Colors.white, fontSize: 12),
@@ -274,16 +293,16 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
 
   Widget _buildAgreementStep() {
     return Column(
-      children: <>[
+      children: [
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: Colors.white.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: <>[
+            children: [
               Text(
                 'Terms & Conditions',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -291,12 +310,12 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
               SizedBox(height: 12),
               Text(
                 '• You must be at least 18 years old\n'
-                '• You must provide valid documents\n'
-                '• 15% minimum discount on all coins\n'
-                '• Platform commission: 5% on each sale\n'
-                '• Immediate coin transfer after payment\n'
-                '• No refund after coin transfer\n'
-                '• Violation may lead to account suspension',
+                    '• You must provide valid documents\n'
+                    '• 15% minimum discount on all coins\n'
+                    '• Platform commission: 5% on each sale\n'
+                    '• Immediate coin transfer after payment\n'
+                    '• No refund after coin transfer\n'
+                    '• Violation may lead to account suspension',
                 style: TextStyle(color: Colors.white70, fontSize: 12),
               ),
             ],
@@ -304,12 +323,12 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
         ),
         const SizedBox(height: 16),
         Row(
-          children: <>[
+          children: [
             Checkbox(
               value: _agreeToTerms,
               onChanged: (bool? value) {
                 setState(() {
-                  _agreeToTerms = value!;
+                  _agreeToTerms = value ?? false;
                 });
               },
               checkColor: Colors.white,
@@ -353,6 +372,20 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
       return;
     }
 
+    if (_selectedCountry == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a country')),
+      );
+      return;
+    }
+
+    if (_documents.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload required documents')),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -360,7 +393,7 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
         title: const Icon(Icons.hourglass_empty, color: Colors.orange, size: 60),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Text(
               'Application Submitted!',
               style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
@@ -373,7 +406,7 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);

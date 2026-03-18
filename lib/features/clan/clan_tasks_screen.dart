@@ -1,18 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../core/di/service_locator.dart';
-import '../../core/services/clan_service.dart';
+import '../clan/services/clan_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
-import '../../widgets/common/custom_button.dart';
 import '../../widgets/animation/fade_animation.dart';
-import 'widgets/clan_progress_bar.dart';
 
 class ClanTasksScreen extends StatefulWidget {
+  final String clanId;
 
   const ClanTasksScreen({required this.clanId, super.key});
-  final String clanId;
 
   @override
   State<ClanTasksScreen> createState() => _ClanTasksScreenState();
@@ -24,15 +23,14 @@ class ClanTasksScreen extends StatefulWidget {
   }
 }
 
-class _ClanTasksScreenState extends State<ClanTasksScreen> 
+class _ClanTasksScreenState extends State<ClanTasksScreen>
     with LoadingMixin, ToastMixin {
-  
+
   final ClanService _clanService = ServiceLocator().get<ClanService>();
   final AuthService _authService = ServiceLocator().get<AuthService>();
-  
-  List<ClanTask> _dailyTasks = <ClanTask>[];
-  List<ClanTask> _weeklyTasks = <ClanTask>[];
-  final Map<String, int> _userProgress = <String, int>{};
+
+  List<ClanTask> _dailyTasks = [];
+  List<ClanTask> _weeklyTasks = [];
   String? _currentUserId;
   int _clanCoins = 0;
 
@@ -53,9 +51,8 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
   Future<void> _loadTasks() async {
     await runWithLoading(() async {
       await Future.delayed(const Duration(seconds: 1));
-      
-      // Mock tasks
-      _dailyTasks = <ClanTask>[
+
+      _dailyTasks = [
         ClanTask(
           id: 'dt1',
           title: 'Send 5 Gifts',
@@ -118,7 +115,7 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
         ),
       ];
 
-      _weeklyTasks = <ClanTask>[
+      _weeklyTasks = [
         ClanTask(
           id: 'wt1',
           title: 'Win Clan Wars',
@@ -164,7 +161,7 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
   Future<void> _claimTask(ClanTask task) async {
     await runWithLoading(() async {
       await Future.delayed(const Duration(seconds: 1));
-      
+
       setState(() {
         if (task.type == 'daily') {
           final int index = _dailyTasks.indexWhere((ClanTask t) => t.id == task.id);
@@ -179,10 +176,9 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
         }
         _clanCoins += task.coinReward;
       });
-      
+
       showSuccess('Task completed! +${task.xpReward} XP, +${task.coinReward} coins');
-      
-      // Add activity points
+
       if (_currentUserId != null) {
         await _clanService.addActivityPoints(
           widget.clanId,
@@ -193,111 +189,27 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Clan Tasks'),
-        backgroundColor: Colors.deepPurple,
-        actions: <>[
-          Container(
-            margin: const EdgeInsets.all(8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.amber,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: <>[
-                const Icon(Icons.monetization_on, color: Colors.white, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  '$_clanCoins',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <>[
-                  // Daily Tasks
-                  const Text(
-                    'Daily Tasks',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Reset in 12 hours',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 16),
-                  ...List.generate(_dailyTasks.length, (int index) {
-                    final ClanTask task = _dailyTasks[index];
-                    return FadeAnimation(
-                      delay: Duration(milliseconds: index * 100),
-                      child: _buildTaskCard(task),
-                    );
-                  }),
-
-                  const SizedBox(height: 24),
-
-                  // Weekly Tasks
-                  const Text(
-                    'Weekly Tasks',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Reset in 5 days',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 16),
-                  ...List.generate(_weeklyTasks.length, (int index) {
-                    final ClanTask task = _weeklyTasks[index];
-                    return FadeAnimation(
-                      delay: Duration(milliseconds: (index + _dailyTasks.length) * 100),
-                      child: _buildTaskCard(task),
-                    );
-                  }),
-                ],
-              ),
-            ),
-    );
-  }
-
   Widget _buildTaskCard(ClanTask task) {
     final bool isCompleted = task.progress >= task.target;
     final double progress = task.progress / task.target;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: <>[
+          children: [
             Row(
-              children: <>[
+              children: [
                 Container(
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: task.color.withValues(alpha: 0.1),
+                    color: task.color.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(task.icon, color: task.color, size: 24),
@@ -306,7 +218,7 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <>[
+                    children: [
                       Text(
                         task.title,
                         style: const TextStyle(
@@ -324,11 +236,11 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: task.color.withValues(alpha: 0.1),
+                    color: task.color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
-                    children: <>[
+                    children: [
                       const Icon(Icons.flash_on, size: 14, color: Colors.amber),
                       const SizedBox(width: 2),
                       Text('+${task.xpReward}'),
@@ -339,13 +251,9 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
             ),
             const SizedBox(height: 12),
             Row(
-              children: <>[
+              children: [
                 Expanded(
-                  child: ClanProgressBar(
-                    progress: progress,
-                    color: task.color,
-                    height: 6,
-                  ),
+                  child: _buildProgressBar(progress, task.color),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -360,31 +268,38 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <>[
+              children: [
                 Row(
-                  children: <>[
+                  children: [
                     const Icon(Icons.monetization_on, size: 16, color: Colors.amber),
                     const SizedBox(width: 4),
                     Text('+${task.coinReward} coins'),
                   ],
                 ),
                 if (!isCompleted)
-                  CustomButton(
-                    text: 'Claim',
-                    onPressed: () => _claimTask(task),
-                    color: task.color,
+                  SizedBox(
                     height: 36,
-                    isFullWidth: false,
+                    child: ElevatedButton(
+                      onPressed: () => _claimTask(task),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: task.color,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Claim'),
+                    ),
                   )
                 else
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.1),
+                      color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Row(
-                      children: <>[
+                      children: [
                         Icon(Icons.check_circle, color: Colors.green, size: 16),
                         SizedBox(width: 4),
                         Text('Completed'),
@@ -398,9 +313,124 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
       ),
     );
   }
+
+  Widget _buildProgressBar(double progress, Color color) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(3),
+      child: Container(
+        height: 6,
+        color: Colors.grey.shade200,
+        child: FractionallySizedBox(
+          widthFactor: progress.clamp(0.0, 1.0),
+          child: Container(
+            color: color,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Clan Tasks'),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+        actions: [
+          Container(
+            margin: const EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.amber,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.monetization_on, color: Colors.white, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  '$_clanCoins',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Daily Tasks
+            const Text(
+              'Daily Tasks',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Reset in 12 hours',
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            ...List.generate(_dailyTasks.length, (int index) {
+              final task = _dailyTasks[index];
+              return FadeAnimation(
+                delay: Duration(milliseconds: index * 100),
+                child: _buildTaskCard(task),
+              );
+            }),
+
+            const SizedBox(height: 24),
+
+            // Weekly Tasks
+            const Text(
+              'Weekly Tasks',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Reset in 5 days',
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            ...List.generate(_weeklyTasks.length, (int index) {
+              final task = _weeklyTasks[index];
+              return FadeAnimation(
+                delay: Duration(milliseconds: (index + _dailyTasks.length) * 100),
+                child: _buildTaskCard(task),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class ClanTask {
+  final String id;
+  final String title;
+  final String description;
+  final String type;
+  final int xpReward;
+  final int coinReward;
+  final int progress;
+  final int target;
+  final IconData icon;
+  final Color color;
 
   ClanTask({
     required this.id,
@@ -414,16 +444,6 @@ class ClanTask {
     required this.icon,
     required this.color,
   });
-  final String id;
-  final String title;
-  final String description;
-  final String type;
-  final int xpReward;
-  final int coinReward;
-  final int progress;
-  final int target;
-  final IconData icon;
-  final Color color;
 
   ClanTask copyWith({int? progress}) {
     return ClanTask(

@@ -1,27 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../models/friend_model.dart';
 import 'online_status_badge.dart';
 
 class FriendTile extends StatelessWidget {
-
-  const FriendTile({
-    required this.friend, required this.onTap, required this.onMoreTap, super.key,
-  });
   final FriendModel friend;
   final VoidCallback onTap;
   final VoidCallback onMoreTap;
+
+  const FriendTile({
+    required this.friend,
+    required this.onTap,
+    required this.onMoreTap,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
-            children: <>[
+            children: [
               // Avatar with online status
               OnlineStatusBadge(
                 isOnline: friend.isOnline,
@@ -30,8 +39,15 @@ class FriendTile extends StatelessWidget {
                   backgroundImage: friend.avatar != null
                       ? NetworkImage(friend.avatar!)
                       : null,
+                  backgroundColor: Colors.grey.shade200,
                   child: friend.avatar == null
-                      ? Text(friend.username[0].toUpperCase())
+                      ? Text(
+                    friend.username.isNotEmpty ? friend.username[0].toUpperCase() : '?',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
                       : null,
                 ),
               ),
@@ -41,9 +57,9 @@ class FriendTile extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     Row(
-                      children: <>[
+                      children: [
                         Expanded(
                           child: Text(
                             friend.displayNameOrUsername,
@@ -51,6 +67,8 @@ class FriendTile extends StatelessWidget {
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (friend.isFavorite)
@@ -58,7 +76,7 @@ class FriendTile extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    if (friend.note != null) ...<>[
+                    if (friend.note != null && friend.note!.isNotEmpty) ...[
                       Text(
                         friend.note!,
                         style: const TextStyle(
@@ -71,7 +89,7 @@ class FriendTile extends StatelessWidget {
                       ),
                     ],
                     Row(
-                      children: <>[
+                      children: [
                         Icon(Icons.people, size: 12, color: Colors.grey.shade600),
                         const SizedBox(width: 2),
                         Text(
@@ -100,6 +118,7 @@ class FriendTile extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.more_vert),
                 onPressed: onMoreTap,
+                visualDensity: VisualDensity.compact,
               ),
             ],
           ),
@@ -109,8 +128,8 @@ class FriendTile extends StatelessWidget {
   }
 
   String _formatLastActive(DateTime lastActive) {
-    final DateTime now = DateTime.now();
-    final Duration difference = now.difference(lastActive);
+    final now = DateTime.now();
+    final difference = now.difference(lastActive);
 
     if (difference.inMinutes < 1) {
       return 'Just now';
@@ -118,8 +137,10 @@ class FriendTile extends StatelessWidget {
       return '${difference.inMinutes}m ago';
     } else if (difference.inDays < 1) {
       return '${difference.inHours}h ago';
-    } else {
+    } else if (difference.inDays < 7) {
       return '${difference.inDays}d ago';
+    } else {
+      return '${lastActive.day}/${lastActive.month}';
     }
   }
 

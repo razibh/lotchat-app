@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/services/admin_service.dart';
-import '../../core/models/user_model.dart';
+import 'package:lotchat_app/core/models/user_models.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../mixins/dialog_mixin.dart';
@@ -16,14 +16,14 @@ class UserManagement extends StatefulWidget {
   State<UserManagement> createState() => _UserManagementState();
 }
 
-class _UserManagementState extends State<UserManagement> 
+class _UserManagementState extends State<UserManagement>
     with LoadingMixin, ToastMixin, DialogMixin {
-  
+
   final AdminService _adminService = ServiceLocator().get<AdminService>();
   final TextEditingController _searchController = TextEditingController();
-  
-  List<UserModel> _users = <UserModel>[];
-  List<UserModel> _filteredUsers = <UserModel>[];
+
+  List<User> _users = [];
+  List<User> _filteredUsers = [];
   bool _isLoading = true;
 
   @override
@@ -41,7 +41,8 @@ class _UserManagementState extends State<UserManagement>
   Future<void> _loadUsers() async {
     await runWithLoading(() async {
       try {
-        _users = await _adminService.getAllUsers();
+        // Mock data for testing
+        _users = _getMockUsers();
         _filteredUsers = _users;
       } catch (e) {
         showError('Failed to load users: $e');
@@ -53,21 +54,53 @@ class _UserManagementState extends State<UserManagement>
     });
   }
 
+  // Mock data method
+  List<User> _getMockUsers() {
+    return List.generate(10, (index) {
+      return User(
+        id: 'user_$index',
+        username: 'user${index + 1}',
+        email: 'user${index + 1}@example.com',
+        name: 'User ${index + 1}',
+        role: index == 0 ? UserRole.admin :
+        (index == 1 ? UserRole.countryManager :
+        (index == 2 ? UserRole.agency :
+        (index == 3 ? UserRole.coinSeller :
+        (index == 4 ? UserRole.host : UserRole.user)))),
+        countryId: index % 3 == 0 ? 'bd' : (index % 3 == 1 ? 'in' : 'pk'),
+        createdAt: DateTime.now().subtract(Duration(days: index * 10)),
+        coins: 1000 * (index + 1),
+        diamonds: 100 * (index + 1),
+        tier: index % 3 == 0 ? UserTier.vip :
+        (index % 3 == 1 ? UserTier.svip : UserTier.normal),
+        isOnline: index % 2 == 0,
+        phoneNumber: '0171${1000000 + index}',
+        isVerified: index % 3 == 0,
+        isEmailVerified: index % 2 == 0,
+        isPhoneVerified: index % 4 == 0,
+        isTwoFactorEnabled: index % 5 == 0,
+        status: index == 8 ? UserStatus.banned :
+        (index == 5 ? UserStatus.suspended : UserStatus.active),
+        interests: [],
+      );
+    });
+  }
+
   void _filterUsers(String query) {
     setState(() {
       if (query.isEmpty) {
         _filteredUsers = _users;
       } else {
-        _filteredUsers = _users.where((UserModel user) {
+        _filteredUsers = _users.where((user) {
           return user.username.toLowerCase().contains(query.toLowerCase()) ||
-                 user.email.toLowerCase().contains(query.toLowerCase()) ||
-                 user.phone.contains(query);
+              user.email.toLowerCase().contains(query.toLowerCase()) ||
+              (user.phoneNumber?.contains(query) ?? false);
         }).toList();
       }
     });
   }
 
-  Future<void> _banUser(UserModel user) async {
+  Future<void> _banUser(User user) async {
     final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Ban User',
@@ -78,7 +111,7 @@ class _UserManagementState extends State<UserManagement>
       await runWithLoading(() async {
         try {
           await _adminService.banUser(
-            userId: user.uid,
+            userId: user.id,
             reason: 'Violation of terms',
           );
           showSuccess('User banned successfully');
@@ -90,7 +123,7 @@ class _UserManagementState extends State<UserManagement>
     }
   }
 
-  Future<void> _unbanUser(UserModel user) async {
+  Future<void> _unbanUser(User user) async {
     final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Unban User',
@@ -100,7 +133,7 @@ class _UserManagementState extends State<UserManagement>
     if (confirmed ?? false) {
       await runWithLoading(() async {
         try {
-          await _adminService.unbanUser(user.uid);
+          await _adminService.unbanUser(user.id);
           showSuccess('User unbanned successfully');
           _loadUsers();
         } catch (e) {
@@ -110,7 +143,7 @@ class _UserManagementState extends State<UserManagement>
     }
   }
 
-  Future<void> _addCoins(UserModel user) async {
+  Future<void> _addCoins(User user) async {
     final String? amount = await showInputDialog(
       context,
       title: 'Add Coins',
@@ -123,7 +156,7 @@ class _UserManagementState extends State<UserManagement>
         await runWithLoading(() async {
           try {
             await _adminService.addCoinsToUser(
-              userId: user.uid,
+              userId: user.id,
               amount: coins,
               reason: 'Admin addition',
             );
@@ -139,14 +172,14 @@ class _UserManagementState extends State<UserManagement>
     }
   }
 
-  Future<void> _changeRole(UserModel user) async {
+  Future<void> _changeRole(User user) async {
     final UserRole? role = await showDialog<UserRole>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
         title: const Text('Change Role'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: UserRole.values.map((UserRole role) {
+          children: UserRole.values.map((role) {
             return ListTile(
               title: Text(role.toString().split('.').last),
               onTap: () => Navigator.pop(context, role),
@@ -160,7 +193,7 @@ class _UserManagementState extends State<UserManagement>
       await runWithLoading(() async {
         try {
           await _adminService.changeUserRole(
-            userId: user.uid,
+            userId: user.id,
             newRole: role,
           );
           showSuccess('Role changed successfully');
@@ -201,22 +234,22 @@ class _UserManagementState extends State<UserManagement>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _filteredUsers.isEmpty
-              ? const EmptyStateWidget(
-                  title: 'No Users Found',
-                  message: 'No users match your search',
-                  icon: Icons.person_off,
-                )
-              : ListView.builder(
-                  itemCount: _filteredUsers.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final UserModel user = _filteredUsers[index];
-                    return _buildUserTile(user);
-                  },
-                ),
+          ? const EmptyStateWidget(
+        title: 'No Users Found',
+        message: 'No users match your search',
+        icon: Icons.person_off,
+      )
+          : ListView.builder(
+        itemCount: _filteredUsers.length,
+        itemBuilder: (context, index) {
+          final user = _filteredUsers[index];
+          return _buildUserTile(user);
+        },
+      ),
     );
   }
 
-  Widget _buildUserTile(UserModel user) {
+  Widget _buildUserTile(User user) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ExpansionTile(
@@ -229,7 +262,7 @@ class _UserManagementState extends State<UserManagement>
               : null,
         ),
         title: Text(user.username),
-        subtitle: Text('ID: ${user.uid.substring(0, 8)}... • ${user.email}'),
+        subtitle: Text('ID: ${user.id.substring(0, 8)}... • ${user.email}'),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
@@ -241,25 +274,25 @@ class _UserManagementState extends State<UserManagement>
             style: const TextStyle(color: Colors.white, fontSize: 10),
           ),
         ),
-        children: <>[
+        children: [
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              children: <>[
+              children: [
                 // User Info
                 Row(
-                  children: <>[
+                  children: [
                     Expanded(
-                      child: _buildInfoRow('Phone', user.phone),
+                      child: _buildInfoRow('Phone', user.phoneNumber ?? 'N/A'),
                     ),
                     Expanded(
-                      child: _buildInfoRow('Country', user.country),
+                      child: _buildInfoRow('Country', user.countryId),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Row(
-                  children: <>[
+                  children: [
                     Expanded(
                       child: _buildInfoRow('Coins', '${user.coins}'),
                     ),
@@ -270,12 +303,12 @@ class _UserManagementState extends State<UserManagement>
                 ),
                 const SizedBox(height: 8),
                 Row(
-                  children: <>[
+                  children: [
                     Expanded(
                       child: _buildInfoRow('Status', user.isOnline ? 'Online' : 'Offline'),
                     ),
                     Expanded(
-                      child: _buildInfoRow('Tier', user.tier.toString().split('.').last),
+                      child: _buildInfoRow('Tier', user.tier?.toString().split('.').last ?? 'normal'),
                     ),
                   ],
                 ),
@@ -283,7 +316,7 @@ class _UserManagementState extends State<UserManagement>
 
                 // Actions
                 Row(
-                  children: <>[
+                  children: [
                     Expanded(
                       child: _buildActionButton(
                         icon: Icons.attach_money,
@@ -305,13 +338,13 @@ class _UserManagementState extends State<UserManagement>
                 ),
                 const SizedBox(height: 8),
                 Row(
-                  children: <>[
+                  children: [
                     Expanded(
                       child: _buildActionButton(
-                        icon: user.isBanned ? Icons.block : Icons.block,
-                        label: user.isBanned ? 'Unban' : 'Ban',
-                        color: user.isBanned ? Colors.green : Colors.red,
-                        onTap: () => user.isBanned ? _unbanUser(user) : _banUser(user),
+                        icon: user.status == UserStatus.banned ? Icons.lock_open : Icons.lock,
+                        label: user.status == UserStatus.banned ? 'Unban' : 'Ban',
+                        color: user.status == UserStatus.banned ? Colors.green : Colors.red,
+                        onTap: () => user.status == UserStatus.banned ? _unbanUser(user) : _banUser(user),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -336,7 +369,7 @@ class _UserManagementState extends State<UserManagement>
   Widget _buildInfoRow(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         Text(
           label,
           style: const TextStyle(
@@ -366,11 +399,11 @@ class _UserManagementState extends State<UserManagement>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
+          color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Column(
-          children: <>[
+          children: [
             Icon(icon, color: color, size: 20),
             const SizedBox(height: 4),
             Text(
@@ -387,7 +420,7 @@ class _UserManagementState extends State<UserManagement>
     );
   }
 
-  Future<void> _deleteUser(UserModel user) async {
+  Future<void> _deleteUser(User user) async {
     final bool? confirmed = await showConfirmDialog(
       context,
       title: 'Delete User',
@@ -401,14 +434,16 @@ class _UserManagementState extends State<UserManagement>
 
   Color _getRoleColor(UserRole role) {
     switch (role) {
-      case UserRole.superAdmin:
-        return Colors.red;
       case UserRole.admin:
-        return Colors.orange;
+        return Colors.red;
+      case UserRole.countryManager:
+        return Colors.purple;
       case UserRole.agency:
         return Colors.blue;
-      case UserRole.seller:
-        return Colors.green;
+      case UserRole.coinSeller:
+        return Colors.orange;
+      case UserRole.host:
+        return Colors.pink;
       default:
         return Colors.grey;
     }

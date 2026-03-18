@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
-import '../../core/providers/auth_provider.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../../core/providers/country_provider.dart';
 import '../../core/widgets/gradient_background.dart';
 import '../../core/widgets/neumorphic_button.dart';
@@ -20,52 +20,52 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  
+
   bool _obscurePassword = true;
   bool _rememberMe = false;
   String? _selectedRole;
-  
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  final List<Map<String, dynamic>> _demoAccounts = <Map<String, dynamic>>[
-    <String, dynamic>{
+  final List<Map<String, dynamic>> _demoAccounts = [
+    {
       'role': 'Admin',
       'email': 'admin@test.com',
       'password': 'admin123',
       'color': Colors.red,
       'icon': Icons.admin_panel_settings,
     },
-    <String, dynamic>{
+    {
       'role': 'Country Manager',
       'email': 'manager@test.com',
       'password': 'manager123',
       'color': Colors.purple,
       'icon': Icons.public,
     },
-    <String, dynamic>{
+    {
       'role': 'Agency Owner',
       'email': 'agency@test.com',
       'password': 'agency123',
       'color': Colors.blue,
       'icon': Icons.business,
     },
-    <String, dynamic>{
+    {
       'role': 'Coin Seller',
       'email': 'seller@test.com',
       'password': 'seller123',
       'color': Colors.orange,
       'icon': Icons.store,
     },
-    <String, dynamic>{
+    {
       'role': 'Host',
       'email': 'host@test.com',
       'password': 'host123',
       'color': Colors.pink,
       'icon': Icons.mic,
     },
-    <String, dynamic>{
+    {
       'role': 'Regular User',
       'email': 'user@test.com',
       'password': 'user123',
@@ -81,14 +81,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-    
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: Curves.easeIn,
       ),
     );
-    
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.5),
       end: Offset.zero,
@@ -98,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         curve: Curves.easeOut,
       ),
     );
-    
+
     _animationController.forward();
   }
 
@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Future<void> _handleLogin() async {
     if (_formKey.currentState?.validate() ?? false) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
+
       final success = await authProvider.login(
         _emailController.text.trim(),
         _passwordController.text,
@@ -122,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       if (success && mounted) {
         // Check if country is selected
         final countryProvider = Provider.of<CountryProvider>(context, listen: false);
-        
+
         if (countryProvider.selectedCountry == null) {
           NavigationService.navigateToReplacement('/country-select');
         } else {
@@ -149,13 +149,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   void _fillDemoAccount(Map<String, dynamic> account) {
     setState(() {
-      _emailController.text = account['email'];
-      _passwordController.text = account['password'];
-      _selectedRole = account['role'];
+      _emailController.text = account['email'] as String;
+      _passwordController.text = account['password'] as String;
+      _selectedRole = account['role'] as String;
     });
-    
-    // Optional: Auto login after a short delay
-    // Future.delayed(const Duration(milliseconds: 500), _handleLogin);
   }
 
   @override
@@ -176,31 +173,31 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     key: _formKey,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: <>[
+                      children: [
                         // Logo and Title
                         _buildLogo(),
                         const SizedBox(height: 40),
-                        
+
                         // Demo Accounts Section
                         _buildDemoAccounts(),
                         const SizedBox(height: 30),
-                        
+
                         // Login Form
                         _buildLoginForm(),
                         const SizedBox(height: 20),
-                        
+
                         // Forgot Password
                         _buildForgotPassword(),
                         const SizedBox(height: 30),
-                        
+
                         // Login Button
                         _buildLoginButton(authProvider.isLoading),
                         const SizedBox(height: 20),
-                        
+
                         // Register Link
                         _buildRegisterLink(),
                         const SizedBox(height: 20),
-                        
+
                         // Guest Login
                         _buildGuestLogin(),
                       ],
@@ -217,21 +214,21 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   Widget _buildLogo() {
     return Column(
-      children: <>[
+      children: [
         Container(
           width: 100,
           height: 100,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: <>[
+              colors: [
                 AppColors.accentPurple,
                 AppColors.accentBlue,
               ],
             ),
             shape: BoxShape.circle,
-            boxShadow: <>[
+            boxShadow: [
               BoxShadow(
-                color: AppColors.accentPurple.withValues(alpha: 0.3),
+                color: AppColors.accentPurple.withOpacity(0.3),
                 blurRadius: 20,
                 spreadRadius: 5,
               ),
@@ -257,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         Text(
           'Play Games • Live Stream • Earn Coins',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+            color: Colors.white.withOpacity(0.7),
             fontSize: 14,
           ),
         ),
@@ -269,17 +266,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
+          color: Colors.white.withOpacity(0.2),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           const Row(
-            children: <>[
+            children: [
               Icon(
                 Icons.science,
                 color: AppColors.accentPurple,
@@ -300,7 +297,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _demoAccounts.map((Map<String, dynamic> account) {
+            children: _demoAccounts.map((account) {
               final bool isSelected = _selectedRole == account['role'];
               return GestureDetector(
                 onTap: () => _fillDemoAccount(account),
@@ -310,31 +307,31 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: (account['color'] as Color).withValues(alpha: 0.2),
+                    color: (account['color'] as Color).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
-                          ? account['color']
+                          ? account['color'] as Color
                           : Colors.transparent,
                       width: 2,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: <>[
+                    children: [
                       Icon(
-                        account['icon'],
+                        account['icon'] as IconData,
                         color: isSelected
-                            ? account['color']
+                            ? account['color'] as Color
                             : Colors.white70,
                         size: 12,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        account['role'],
+                        account['role'] as String,
                         style: TextStyle(
                           color: isSelected
-                              ? account['color']
+                              ? account['color'] as Color
                               : Colors.white70,
                           fontSize: 10,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -355,14 +352,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
+          color: Colors.white.withOpacity(0.2),
         ),
       ),
       child: Column(
-        children: <>[
+        children: [
           // Email Field
           NeumorphicTextField(
             controller: _emailController,
@@ -380,7 +377,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             },
           ),
           const SizedBox(height: 16),
-          
+
           // Password Field
           NeumorphicTextField(
             controller: _passwordController,
@@ -409,16 +406,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               return null;
             },
           ),
-          
+
           // Remember Me & Forgot Password Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <>[
+            children: [
               Row(
-                children: <>[
+                children: [
                   Checkbox(
                     value: _rememberMe,
-                    onChanged: (bool? value) {
+                    onChanged: (value) {
                       setState(() {
                         _rememberMe = value ?? false;
                       });
@@ -474,7 +471,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: <>[
+            colors: [
               AppColors.accentPurple,
               AppColors.accentBlue,
             ],
@@ -484,22 +481,22 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         child: Center(
           child: isLoading
               ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          )
               : const Text(
-                  'LOGIN',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                  ),
-                ),
+            'LOGIN',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+            ),
+          ),
         ),
       ),
     );
@@ -508,7 +505,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Widget _buildRegisterLink() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: <>[
+      children: [
         const Text(
           "Don't have an account? ",
           style: TextStyle(color: Colors.white70),
@@ -592,7 +589,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
@@ -616,12 +613,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.2),
+                      color: Colors.green.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.green),
                     ),
                     child: Column(
-                      children: <>[
+                      children: [
                         const Icon(
                           Icons.check_circle,
                           color: Colors.green,
@@ -657,7 +654,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   )
                 else
                   Column(
-                    children: <>[
+                    children: [
                       NeumorphicTextField(
                         controller: _emailController,
                         hintText: 'Email Address',
@@ -673,16 +670,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           child: Center(
                             child: _isLoading
                                 ? const CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  )
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            )
                                 : const Text(
-                                    'SEND RESET LINK',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                              'SEND RESET LINK',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),

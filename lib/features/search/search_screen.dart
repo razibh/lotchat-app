@@ -15,15 +15,15 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMixin {
-  
-  final SearchService _searchService = ServiceLocator().get<SearchService>();
+
+  final SearchService _searchService = ServiceLocator.instance.get<SearchService>();
   final TextEditingController _searchController = TextEditingController();
-  
-  List<Map<String, dynamic>> _results = <Map<String, dynamic>>[];
+
+  List<Map<String, dynamic>> _results = [];
   String _selectedFilter = 'All';
   bool _isSearching = false;
 
-  final List<String> _filters = <String>['All', 'Users', 'Rooms', 'Posts', 'Gifts'];
+  final List<String> _filters = ['All', 'Users', 'Rooms', 'Posts', 'Gifts'];
 
   @override
   void dispose() {
@@ -40,12 +40,12 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
 
     await runWithLoading(() async {
       await Future.delayed(const Duration(seconds: 1));
-      
+
       // Mock search results
       setState(() {
         _results = List.generate(20, (int index) {
           final String type = _getRandomType(index);
-          return <String, dynamic>{
+          return {
             'id': 'result_$index',
             'type': type,
             'title': _getTitle(type, index),
@@ -63,7 +63,7 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
 
   String _getRandomType(int index) {
     if (_selectedFilter != 'All') return _selectedFilter;
-    final List<String> types = <String>['Users', 'Rooms', 'Posts', 'Gifts'];
+    final List<String> types = ['Users', 'Rooms', 'Posts', 'Gifts'];
     return types[index % types.length];
   }
 
@@ -160,7 +160,7 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              children: <>[
+              children: [
                 // Search Bar
                 TextField(
                   controller: _searchController,
@@ -169,9 +169,9 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: _clearSearch,
-                          )
+                      icon: const Icon(Icons.clear),
+                      onPressed: _clearSearch,
+                    )
                         : null,
                     filled: true,
                     fillColor: Colors.white,
@@ -221,88 +221,89 @@ class _SearchScreenState extends State<SearchScreen> with LoadingMixin, ToastMix
       body: _isSearching
           ? const Center(child: CircularProgressIndicator())
           : _results.isEmpty
-              ? _searchController.text.isEmpty
-                  ? const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <>[
-                          Icon(Icons.search, size: 80, color: Colors.grey),
-                          SizedBox(height: 16),
-                          Text(
-                            'Search for something',
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Find users, rooms, posts and gifts',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    )
-                  : const EmptyStateWidget(
-                      title: 'No Results Found',
-                      message: 'Try searching with different keywords',
-                      icon: Icons.search_off,
-                    )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _results.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final Map<String, dynamic> result = _results[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: result['color'].withOpacity(0.1),
-                          child: Icon(
-                            result['icon'],
-                            color: result['color'],
-                          ),
-                        ),
-                        title: Text(result['title']),
-                        subtitle: Text(result['subtitle']),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: <>[
-                            Text(
-                              result['value'],
-                              style: TextStyle(
-                                color: result['color'],
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        onTap: () {
-                          _handleResultTap(result);
-                        },
-                      ),
-                    );
-                  },
+          ? _searchController.text.isEmpty
+          ? const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search, size: 80, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'Search for something',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Find users, rooms, posts and gifts',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      )
+          : const EmptyStateWidget(
+        title: 'No Results Found',
+        message: 'Try searching with different keywords',
+        icon: Icons.search_off,
+      )
+          : ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _results.length,
+        itemBuilder: (BuildContext context, int index) {
+          final Map<String, dynamic> result = _results[index];
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: (result['color'] as Color).withOpacity(0.1),
+                child: Icon(
+                  result['icon'] as IconData,
+                  color: result['color'] as Color,
                 ),
+              ),
+              title: Text(result['title'] as String),
+              subtitle: Text(result['subtitle'] as String),
+              trailing: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    result['value'] as String,
+                    style: TextStyle(
+                      color: result['color'] as Color,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              onTap: () {
+                _handleResultTap(result);
+              },
+            ),
+          );
+        },
+      ),
     );
   }
 
   void _handleResultTap(Map<String, dynamic> result) {
-    switch (result['type']) {
+    switch (result['type'] as String) {
       case 'Users':
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (BuildContext context) => ProfileScreen(userId: result['id']),
+            builder: (BuildContext context) => ProfileScreen(userId: result['id'] as String),
           ),
         );
+        break;
       case 'Rooms':
-        // Navigate to room
+      // Navigate to room
         break;
       case 'Posts':
-        // Show post
+      // Show post
         break;
       case 'Gifts':
-        // Show gift details
+      // Show gift details
         break;
     }
   }

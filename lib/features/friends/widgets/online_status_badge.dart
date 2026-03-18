@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
+import '../models/friend_model.dart'; // OnlineStatus enum এর জন্য
 
 class OnlineStatusBadge extends StatelessWidget {
-
-  const OnlineStatusBadge({
-    required this.child, required this.isOnline, super.key,
-    this.size = 12,
-  });
   final Widget child;
   final bool isOnline;
   final double size;
+
+  const OnlineStatusBadge({
+    required this.child,
+    required this.isOnline,
+    this.size = 12,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       clipBehavior: Clip.none,
-      children: <>[
+      children: [
         child,
         if (isOnline)
           Positioned(
@@ -46,13 +51,14 @@ class OnlineStatusBadge extends StatelessWidget {
 }
 
 class OnlineStatusIndicator extends StatelessWidget {
-
-  const OnlineStatusIndicator({
-    required this.status, super.key,
-    this.size = 12,
-  });
   final OnlineStatus status;
   final double size;
+
+  const OnlineStatusIndicator({
+    required this.status,
+    this.size = 12,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -60,12 +66,16 @@ class OnlineStatusIndicator extends StatelessWidget {
     switch (status) {
       case OnlineStatus.online:
         color = Colors.green;
+        break;
       case OnlineStatus.away:
         color = Colors.orange;
+        break;
       case OnlineStatus.busy:
         color = Colors.red;
+        break;
       case OnlineStatus.offline:
         color = Colors.grey;
+        break;
     }
 
     return Container(

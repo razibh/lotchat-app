@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 debugPrint এর জন্য
 import '../models/room_model.dart';
-import '../models/user_model.dart';
+import '../models/user_models.dart' as app; // 🟢 alias ব্যবহার
 import '../services/room_service.dart';
 import '../services/socket_service.dart';
 
 class RoomProvider extends ChangeNotifier {
   final RoomService _roomService = RoomService();
   final SocketService _socketService = SocketService();
-  
-  List<RoomModel> _rooms = <RoomModel>[];
+
+  List<RoomModel> _rooms = [];
   RoomModel? _currentRoom;
   bool _isLoading = false;
   String? _error;
@@ -19,51 +20,73 @@ class RoomProvider extends ChangeNotifier {
   String? get error => _error;
 
   void initSocketListeners() {
-    _socketService.onUserJoined(_handleUserJoined);
-    _socketService.onUserLeft(_handleUserLeft);
-    _socketService.onSeatTaken(_handleSeatTaken);
-    _socketService.onSeatLeft(_handleSeatLeft);
-    _socketService.onMicToggled(_handleMicToggled);
-    _socketService.onNewMessage(_handleNewMessage);
-    _socketService.onGiftReceived(_handleGiftReceived);
+    try {
+      _socketService.onUserJoined(_handleUserJoined);
+      _socketService.onUserLeft(_handleUserLeft);
+      _socketService.onSeatTaken(_handleSeatTaken);
+      _socketService.onSeatLeft(_handleSeatLeft);
+      _socketService.onMicToggled(_handleMicToggled);
+      _socketService.onNewMessage(_handleNewMessage);
+      _socketService.onGiftReceived(_handleGiftReceived);
+    } catch (e) {
+      debugPrint('Error initializing socket listeners: $e');
+    }
   }
 
   void _handleUserJoined(dynamic data) {
     if (_currentRoom != null && _currentRoom!.id == data['roomId']) {
-      _currentRoom!.viewerCount++;
+      // 🟢 Fix: viewerCount is final, use copyWith
+      _currentRoom = _currentRoom!.copyWith(
+        viewerCount: (_currentRoom!.viewerCount ?? 0) + 1,
+      );
       notifyListeners();
     }
   }
 
   void _handleUserLeft(dynamic data) {
     if (_currentRoom != null && _currentRoom!.id == data['roomId']) {
-      _currentRoom!.viewerCount--;
+      final newCount = (_currentRoom!.viewerCount ?? 1) - 1;
+      // 🟢 Fix: viewerCount is final, use copyWith
+      _currentRoom = _currentRoom!.copyWith(
+        viewerCount: newCount < 0 ? 0 : newCount,
+      );
       notifyListeners();
     }
   }
 
   void _handleSeatTaken(dynamic data) {
     if (_currentRoom != null && _currentRoom!.id == data['roomId']) {
-      final seatNumber = data['seatNumber'];
-      final userId = data['userId'];
-      // Update seat
+      final seatNumber = data['seatNumber'] as int?;
+      final userId = data['userId'] as String?;
+
+      if (seatNumber != null && userId != null) {
+        // Update seat logic here
+        // You might want to update the seats list in the room
+        debugPrint('Seat $seatNumber taken by user $userId');
+      }
       notifyListeners();
     }
   }
 
   void _handleSeatLeft(dynamic data) {
     if (_currentRoom != null && _currentRoom!.id == data['roomId']) {
-      final seatNumber = data['seatNumber'];
-      // Update seat
+      final seatNumber = data['seatNumber'] as int?;
+      if (seatNumber != null) {
+        // Update seat logic here
+        debugPrint('Seat $seatNumber left');
+      }
       notifyListeners();
     }
   }
 
   void _handleMicToggled(dynamic data) {
     if (_currentRoom != null && _currentRoom!.id == data['roomId']) {
-      final seatNumber = data['seatNumber'];
-      final isMuted = data['isMuted'];
-      // Update mic status
+      final seatNumber = data['seatNumber'] as int?;
+      final isMuted = data['isMuted'] as bool?;
+      if (seatNumber != null && isMuted != null) {
+        // Update mic status
+        debugPrint('Seat $seatNumber muted: $isMuted');
+      }
       notifyListeners();
     }
   }
@@ -71,6 +94,7 @@ class RoomProvider extends ChangeNotifier {
   void _handleNewMessage(dynamic data) {
     if (_currentRoom != null && _currentRoom!.id == data['roomId']) {
       // Add message to chat
+      debugPrint('New message in room: $data');
       notifyListeners();
     }
   }
@@ -78,6 +102,7 @@ class RoomProvider extends ChangeNotifier {
   void _handleGiftReceived(dynamic data) {
     if (_currentRoom != null && _currentRoom!.id == data['roomId']) {
       // Show gift animation
+      debugPrint('Gift received in room: $data');
       notifyListeners();
     }
   }
@@ -91,13 +116,14 @@ class RoomProvider extends ChangeNotifier {
       _rooms = await _roomService.getRooms(country);
     } catch (e) {
       _error = e.toString();
+      debugPrint('Error loading rooms: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> joinRoom(String roomId, UserModel user) async {
+  Future<void> joinRoom(String roomId, app.User user) async { // 🟢 app.User ব্যবহার
     _isLoading = true;
     notifyListeners();
 
@@ -105,11 +131,15 @@ class RoomProvider extends ChangeNotifier {
       _currentRoom = await _roomService.getRoom(roomId);
       if (_currentRoom != null) {
         _socketService.joinRoom(roomId);
-        _currentRoom!.viewerCount++;
-        await _roomService.updateViewerCount(roomId, _currentRoom!.viewerCount);
+        // 🟢 Fix: viewerCount is final, use copyWith
+        _currentRoom = _currentRoom!.copyWith(
+          viewerCount: (_currentRoom!.viewerCount ?? 0) + 1,
+        );
+        await _roomService.updateViewerCount(roomId, _currentRoom!.viewerCount ?? 0);
       }
     } catch (e) {
       _error = e.toString();
+      debugPrint('Error joining room: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -121,11 +151,16 @@ class RoomProvider extends ChangeNotifier {
 
     try {
       _socketService.leaveRoom(_currentRoom!.id);
-      _currentRoom!.viewerCount--;
-      await _roomService.updateViewerCount(_currentRoom!.id, _currentRoom!.viewerCount);
+      // 🟢 Fix: viewerCount is final, use copyWith
+      final newCount = (_currentRoom!.viewerCount ?? 1) - 1;
+      _currentRoom = _currentRoom!.copyWith(
+        viewerCount: newCount < 0 ? 0 : newCount,
+      );
+      await _roomService.updateViewerCount(_currentRoom!.id, _currentRoom!.viewerCount ?? 0);
       _currentRoom = null;
     } catch (e) {
       _error = e.toString();
+      debugPrint('Error leaving room: $e');
     }
     notifyListeners();
   }

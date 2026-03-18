@@ -1,19 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 
 class AppChip extends StatelessWidget {
-
-  const AppChip({
-    required this.label, super.key,
-    this.icon,
-    this.color,
-    this.textColor,
-    this.isSelected = false,
-    this.isRemovable = false,
-    this.onTap,
-    this.onDeleted,
-    this.height = 32,
-    this.fontSize = 14,
-  });
   final String label;
   final IconData? icon;
   final Color? color;
@@ -24,6 +12,20 @@ class AppChip extends StatelessWidget {
   final VoidCallback? onDeleted;
   final double height;
   final double fontSize;
+
+  const AppChip({
+    required this.label,
+    this.icon,
+    this.color,
+    this.textColor,
+    this.isSelected = false,
+    this.isRemovable = false,
+    this.onTap,
+    this.onDeleted,
+    this.height = 32,
+    this.fontSize = 14,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,16 +39,16 @@ class AppChip extends StatelessWidget {
         height: height,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: chipColor.withValues(alpha: isSelected ? 1 : 0.1),
+          color: chipColor.withOpacity(isSelected ? 1 : 0.1),
           borderRadius: BorderRadius.circular(height / 2),
           border: Border.all(
-            color: isSelected ? Colors.transparent : chipColor.withValues(alpha: 0.3),
+            color: isSelected ? Colors.transparent : chipColor.withOpacity(0.3),
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
-            if (icon != null) ...<>[
+          children: [
+            if (icon != null) ...[
               Icon(
                 icon,
                 size: fontSize * 1.2,
@@ -62,7 +64,7 @@ class AppChip extends StatelessWidget {
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
-            if (isRemovable) ...<>[
+            if (isRemovable) ...[
               const SizedBox(width: 4),
               GestureDetector(
                 onTap: onDeleted,
@@ -96,15 +98,18 @@ class AppChip extends StatelessWidget {
 }
 
 class FilterChipWidget extends StatefulWidget {
-
-  const FilterChipWidget({
-    required this.label, required this.initialSelected, required this.onSelected, super.key,
-    this.selectedColor,
-  });
   final String label;
   final bool initialSelected;
   final ValueChanged<bool> onSelected;
   final Color? selectedColor;
+
+  const FilterChipWidget({
+    required this.label,
+    required this.initialSelected,
+    required this.onSelected,
+    this.selectedColor,
+    super.key,
+  });
 
   @override
   State<FilterChipWidget> createState() => _FilterChipWidgetState();
@@ -151,15 +156,18 @@ class _FilterChipWidgetState extends State<FilterChipWidget> {
 }
 
 class ChoiceChipWidget extends StatelessWidget {
-
-  const ChoiceChipWidget({
-    required this.label, required this.isSelected, required this.onSelected, super.key,
-    this.selectedColor,
-  });
   final String label;
   final bool isSelected;
   final ValueChanged<bool> onSelected;
   final Color? selectedColor;
+
+  const ChoiceChipWidget({
+    required this.label,
+    required this.isSelected,
+    required this.onSelected,
+    this.selectedColor,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

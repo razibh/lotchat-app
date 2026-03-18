@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 
 class ChatSearchBar extends StatelessWidget {
-
   const ChatSearchBar({
-    required this.controller, required this.onChanged, required this.onClear, super.key,
+    super.key,
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
   });
+
   final TextEditingController controller;
   final Function(String) onChanged;
   final VoidCallback onClear;
@@ -21,9 +25,9 @@ class ChatSearchBar extends StatelessWidget {
           prefixIcon: const Icon(Icons.search),
           suffixIcon: controller.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: onClear,
-                )
+            icon: const Icon(Icons.clear),
+            onPressed: onClear,
+          )
               : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(24),

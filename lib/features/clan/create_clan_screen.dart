@@ -1,15 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 import '../../core/di/service_locator.dart';
 import '../../core/models/clan_model.dart';
-import '../../core/services/clan_service.dart';
+import '../clan/services/clan_service.dart';
 import '../../core/utils/image_picker_helper.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../mixins/form_mixin.dart';
-import '../../widgets/common/custom_button.dart';
-import '../../widgets/common/custom_text_field.dart';
 
 class CreateClanScreen extends StatefulWidget {
   const CreateClanScreen({super.key});
@@ -18,21 +17,21 @@ class CreateClanScreen extends StatefulWidget {
   State<CreateClanScreen> createState() => _CreateClanScreenState();
 }
 
-class _CreateClanScreenState extends State<CreateClanScreen> 
+class _CreateClanScreenState extends State<CreateClanScreen>
     with LoadingMixin, ToastMixin, FormMixin {
-  
+
   final ClanService _clanService = ServiceLocator().get<ClanService>();
-  
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _rulesController = TextEditingController();
-  
+
   String? _emblemPath;
   ClanJoinType _joinType = ClanJoinType.open;
-  final List<String> _selectedTags = <String>[];
+  final List<String> _selectedTags = [];
   int _maxMembers = 50;
 
-  final List<String> _availableTags = <String>[
+  final List<String> _availableTags = [
     'Gaming',
     'Social',
     'Competitive',
@@ -75,14 +74,14 @@ class _CreateClanScreenState extends State<CreateClanScreen>
           rules: _rulesController.text.isNotEmpty
               ? _rulesController.text
               : null,
-          emblem: _emblemPath, // Would need to upload to storage first
+          emblem: _emblemPath,
           joinType: _joinType,
           tags: _selectedTags,
         );
 
         if (clan != null) {
           showSuccess('Clan created successfully!');
-          Navigator.pop(context, clan);
+          if (mounted) Navigator.pop(context, clan);
         } else {
           showError('Failed to create clan');
         }
@@ -92,12 +91,28 @@ class _CreateClanScreenState extends State<CreateClanScreen>
     });
   }
 
+  Widget _buildJoinTypeOption(String title, String subtitle, ClanJoinType type) {
+    return RadioListTile<ClanJoinType>(
+      title: Text(title),
+      subtitle: Text(subtitle),
+      value: type,
+      groupValue: _joinType,
+      onChanged: (ClanJoinType? value) {
+        setState(() {
+          _joinType = value!;
+        });
+      },
+      activeColor: Colors.deepPurple,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Clan'),
         backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -105,7 +120,7 @@ class _CreateClanScreenState extends State<CreateClanScreen>
           key: formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: <>[
+            children: [
               // Emblem
               Center(
                 child: GestureDetector(
@@ -114,7 +129,7 @@ class _CreateClanScreenState extends State<CreateClanScreen>
                     width: 120,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: Colors.deepPurple.withValues(alpha: 0.1),
+                      color: Colors.deepPurple.withOpacity(0.1),
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: Colors.deepPurple,
@@ -122,17 +137,17 @@ class _CreateClanScreenState extends State<CreateClanScreen>
                       ),
                       image: _emblemPath != null
                           ? DecorationImage(
-                              image: FileImage(File(_emblemPath!)),
-                              fit: BoxFit.cover,
-                            )
+                        image: FileImage(File(_emblemPath!)),
+                        fit: BoxFit.cover,
+                      )
                           : null,
                     ),
                     child: _emblemPath == null
                         ? const Icon(
-                            Icons.add_photo_alternate,
-                            size: 40,
-                            color: Colors.deepPurple,
-                          )
+                      Icons.add_photo_alternate,
+                      size: 40,
+                      color: Colors.deepPurple,
+                    )
                         : null,
                   ),
                 ),
@@ -140,11 +155,18 @@ class _CreateClanScreenState extends State<CreateClanScreen>
               const SizedBox(height: 24),
 
               // Clan Name
-              CustomTextField(
+              TextFormField(
                 controller: _nameController,
-                label: 'Clan Name',
-                prefixIcon: Icons.groups,
-                validator: (String? value) {
+                decoration: InputDecoration(
+                  labelText: 'Clan Name',
+                  prefixIcon: const Icon(Icons.groups),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                ),
+                validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a clan name';
                   }
@@ -157,19 +179,33 @@ class _CreateClanScreenState extends State<CreateClanScreen>
               const SizedBox(height: 16),
 
               // Description
-              CustomTextField(
+              TextFormField(
                 controller: _descriptionController,
-                label: 'Description',
-                prefixIcon: Icons.description,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  prefixIcon: const Icon(Icons.description),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                ),
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
 
               // Rules
-              CustomTextField(
+              TextFormField(
                 controller: _rulesController,
-                label: 'Rules',
-                prefixIcon: Icons.rule,
+                decoration: InputDecoration(
+                  labelText: 'Rules',
+                  prefixIcon: const Icon(Icons.rule),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                ),
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
@@ -210,7 +246,7 @@ class _CreateClanScreenState extends State<CreateClanScreen>
               ),
               const SizedBox(height: 8),
               Row(
-                children: <int>[10, 25, 50, 100, 200].map((int max) {
+                children: [10, 25, 50, 100, 200].map((int max) {
                   return Expanded(
                     child: Padding(
                       padding: const EdgeInsets.only(right: 8),
@@ -270,31 +306,37 @@ class _CreateClanScreenState extends State<CreateClanScreen>
               const SizedBox(height: 24),
 
               // Create Button
-              CustomButton(
-                text: 'Create Clan',
-                onPressed: _createClan,
-                isLoading: isLoading,
-                color: Colors.deepPurple,
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : _createClan,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                      : const Text(
+                    'Create Clan',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildJoinTypeOption(String title, String subtitle, ClanJoinType type) {
-    return RadioListTile<ClanJoinType>(
-      title: Text(title),
-      subtitle: Text(subtitle),
-      value: type,
-      groupValue: _joinType,
-      onChanged: (Object? value) {
-        setState(() {
-          _joinType = value;
-        });
-      },
-      activeColor: Colors.deepPurple,
     );
   }
 }

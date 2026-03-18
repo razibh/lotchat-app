@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider extends ChangeNotifier {
+  static const String _themeKey = 'theme_mode';
+  ThemeMode _themeMode = ThemeMode.system;
 
   ThemeProvider() {
     _loadTheme();
   }
-  static const String _themeKey = 'theme_mode';
-  ThemeMode _themeMode = ThemeMode.system;
 
   ThemeMode get themeMode => _themeMode;
 
@@ -19,11 +19,17 @@ class ThemeProvider extends ChangeNotifier {
     return _themeMode == ThemeMode.dark;
   }
 
+  // Private method for internal use
   Future<void> _loadTheme() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final int themeIndex = prefs.getInt(_themeKey) ?? 0;
     _themeMode = ThemeMode.values[themeIndex];
     notifyListeners();
+  }
+
+  // 🟢 Public method for external use (for splash screen)
+  Future<void> loadTheme() async {
+    await _loadTheme();
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {

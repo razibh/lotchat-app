@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/gradient_background.dart';
 import '../../core/widgets/neumorphic_button.dart';
 
 class ChessGame extends StatefulWidget {
-
-  const ChessGame({
-    required this.gameId, super.key,
-    this.gameData,
-  });
   final String gameId;
   final Map<String, dynamic>? gameData;
+
+  const ChessGame({
+    required this.gameId,
+    this.gameData,
+    super.key,
+  });
 
   @override
   State<ChessGame> createState() => _ChessGameState();
@@ -37,10 +40,10 @@ class _ChessGameState extends State<ChessGame> {
   }
 
   void _initializeBoard() {
-    board = List.generate(8, (int row) => List.generate(8, (int col) {
+    board = List.generate(8, (row) => List.generate(8, (col) {
       if (row == 1) return ChessPiece(type: ChessPieceType.pawn, isWhite: false);
       if (row == 6) return ChessPiece(type: ChessPieceType.pawn, isWhite: true);
-      
+
       if (row == 0) {
         if (col == 0 || col == 7) return ChessPiece(type: ChessPieceType.rook, isWhite: false);
         if (col == 1 || col == 6) return ChessPiece(type: ChessPieceType.knight, isWhite: false);
@@ -48,7 +51,7 @@ class _ChessGameState extends State<ChessGame> {
         if (col == 3) return ChessPiece(type: ChessPieceType.queen, isWhite: false);
         if (col == 4) return ChessPiece(type: ChessPieceType.king, isWhite: false);
       }
-      
+
       if (row == 7) {
         if (col == 0 || col == 7) return ChessPiece(type: ChessPieceType.rook, isWhite: true);
         if (col == 1 || col == 6) return ChessPiece(type: ChessPieceType.knight, isWhite: true);
@@ -56,9 +59,9 @@ class _ChessGameState extends State<ChessGame> {
         if (col == 3) return ChessPiece(type: ChessPieceType.queen, isWhite: true);
         if (col == 4) return ChessPiece(type: ChessPieceType.king, isWhite: true);
       }
-      
+
       return null;
-    }),);
+    }));
   }
 
   void _onSquareTapped(int row, int col) {
@@ -91,7 +94,7 @@ class _ChessGameState extends State<ChessGame> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildGameStatus(),
               Expanded(
@@ -112,7 +115,7 @@ class _ChessGameState extends State<ChessGame> {
       padding: const EdgeInsets.all(16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -120,9 +123,9 @@ class _ChessGameState extends State<ChessGame> {
           Text(
             'Chess',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.white),
@@ -138,7 +141,7 @@ class _ChessGameState extends State<ChessGame> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -162,14 +165,14 @@ class _ChessGameState extends State<ChessGame> {
           crossAxisCount: 8,
         ),
         itemCount: 64,
-        itemBuilder: (BuildContext context, int index) {
+        itemBuilder: (context, index) {
           final row = index ~/ 8;
           final col = index % 8;
-          final var isSelected = selectedRow == row && selectedCol == col;
-          
+          final isSelected = selectedRow == row && selectedCol == col;
+
           return GestureDetector(
             onTap: () => _onSquareTapped(row, col),
-            child: DecoratedBox(
+            child: Container(
               decoration: BoxDecoration(
                 color: _getSquareColor(row, col, isSelected),
                 border: Border.all(
@@ -189,33 +192,39 @@ class _ChessGameState extends State<ChessGame> {
 
   Color _getSquareColor(int row, int col, bool isSelected) {
     if (isSelected) {
-      return Colors.yellow.withValues(alpha: 0.5);
+      return Colors.yellow.withOpacity(0.5);
     }
-    return (row + col) % 2 == 0 
-        ? Colors.brown.shade300 
+    return (row + col) % 2 == 0
+        ? Colors.brown.shade300
         : Colors.brown.shade600;
   }
 
   Widget? _buildChessPiece(int row, int col) {
-    final ChessPiece? piece = board[row][col];
+    final piece = board[row][col];
     if (piece == null) return null;
-    
+
     IconData iconData;
     switch (piece.type) {
       case ChessPieceType.pawn:
         iconData = Icons.agriculture;
+        break;
       case ChessPieceType.rook:
         iconData = Icons.account_balance;
+        break;
       case ChessPieceType.knight:
         iconData = Icons.pets;
+        break;
       case ChessPieceType.bishop:
         iconData = Icons.church;
+        break;
       case ChessPieceType.queen:
         iconData = Icons.star;
+        break;
       case ChessPieceType.king:
         iconData = Icons.star_border;
+        break;
     }
-    
+
     return Icon(
       iconData,
       color: piece.isWhite ? Colors.white : Colors.black,
@@ -228,13 +237,15 @@ class _ChessGameState extends State<ChessGame> {
       padding: const EdgeInsets.all(20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <>[
+        children: [
           NeumorphicButton(
             onPressed: () {
               setState(() {
                 _initializeBoard();
                 isWhiteTurn = true;
                 gameStatus = 'Your turn';
+                selectedRow = null;
+                selectedCol = null;
               });
             },
             child: const Icon(Icons.refresh, color: Colors.white),
@@ -262,8 +273,11 @@ class _ChessGameState extends State<ChessGame> {
 enum ChessPieceType { pawn, rook, knight, bishop, queen, king }
 
 class ChessPiece {
-
-  ChessPiece({required this.type, required this.isWhite});
   final ChessPieceType type;
   final bool isWhite;
+
+  ChessPiece({
+    required this.type,
+    required this.isWhite,
+  });
 }

@@ -1,8 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'dart:io';
 
 import '../../core/constants/asset_constants.dart';
+import '../../core/constants/app_routes.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/config_service.dart';
@@ -18,8 +19,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> with LoadingMixin {
-  final AuthService _authService = ServiceLocator().get<AuthService>();
-  final ConfigService _configService = ServiceLocator().get<ConfigService>();
+  final AuthService _authService = ServiceLocator.instance.get<AuthService>();
+  final ConfigService _configService = ServiceLocator.instance.get<ConfigService>();
 
   @override
   void initState() {
@@ -29,25 +30,22 @@ class _SplashScreenState extends State<SplashScreen> with LoadingMixin {
 
   Future<void> _initializeApp() async {
     await Future.delayed(const Duration(seconds: 2)); // Show splash for 2 seconds
-    
+
     // Check if app is in maintenance mode
     if (_configService.isInMaintenanceMode) {
       _showMaintenanceDialog();
       return;
     }
-    
-    // Check if user is logged in
-    final isLoggedIn = _authService.isLoggedIn();
-    
+
+    // Check if user is logged in using getCurrentUser()
+    final User? user = _authService.getCurrentUser();
+    final bool isLoggedIn = user != null;
+
     if (isLoggedIn) {
-      // Auto login
-      final User? user = _authService.getCurrentUser();
-      if (user != null) {
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
-      } else {
-        Navigator.pushReplacementNamed(context, AppRoutes.login);
-      }
+      // User is logged in, go to home
+      Navigator.pushReplacementNamed(context, AppRoutes.home);
     } else {
+      // User is not logged in, go to login
       Navigator.pushReplacementNamed(context, AppRoutes.login);
     }
   }
@@ -59,9 +57,16 @@ class _SplashScreenState extends State<SplashScreen> with LoadingMixin {
       builder: (BuildContext context) => AlertDialog(
         title: const Text('Under Maintenance'),
         content: Text(_configService.maintenanceMessage),
-        actions: <>[
+        actions: [
           TextButton(
-            onPressed: () => exit(0),
+            onPressed: () {
+              if (Platform.isAndroid || Platform.isIOS) {
+                // For mobile, just close the app
+                exit(0);
+              } else {
+                Navigator.of(context).pop();
+              }
+            },
             child: const Text('Exit'),
           ),
         ],
@@ -72,23 +77,38 @@ class _SplashScreenState extends State<SplashScreen> with LoadingMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DecoratedBox(
+      body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: <>[Colors.purple, Colors.pink],
+            colors: [Colors.purple, Colors.pink],
           ),
         ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: <>[
+            children: [
               // Logo
               Image.asset(
                 AssetConstants.logo,
                 width: 150,
                 height: 150,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.chat,
+                      size: 80,
+                      color: Colors.purple,
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 20),
               // App Name

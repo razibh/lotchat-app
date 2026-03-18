@@ -1,15 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/gradient_background.dart';
 import '../../../core/widgets/neumorphic_button.dart';
 import '../badge/agency_badge_widget.dart';
-import '../hosts/manage_hosts_screen.dart';
+import '../hosts/manage_hosts_screen.dart'; // ← এই ইম্পোর্ট ঠিক আছে (ফাইলের নাম manage_hosts_screen.dart)
 import '../earnings/agency_earnings_screen.dart';
 
+// AgencyHost এবং HostStatus মডেল
+enum HostStatus { active, inactive, pending }
+
+class AgencyHost {
+  final String hostId;
+  final String name;
+  final String username;
+  final DateTime joinedDate;
+  final HostStatus status;
+  final int followers;
+  final double totalEarnings;
+  final double thisMonthEarnings;
+  final double commissionRate;
+  final double commissionPaid;
+  final double commissionPending;
+
+  AgencyHost({
+    required this.hostId,
+    required this.name,
+    required this.username,
+    required this.joinedDate,
+    required this.status,
+    required this.followers,
+    required this.totalEarnings,
+    required this.thisMonthEarnings,
+    required this.commissionRate,
+    required this.commissionPaid,
+    required this.commissionPending,
+  });
+}
+
+// AgencyBadge মডেল
+class AgencyBadge {
+  final String agencyId;
+  final String agencyName;
+  final int totalHosts;
+  final double totalEarnings;
+  final double commissionRate;
+  final bool isVerified;
+
+  AgencyBadge({
+    required this.agencyId,
+    required this.agencyName,
+    required this.totalHosts,
+    required this.totalEarnings,
+    required this.commissionRate,
+    required this.isVerified,
+  });
+}
+
 class AgencyDashboard extends StatefulWidget {
+  final String agencyId;
 
   const AgencyDashboard({required this.agencyId, super.key});
-  final String agencyId;
 
   @override
   State<AgencyDashboard> createState() => _AgencyDashboardState();
@@ -23,8 +74,8 @@ class AgencyDashboard extends StatefulWidget {
 
 class _AgencyDashboardState extends State<AgencyDashboard> {
   bool _isLoading = true;
-  Map<String, dynamic> _agencyData = <String, dynamic>{};
-  List<AgencyHost> _hosts = <>[];
+  Map<String, dynamic> _agencyData = {};
+  List<AgencyHost> _hosts = [];
 
   @override
   void initState() {
@@ -37,14 +88,14 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
     await Future.delayed(const Duration(seconds: 1));
 
     setState(() {
-      _agencyData = <String, dynamic>{
+      _agencyData = {
         'id': 'ag_001',
         'name': 'Elite Talent Agency',
         'ownerName': 'Karim Rahman',
         'email': 'contact@eliteagency.com',
         'phone': '01712345678',
         'countryId': 'bd',
-        'baseCommissionRate': 10.0, // 10% base commission
+        'baseCommissionRate': 10.0,
         'totalHosts': 25,
         'activeHosts': 18,
         'monthlyEarnings': 125000,
@@ -66,8 +117,8 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
   }
 
   List<AgencyHost> _generateSampleHosts() {
-    return List.generate(5, (int index) {
-      final var earnings = 5000 + (index * 3000);
+    return List.generate(5, (index) {
+      final earnings = 5000 + (index * 3000);
       return AgencyHost(
         hostId: 'host_00$index',
         name: 'Host ${index + 1}',
@@ -75,20 +126,20 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
         joinedDate: DateTime.now().subtract(Duration(days: 30 * index)),
         status: HostStatus.active,
         followers: 1000 + (index * 500),
-        totalEarnings: earnings * 3,
-        thisMonthEarnings: earnings,
-        commissionRate: _getCommissionRate(earnings),
-        commissionPaid: earnings * 0.08,
-        commissionPending: earnings * 0.02,
+        totalEarnings: (earnings * 3).toDouble(),
+        thisMonthEarnings: earnings.toDouble(),
+        commissionRate: _getCommissionRate(earnings.toDouble()),
+        commissionPaid: (earnings * 0.08).toDouble(),
+        commissionPending: (earnings * 0.02).toDouble(),
       );
     });
   }
 
   double _getCommissionRate(double earnings) {
-    if (earnings < 5000) return 5;
-    if (earnings < 10000) return 6;
-    if (earnings < 20000) return 7;
-    return 8;
+    if (earnings < 5000) return 5.0;
+    if (earnings < 10000) return 6.0;
+    if (earnings < 20000) return 7.0;
+    return 8.0;
   }
 
   @override
@@ -106,13 +157,13 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
 
   Widget _buildDashboard() {
     return Column(
-      children: <>[
+      children: [
         _buildHeader(),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
-              children: <>[
+              children: [
                 _buildAgencyBadgeSection(),
                 const SizedBox(height: 20),
                 _buildStatsGrid(),
@@ -132,7 +183,7 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           const CircleAvatar(
             radius: 25,
             backgroundColor: AppColors.accentPurple,
@@ -142,7 +193,7 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   _agencyData['name'],
                   style: const TextStyle(
@@ -172,16 +223,16 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <>[
-            Colors.purple.withValues(alpha: 0.3),
-            Colors.blue.withValues(alpha: 0.3),
+          colors: [
+            Colors.purple.withOpacity(0.3),
+            Colors.blue.withOpacity(0.3),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Row(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: const BoxDecoration(
@@ -194,9 +245,9 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 const Row(
-                  children: <>[
+                  children: [
                     Text(
                       'Official Agency',
                       style: TextStyle(
@@ -229,7 +280,7 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
       childAspectRatio: 1.5,
       crossAxisSpacing: 10,
       mainAxisSpacing: 10,
-      children: <>[
+      children: [
         _buildStatCard('Total Hosts', '${_agencyData['totalHosts']}', Icons.people),
         _buildStatCard('Active Hosts', '${_agencyData['activeHosts']}', Icons.person),
         _buildStatCard('Monthly Earnings', '৳${_agencyData['monthlyEarnings']}', Icons.money),
@@ -242,12 +293,12 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: <>[
+        children: [
           Icon(icon, color: AppColors.accentPurple),
           const SizedBox(height: 4),
           Text(
@@ -271,12 +322,12 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           const Text(
             'Commission Rules',
             style: TextStyle(
@@ -300,7 +351,7 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           Text(range, style: const TextStyle(color: Colors.white70)),
           Text(
             rate,
@@ -317,10 +368,10 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
   Widget _buildHostList() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <>[
+          children: [
             const Text(
               'Your Hosts',
               style: TextStyle(
@@ -334,7 +385,8 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => ManageHostsScreen(agencyId: widget.agencyId),
+                    // ← এখানে ক্লাসের নাম ঠিক করুন
+                    builder: (_) => AgencyManageHostsScreen(agencyId: widget.agencyId),
                   ),
                 );
               },
@@ -343,7 +395,7 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
           ],
         ),
         const SizedBox(height: 10),
-        ..._hosts.map(_buildHostTile),
+        ..._hosts.map((host) => _buildHostTile(host)).toList(),
       ],
     );
   }
@@ -353,20 +405,20 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        children: <>[
+        children: [
           CircleAvatar(
-            backgroundColor: Colors.blue.withValues(alpha: 0.3),
+            backgroundColor: Colors.blue.withOpacity(0.3),
             child: Text(host.name[0]),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   host.name,
                   style: const TextStyle(
@@ -384,7 +436,7 @@ class _AgencyDashboardState extends State<AgencyDashboard> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.2),
+              color: Colors.green.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(

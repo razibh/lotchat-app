@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/game_service.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../mixins/dialog_mixin.dart';
-import '../../widgets/common/custom_button.dart';
 import '../../widgets/animation/pulse_animation.dart';
 
 class GreedyCatGame extends StatefulWidget {
-  const GreedyCatGame({super.key});
+  final String? gameId;
+
+  const GreedyCatGame({super.key, this.gameId});
 
   @override
   State<GreedyCatGame> createState() => _GreedyCatGameState();
 }
 
-class _GreedyCatGameState extends State<GreedyCatGame> 
+class _GreedyCatGameState extends State<GreedyCatGame>
     with LoadingMixin, ToastMixin, DialogMixin {
-  
+
   final GameService _gameService = ServiceLocator().get<GameService>();
-  
+
   int _betAmount = 100;
   int? _selectedBox;
   int? _winningBox;
@@ -67,10 +70,9 @@ class _GreedyCatGameState extends State<GreedyCatGame>
         _isRevealing = true;
       });
 
-      // Simulate thinking
       await Future.delayed(const Duration(seconds: 1));
 
-      final GreedyCatResult result = _gameService.playGreedyCat(
+      final result = _gameService.playGreedyCat(
         betAmount: _betAmount,
         selectedBox: index + 1,
       );
@@ -78,8 +80,7 @@ class _GreedyCatGameState extends State<GreedyCatGame>
       setState(() {
         _winningBox = result.winningBox - 1;
         _isRevealing = false;
-        
-        // Reveal all boxes
+
         for (var i = 0; i < 10; i++) {
           if (i == _winningBox) {
             _boxColors[i] = Colors.green;
@@ -97,7 +98,6 @@ class _GreedyCatGameState extends State<GreedyCatGame>
         }
       });
 
-      // Show result dialog
       await showResultDialog(result);
     });
   }
@@ -123,29 +123,30 @@ class _GreedyCatGameState extends State<GreedyCatGame>
       appBar: AppBar(
         title: const Text('Greedy Cat'),
         backgroundColor: Colors.orange,
+        foregroundColor: Colors.white,
       ),
-      body: DecoratedBox(
+      body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: <>[Colors.orange.shade900, Colors.orange.shade700],
+            colors: [Colors.orange.shade900, Colors.orange.shade700],
           ),
         ),
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               // Coins Display
               Container(
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Colors.white.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <>[
+                  children: [
                     const Text(
                       'Your Coins:',
                       style: TextStyle(color: Colors.white, fontSize: 18),
@@ -178,13 +179,13 @@ class _GreedyCatGameState extends State<GreedyCatGame>
               ),
               const SizedBox(height: 20),
 
-              if (!_gameStarted) ...<>[
+              if (!_gameStarted) ...[
                 // Bet Selection
                 Expanded(
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: <>[
+                      children: [
                         const Text(
                           'Select Bet Amount',
                           style: TextStyle(
@@ -196,32 +197,42 @@ class _GreedyCatGameState extends State<GreedyCatGame>
                         const SizedBox(height: 20),
                         Wrap(
                           spacing: 10,
-                          children: <int>[100, 500, 1000, 5000].map((int amount) {
+                          children: [100, 500, 1000, 5000].map((amount) {
                             return FilterChip(
                               label: Text('$amount'),
                               selected: _betAmount == amount,
-                              onSelected: (bool selected) {
+                              onSelected: (selected) {
                                 setState(() {
                                   _betAmount = amount;
                                 });
                               },
-                              backgroundColor: Colors.white.withValues(alpha: 0.1),
+                              backgroundColor: Colors.white.withOpacity(0.1),
                               selectedColor: Colors.orange,
                               labelStyle: const TextStyle(color: Colors.white),
                             );
                           }).toList(),
                         ),
                         const SizedBox(height: 30),
-                        CustomButton(
-                          text: 'Start Game',
-                          onPressed: _startGame,
-                          color: Colors.orange,
+                        SizedBox(
+                          width: 200,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _startGame,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text('Start Game'),
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ] else ...<>[
+              ] else ...[
                 // Game Grid
                 Expanded(
                   child: GridView.builder(
@@ -232,7 +243,7 @@ class _GreedyCatGameState extends State<GreedyCatGame>
                       mainAxisSpacing: 8,
                     ),
                     itemCount: 10,
-                    itemBuilder: (BuildContext context, int index) {
+                    itemBuilder: (context, index) {
                       return _buildBox(index);
                     },
                   ),
@@ -242,10 +253,20 @@ class _GreedyCatGameState extends State<GreedyCatGame>
                 if (_selectedBox != null)
                   Padding(
                     padding: const EdgeInsets.all(16),
-                    child: CustomButton(
-                      text: 'Play Again',
-                      onPressed: _startGame,
-                      color: Colors.orange,
+                    child: SizedBox(
+                      width: 200,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _startGame,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Play Again'),
+                      ),
                     ),
                   ),
               ],
@@ -257,12 +278,12 @@ class _GreedyCatGameState extends State<GreedyCatGame>
   }
 
   Widget _buildBox(int index) {
-    final var isSelected = _selectedBox == index;
-    final bool isWinning = _winningBox == index;
+    final isSelected = _selectedBox == index;
+    final isWinning = _winningBox == index;
 
     return GestureDetector(
-      onTap: _isRevealing || _selectedBox != null 
-          ? null 
+      onTap: _isRevealing || _selectedBox != null
+          ? null
           : () => _selectBox(index),
       child: PulseAnimation(
         animate: isSelected && !_isRevealing,
@@ -279,27 +300,27 @@ class _GreedyCatGameState extends State<GreedyCatGame>
           child: Center(
             child: _isRevealing && isSelected
                 ? const SizedBox(
-                    width: 30,
-                    height: 30,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
+              width: 30,
+              height: 30,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
                 : (_selectedBox != null
-                    ? Text(
-                        '${index + 1}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : const Icon(
-                        Icons.question_mark,
-                        color: Colors.white,
-                        size: 30,
-                      )),
+                ? Text(
+              '${index + 1}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+                : const Icon(
+              Icons.question_mark,
+              color: Colors.white,
+              size: 30,
+            )),
           ),
         ),
       ),

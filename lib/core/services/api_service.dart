@@ -3,10 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart'; // debugPrint এর জন্য
 
-import '../constants/api_constants.dart';
-import '../constants/app_constants.dart';
-
-
+import '../constants/api_constants.dart' as api; // 🟢 alias
+import '../constants/app_constants.dart' as app; // 🟢 alias
 
 class ApiService {
   factory ApiService() => _instance;
@@ -14,7 +12,7 @@ class ApiService {
   static final ApiService _instance = ApiService._internal();
 
   late final Dio _dio;
-  final String baseUrl = ApiConstants.baseUrl;
+  final String baseUrl = api.ApiConstants.baseUrl; // 🟢 api alias ব্যবহার
   bool _isInitialized = false;
 
   Future<void> init() async {
@@ -23,8 +21,8 @@ class ApiService {
     _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: AppConstants.connectionTimeout),
-        receiveTimeout: const Duration(seconds: AppConstants.receiveTimeout),
+        connectTimeout: Duration(seconds: app.AppConstants.connectionTimeout), // 🟢 app alias ব্যবহার
+        receiveTimeout: Duration(seconds: app.AppConstants.receiveTimeout), // 🟢 app alias ব্যবহার
         headers: <String, dynamic>{
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -80,7 +78,7 @@ class ApiService {
       }
 
       final Response<dynamic> response = await _dio.post(
-        ApiConstants.refreshToken,
+        api.ApiConstants.refreshToken, // 🟢 api alias ব্যবহার
         data: <String, String>{'refresh_token': refreshToken},
       );
 
@@ -209,7 +207,7 @@ class ApiService {
     await _ensureInitialized();
     try {
       final String fileName = filePath.split('/').last;
-      final FormData formData = FormData.fromMap(<String, dynamic>{
+      final FormData formData = FormData.fromMap({
         fileField: await MultipartFile.fromFile(filePath, filename: fileName),
         if (data != null) ...data,
       });
@@ -218,7 +216,7 @@ class ApiService {
         endpoint,
         data: formData,
         options: Options(
-          headers: <String, dynamic>{'Content-Type': 'multipart/form-data'},
+          headers: {'Content-Type': 'multipart/form-data'},
         ),
       );
     } on DioException catch (e) {

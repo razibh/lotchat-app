@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../core/di/service_locator.dart';
-import '../../core/models/user_model.dart';
 import '../../core/services/friend_service.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/models/user_models.dart'; // User model এর জন্য
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../mixins/dialog_mixin.dart';
@@ -16,13 +18,13 @@ class BlockedUsersScreen extends StatefulWidget {
   State<BlockedUsersScreen> createState() => _BlockedUsersScreenState();
 }
 
-class _BlockedUsersScreenState extends State<BlockedUsersScreen> 
+class _BlockedUsersScreenState extends State<BlockedUsersScreen>
     with LoadingMixin, ToastMixin, DialogMixin {
-  
+
   final FriendService _friendService = ServiceLocator().get<FriendService>();
   final AuthService _authService = ServiceLocator().get<AuthService>();
-  
-  List<Map<String, dynamic>> _blockedUsers = <Map<String, dynamic>>[];
+
+  List<User> _blockedUsers = []; // List<Map<String, dynamic>> থেকে List<User> এ পরিবর্তন
   bool _isLoading = true;
 
   @override
@@ -32,16 +34,28 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen>
   }
 
   Future<void> _loadBlockedUsers() async {
-    await runWithLoading(() async {
-      _friendService.getBlockedUsers().listen((List<UserModel> users) {
+    setState(() => _isLoading = true);
+
+    try {
+      _friendService.getBlockedUsers().listen((users) {
         if (mounted) {
           setState(() {
             _blockedUsers = users;
             _isLoading = false;
           });
         }
+      }, onError: (error) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          showError('Failed to load blocked users');
+        }
       });
-    });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        showError('Error: $e');
+      }
+    }
   }
 
   Future<void> _unblockUser(String userId, String username) async {
@@ -56,6 +70,10 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen>
         final bool success = await _friendService.unblockUser(userId);
         if (success) {
           showSuccess('$username unblocked');
+          // Refresh the list
+          _loadBlockedUsers();
+        } else {
+          showError('Failed to unblock user');
         }
       });
     }
@@ -67,50 +85,68 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen>
       appBar: AppBar(
         title: const Text('Blocked Users'),
         backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _blockedUsers.isEmpty
-              ? const EmptyStateWidget(
-                  title: 'No Blocked Users',
-                  message: "You haven't blocked anyone yet",
-                  icon: Icons.block,
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _blockedUsers.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final Map<String, dynamic> user = _blockedUsers[index];
-                    return FadeAnimation(
-                      delay: Duration(milliseconds: index * 50),
-                      child: Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundImage: user['photoURL'] != null
-                                ? NetworkImage(user['photoURL'])
-                                : null,
-                            child: user['photoURL'] == null
-                                ? Text(user['username'][0].toUpperCase())
-                                : null,
-                          ),
-                          title: Text(user['username'] ?? 'Unknown'),
-                          subtitle: Text(user['email'] ?? ''),
-                          trailing: ElevatedButton(
-                            onPressed: () => _unblockUser(
-                              user['uid'],
-                              user['username'] ?? 'User',
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                            ),
-                            child: const Text('Unblock'),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+          ? const EmptyStateWidget(
+        title: 'No Blocked Users',
+        message: "You haven't blocked anyone yet",
+        icon: Icons.block,
+      )
+          : ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _blockedUsers.length,
+        itemBuilder: (context, index) {
+          final user = _blockedUsers[index];
+
+          return FadeAnimation(
+            delay: Duration(milliseconds: index * 50),
+            child: Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  radius: 24,
+                  backgroundImage: user.photoURL != null
+                      ? NetworkImage(user.photoURL!)
+                      : null,
+                  backgroundColor: Colors.grey.shade200,
+                  child: user.photoURL == null
+                      ? Text(
+                    user.username.isNotEmpty ? user.username[0].toUpperCase() : '?',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                      : null,
                 ),
+                title: Text(
+                  user.displayName ?? user.username,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: user.email != null ? Text(user.email!) : null,
+                trailing: ElevatedButton(
+                  onPressed: () => _unblockUser(user.id, user.username),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Unblock'),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

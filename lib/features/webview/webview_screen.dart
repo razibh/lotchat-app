@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/gradient_background.dart';
 
 class WebViewScreen extends StatefulWidget {
-
-  const WebViewScreen({
-    required this.title, required this.url, super.key,
-    this.showAppBar = true,
-  });
   final String title;
   final String url;
   final bool showAppBar;
+
+  const WebViewScreen({
+    super.key,
+    required this.title,
+    required this.url,
+    this.showAppBar = true,
+  });
 
   @override
   State<WebViewScreen> createState() => _WebViewScreenState();
@@ -39,18 +42,18 @@ class _WebViewScreenState extends State<WebViewScreen> {
       ..setBackgroundColor(Colors.transparent)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onProgress: (progress) {
+          onProgress: (int progress) {
             setState(() {
               _progress = progress / 100;
             });
           },
-          onPageStarted: (url) {
+          onPageStarted: (String url) {
             setState(() {
               _isLoading = true;
               _hasError = false;
             });
           },
-          onPageFinished: (url) {
+          onPageFinished: (String url) {
             setState(() {
               _isLoading = false;
             });
@@ -86,11 +89,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               if (widget.showAppBar) _buildAppBar(),
               Expanded(
                 child: Stack(
-                  children: <>[
+                  children: [
                     WebViewWidget(controller: _controller),
                     if (_isLoading && _progress < 1.0)
                       LinearProgressIndicator(
@@ -114,7 +117,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: _goBack,
@@ -124,9 +127,13 @@ class _WebViewScreenState extends State<WebViewScreen> {
             child: Text(
               widget.title,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ) ?? const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -145,7 +152,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
+          children: [
             Icon(
               Icons.error_outline,
               size: 80,

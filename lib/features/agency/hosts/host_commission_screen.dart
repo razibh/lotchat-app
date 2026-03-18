@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/gradient_background.dart';
 
 class HostCommissionScreen extends StatefulWidget {
-
-  const HostCommissionScreen({
-    required this.agencyId, required this.hostId, super.key,
-  });
   final String agencyId;
   final String hostId;
+
+  const HostCommissionScreen({
+    required this.agencyId,
+    required this.hostId,
+    super.key,
+  });
 
   @override
   State<HostCommissionScreen> createState() => _HostCommissionScreenState();
@@ -22,8 +25,8 @@ class HostCommissionScreen extends StatefulWidget {
 }
 
 class _HostCommissionScreenState extends State<HostCommissionScreen> {
-  double _commissionRate = 5;
-  List<CommissionTransaction> _transactions = <CommissionTransaction>[];
+  double _commissionRate = 5.0;
+  List<CommissionTransaction> _transactions = [];
 
   @override
   void initState() {
@@ -32,7 +35,7 @@ class _HostCommissionScreenState extends State<HostCommissionScreen> {
   }
 
   void _loadData() {
-    _transactions = <CommissionTransaction>[
+    _transactions = [
       CommissionTransaction(
         amount: 500,
         rate: 5,
@@ -56,13 +59,13 @@ class _HostCommissionScreenState extends State<HostCommissionScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Column(
-                    children: <>[
+                    children: [
                       _buildCommissionCard(),
                       const SizedBox(height: 20),
                       _buildRateSelector(),
@@ -83,7 +86,7 @@ class _HostCommissionScreenState extends State<HostCommissionScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -107,22 +110,22 @@ class _HostCommissionScreenState extends State<HostCommissionScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <>[
-            Colors.purple.withValues(alpha: 0.3),
-            Colors.blue.withValues(alpha: 0.3),
+          colors: [
+            Colors.purple.withOpacity(0.3),
+            Colors.blue.withOpacity(0.3),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
-        children: <>[
+        children: [
           const Text(
             'Current Commission Rate',
             style: TextStyle(color: Colors.white70),
           ),
           const SizedBox(height: 10),
           Text(
-            '$_commissionRate%',
+            '${_commissionRate.toStringAsFixed(0)}%',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 40,
@@ -138,12 +141,12 @@ class _HostCommissionScreenState extends State<HostCommissionScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           const Text(
             'Select Commission Rate',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -151,16 +154,16 @@ class _HostCommissionScreenState extends State<HostCommissionScreen> {
           const SizedBox(height: 16),
           Wrap(
             spacing: 10,
-            children: <int>[5, 6, 7, 8, 9, 10, 12, 15].map((int rate) {
+            children: [5, 6, 7, 8, 9, 10, 12, 15].map((rate) {
               return ChoiceChip(
                 label: Text('$rate%'),
                 selected: _commissionRate == rate,
-                onSelected: (bool selected) {
+                onSelected: (selected) {
                   setState(() {
                     _commissionRate = rate.toDouble();
                   });
                 },
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
+                backgroundColor: Colors.white.withOpacity(0.1),
                 selectedColor: AppColors.accentPurple,
                 labelStyle: TextStyle(
                   color: _commissionRate == rate ? Colors.white : Colors.white70,
@@ -176,13 +179,13 @@ class _HostCommissionScreenState extends State<HostCommissionScreen> {
   Widget _buildTransactionHistory() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         const Text(
           'Commission History',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
-        ..._transactions.map(_buildTransactionTile),
+        ..._transactions.map((t) => _buildTransactionTile(t)).toList(),
       ],
     );
   }
@@ -192,15 +195,15 @@ class _HostCommissionScreenState extends State<HostCommissionScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.2),
+              color: Colors.green.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.money, color: Colors.green),
@@ -209,7 +212,7 @@ class _HostCommissionScreenState extends State<HostCommissionScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   'Commission: ৳${transaction.amount}',
                   style: const TextStyle(color: Colors.white),
@@ -223,7 +226,7 @@ class _HostCommissionScreenState extends State<HostCommissionScreen> {
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: <>[
+            children: [
               Text(
                 _formatDate(transaction.date),
                 style: const TextStyle(color: Colors.white54, fontSize: 10),
@@ -231,7 +234,7 @@ class _HostCommissionScreenState extends State<HostCommissionScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.2),
+                  color: Colors.green.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -252,6 +255,11 @@ class _HostCommissionScreenState extends State<HostCommissionScreen> {
 }
 
 class CommissionTransaction {
+  final double amount;
+  final double rate;
+  final double earnings;
+  final DateTime date;
+  final String status;
 
   CommissionTransaction({
     required this.amount,
@@ -260,9 +268,4 @@ class CommissionTransaction {
     required this.date,
     required this.status,
   });
-  final double amount;
-  final double rate;
-  final double earnings;
-  final DateTime date;
-  final String status;
 }

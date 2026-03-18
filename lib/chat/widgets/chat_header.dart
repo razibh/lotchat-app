@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 import '../models/chat_model.dart';
 
 class ChatHeader extends StatelessWidget {
-
   const ChatHeader({
-    required this.chat, required this.onBack, required this.onCall, required this.onVideoCall, required this.onInfo, super.key,
+    super.key,
+    required this.chat,
+    required this.onBack,
+    required this.onCall,
+    required this.onVideoCall,
+    required this.onInfo,
   });
+
   final ChatModel chat;
   final VoidCallback onBack;
   final VoidCallback onCall;
@@ -18,7 +24,7 @@ class ChatHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: <>[
+        boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
@@ -28,7 +34,7 @@ class ChatHeader extends StatelessWidget {
       ),
       child: SafeArea(
         child: Row(
-          children: <>[
+          children: [
             IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: onBack,
@@ -39,11 +45,11 @@ class ChatHeader extends StatelessWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <>[
+                children: [
                   Text(
                     chat.type == 'private'
-                        ? chat.participants.first
-                        : chat.groupName ?? 'Group',
+                        ? (chat.participants.isNotEmpty ? chat.participants.first : 'User')
+                        : (chat.groupName ?? 'Group'),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -75,14 +81,16 @@ class ChatHeader extends StatelessWidget {
   Widget _buildAvatar() {
     if (chat.type == 'private') {
       return Stack(
-        children: <>[
+        children: [
           CircleAvatar(
             radius: 20,
             backgroundImage: chat.groupAvatar != null
                 ? NetworkImage(chat.groupAvatar!)
                 : null,
             child: chat.groupAvatar == null
-                ? Text(chat.participants.first[0].toUpperCase())
+                ? Text(chat.participants.isNotEmpty
+                ? chat.participants.first[0].toUpperCase()
+                : '?')
                 : null,
           ),
           Positioned(

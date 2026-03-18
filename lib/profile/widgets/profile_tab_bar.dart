@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class ProfileTabBar extends StatelessWidget {
+  final TabController tabController;
 
   const ProfileTabBar({
-    required this.tabController, super.key,
+    super.key,
+    required this.tabController,
   });
-  final TabController tabController;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: <>[
+        boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -22,7 +24,7 @@ class ProfileTabBar extends StatelessWidget {
       ),
       child: TabBar(
         controller: tabController,
-        tabs: const <>[
+        tabs: const [
           Tab(
             icon: Icon(Icons.grid_on),
             text: 'Posts',
@@ -52,12 +54,14 @@ class ProfileTabBar extends StatelessWidget {
 
 // Custom Tab Bar with Indicators
 class CustomProfileTabBar extends StatelessWidget {
-
-  const CustomProfileTabBar({
-    required this.currentIndex, required this.onTap, super.key,
-  });
   final int currentIndex;
   final Function(int) onTap;
+
+  const CustomProfileTabBar({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -65,16 +69,16 @@ class CustomProfileTabBar extends StatelessWidget {
       height: 50,
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: <>[
+        boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Row(
-        children: <>[
+        children: [
           _buildTabItem(
             index: 0,
             icon: Icons.grid_on,
@@ -107,7 +111,7 @@ class CustomProfileTabBar extends StatelessWidget {
     return Expanded(
       child: GestureDetector(
         onTap: () => onTap(index),
-        child: DecoratedBox(
+        child: Container(
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
@@ -118,7 +122,7 @@ class CustomProfileTabBar extends StatelessWidget {
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: <>[
+            children: [
               Icon(
                 icon,
                 color: isSelected ? Colors.blue : Colors.grey,
@@ -149,12 +153,14 @@ class CustomProfileTabBar extends StatelessWidget {
 
 // Animated Tab Bar
 class AnimatedProfileTabBar extends StatefulWidget {
-
-  const AnimatedProfileTabBar({
-    required this.currentIndex, required this.onTap, super.key,
-  });
   final int currentIndex;
   final Function(int) onTap;
+
+  const AnimatedProfileTabBar({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+  });
 
   @override
   State<AnimatedProfileTabBar> createState() => _AnimatedProfileTabBarState();
@@ -224,7 +230,7 @@ class _AnimatedProfileTabBarState extends State<AnimatedProfileTabBar> with Sing
                     margin: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: widget.currentIndex == index
-                          ? Colors.blue.withValues(alpha: 0.1 + _animations[index].value * 0.1)
+                          ? Colors.blue.withOpacity(0.1 + _animations[index].value * 0.1)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(26),
                     ),
@@ -234,7 +240,7 @@ class _AnimatedProfileTabBarState extends State<AnimatedProfileTabBar> with Sing
                           : 1.0,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: <>[
+                        children: [
                           Icon(
                             _getIcon(index),
                             color: widget.currentIndex == index
@@ -291,5 +297,71 @@ class _AnimatedProfileTabBarState extends State<AnimatedProfileTabBar> with Sing
       default:
         return '';
     }
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<AnimationController>('controller', _controller));
+  }
+}
+
+// Segmented Tab Bar
+class SegmentedProfileTabBar extends StatelessWidget {
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const SegmentedProfileTabBar({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          _buildSegment(0, 'Posts'),
+          _buildSegment(1, 'Gifts'),
+          _buildSegment(2, 'About'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSegment(int index, String label) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onTap(index),
+        child: Container(
+          decoration: BoxDecoration(
+            color: currentIndex == index ? Colors.blue : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: currentIndex == index ? Colors.white : Colors.grey,
+                fontWeight: currentIndex == index ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(IntProperty('currentIndex', currentIndex));
   }
 }

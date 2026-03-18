@@ -1,42 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 
 class AppLogo extends StatelessWidget {
-
-  const AppLogo({
-    super.key,
-    this.size = 100,
-    this.withText = true,
-    this.color,
-    this.imagePath,
-  });
   final double size;
   final bool withText;
   final Color? color;
   final String? imagePath;
 
+  const AppLogo({
+    this.size = 100,
+    this.withText = true,
+    this.color,
+    this.imagePath,
+    super.key,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: <>[
+      children: [
         // Logo Icon
         Container(
           width: size,
           height: size,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: <>[
+              colors: [
                 color ?? Theme.of(context).primaryColor,
-                (color ?? Theme.of(context).primaryColor).withValues(alpha: 0.8),
+                (color ?? Theme.of(context).primaryColor).withOpacity(0.8),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             shape: BoxShape.circle,
-            boxShadow: <>[
+            boxShadow: [
               BoxShadow(
-                color: (color ?? Theme.of(context).primaryColor).withValues(alpha: 0.3),
+                color: (color ?? Theme.of(context).primaryColor).withOpacity(0.3),
                 blurRadius: 20,
                 spreadRadius: 5,
               ),
@@ -45,25 +46,25 @@ class AppLogo extends StatelessWidget {
           child: ClipOval(
             child: imagePath != null
                 ? (imagePath!.endsWith('.svg')
-                    ? SvgPicture.asset(
-                        imagePath!,
-                        fit: BoxFit.cover,
-                      )
-                    : Image.asset(
-                        imagePath!,
-                        fit: BoxFit.cover,
-                      ))
+                ? SvgPicture.asset(
+              imagePath!,
+              fit: BoxFit.cover,
+            )
+                : Image.asset(
+              imagePath!,
+              fit: BoxFit.cover,
+            ))
                 : Center(
-                    child: Icon(
-                      Icons.chat,
-                      color: Colors.white,
-                      size: size * 0.5,
-                    ),
-                  ),
+              child: Icon(
+                Icons.chat,
+                color: Colors.white,
+                size: size * 0.5,
+              ),
+            ),
           ),
         ),
-        
-        if (withText) ...<>[
+
+        if (withText) ...[
           const SizedBox(height: 16),
           // Logo Text
           Text(
@@ -99,20 +100,20 @@ class AppLogo extends StatelessWidget {
 }
 
 class LogoText extends StatelessWidget {
-
-  const LogoText({
-    super.key,
-    this.fontSize = 24,
-    this.color,
-  });
   final double fontSize;
   final Color? color;
+
+  const LogoText({
+    this.fontSize = 24,
+    this.color,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return RichText(
       text: TextSpan(
-        children: <>[
+        children: [
           TextSpan(
             text: 'Lot',
             style: TextStyle(
@@ -143,14 +144,14 @@ class LogoText extends StatelessWidget {
 }
 
 class LogoIcon extends StatelessWidget {
-
-  const LogoIcon({
-    super.key,
-    this.size = 40,
-    this.color,
-  });
   final double size;
   final Color? color;
+
+  const LogoIcon({
+    this.size = 40,
+    this.color,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -159,9 +160,9 @@ class LogoIcon extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <>[
+          colors: [
             color ?? Theme.of(context).primaryColor,
-            (color ?? Theme.of(context).primaryColor).withValues(alpha: 0.8),
+            (color ?? Theme.of(context).primaryColor).withOpacity(0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -187,9 +188,9 @@ class LogoIcon extends StatelessWidget {
 }
 
 class AnimatedLogo extends StatefulWidget {
-
-  const AnimatedLogo({super.key, this.size = 100});
   final double size;
+
+  const AnimatedLogo({this.size = 100, super.key});
 
   @override
   State<AnimatedLogo> createState() => _AnimatedLogoState();
@@ -201,7 +202,7 @@ class AnimatedLogo extends StatefulWidget {
   }
 }
 
-class _AnimatedLogoState extends State<AnimatedLogo> 
+class _AnimatedLogoState extends State<AnimatedLogo>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -250,14 +251,14 @@ class _AnimatedLogoState extends State<AnimatedLogo>
               height: widget.size,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: <>[Color(0xFF8B5CF6), Color(0xFFEC4899)],
+                  colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 shape: BoxShape.circle,
-                boxShadow: <>[
+                boxShadow: [
                   BoxShadow(
-                    color: Colors.purple.withValues(alpha: 0.5),
+                    color: Colors.purple.withOpacity(0.5),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),

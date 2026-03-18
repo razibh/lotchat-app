@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/gradient_background.dart';
-import '../../core/utils/country_helper.dart';
-import '../../core/models/country_models.dart';
+import '../../core/models/country_model.dart'; // CountryModel ইম্পোর্ট
 
 class RecommendedRoomsScreen extends StatefulWidget {
+  final String countryId;
 
   const RecommendedRoomsScreen({required this.countryId, super.key});
-  final String countryId;
 
   @override
   State<RecommendedRoomsScreen> createState() => _RecommendedRoomsScreenState();
@@ -20,11 +21,11 @@ class RecommendedRoomsScreen extends StatefulWidget {
 }
 
 class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
-  List<RoomRecommendation> _recommendedRooms = <RoomRecommendation>[];
-  List<RoomRecommendation> _nearbyRooms = <RoomRecommendation>[];
-  List<RoomRecommendation> _trendingRooms = <RoomRecommendation>[];
-  
-  Country? _selectedCountry;
+  List<RoomRecommendation> _recommendedRooms = [];
+  List<RoomRecommendation> _nearbyRooms = [];
+  List<RoomRecommendation> _trendingRooms = [];
+
+  CountryModel? _selectedCountry;
 
   @override
   void initState() {
@@ -33,43 +34,44 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
   }
 
   void _loadData() {
-    _selectedCountry = Country.getCountryById(widget.countryId);
+    // CountryModel ব্যবহার করুন
+    _selectedCountry = CountryModel.getCountryById(widget.countryId);
     _generateRecommendations();
   }
 
   void _generateRecommendations() {
     // Sample data - in real app, this would come from API based on country
-    _recommendedRooms = List.generate(5, (int index) {
+    _recommendedRooms = List.generate(5, (index) {
       return RoomRecommendation(
         id: 'room_$index',
-        title: '${_selectedCountry?.name} Room ${index + 1}',
+        title: '${_selectedCountry?.name ?? 'Local'} Room ${index + 1}',
         hostName: 'Host ${index + 1}',
         viewers: 150 + (index * 50),
-        tags: <String>['local', 'trending', 'music'],
+        tags: ['local', 'trending', 'music'],
         countryId: widget.countryId,
         countryFlag: _selectedCountry?.flag ?? '🌍',
       );
     });
 
-    _nearbyRooms = List.generate(3, (int index) {
+    _nearbyRooms = List.generate(3, (index) {
       return RoomRecommendation(
         id: 'near_$index',
         title: 'Nearby Session ${index + 1}',
         hostName: 'Local Host ${index + 1}',
         viewers: 50 + (index * 25),
-        tags: <String>['nearby', 'local'],
+        tags: ['nearby', 'local'],
         countryId: widget.countryId,
         countryFlag: _selectedCountry?.flag ?? '🌍',
       );
     });
 
-    _trendingRooms = List.generate(4, (int index) {
+    _trendingRooms = List.generate(4, (index) {
       return RoomRecommendation(
         id: 'trend_$index',
         title: 'Trending Room ${index + 1}',
         hostName: 'Star Host ${index + 1}',
         viewers: 1000 + (index * 500),
-        tags: <String>['trending', 'popular', 'hot'],
+        tags: ['trending', 'popular', 'hot'],
         countryId: widget.countryId,
         countryFlag: _selectedCountry?.flag ?? '🌍',
       );
@@ -82,14 +84,14 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <>[
+                    children: [
                       _buildCountryInfo(),
                       const SizedBox(height: 20),
                       _buildSectionTitle('Recommended for You'),
@@ -98,7 +100,7 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
                       _buildSectionTitle('Nearby Rooms'),
                       _buildHorizontalRoomList(_nearbyRooms),
                       const SizedBox(height: 20),
-                      _buildSectionTitle('Trending in ${_selectedCountry?.name}'),
+                      _buildSectionTitle('Trending in ${_selectedCountry?.name ?? 'Your Area'}'),
                       _buildTrendingList(),
                     ],
                   ),
@@ -115,7 +117,7 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -144,15 +146,15 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <>[
-            Colors.purple.withValues(alpha: 0.3),
-            Colors.blue.withValues(alpha: 0.3),
+          colors: [
+            Colors.purple.withOpacity(0.3),
+            Colors.blue.withOpacity(0.3),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
-        children: <>[
+        children: [
           Text(
             _selectedCountry?.flag ?? '🌍',
             style: const TextStyle(fontSize: 40),
@@ -161,7 +163,7 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   _selectedCountry?.name ?? 'Unknown',
                   style: const TextStyle(
@@ -171,7 +173,9 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
                   ),
                 ),
                 Text(
-                  '${_selectedCountry?.currency} • ${_selectedCountry?.phoneCode}',
+                  _selectedCountry != null
+                      ? '${_selectedCountry!.currency} • ${_selectedCountry!.phoneCode}'
+                      : 'Select a country',
                   style: const TextStyle(color: Colors.white70),
                 ),
               ],
@@ -180,7 +184,7 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.2),
+              color: Colors.green.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Text(
@@ -213,8 +217,8 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: rooms.length,
-        itemBuilder: (BuildContext context, int index) {
-          final RoomRecommendation room = rooms[index];
+        itemBuilder: (context, index) {
+          final room = rooms[index];
           return _buildRoomCard(room);
         },
       ),
@@ -227,15 +231,15 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           Row(
-            children: <>[
+            children: [
               CircleAvatar(
                 radius: 15,
                 backgroundColor: Colors.purple,
@@ -267,7 +271,7 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
           ),
           const SizedBox(height: 8),
           Row(
-            children: <>[
+            children: [
               const Icon(Icons.visibility, color: Colors.white70, size: 12),
               const SizedBox(width: 4),
               Text(
@@ -284,11 +288,11 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
           const SizedBox(height: 8),
           Wrap(
             spacing: 4,
-            children: room.tags.take(2).map((String tag) {
+            children: room.tags.take(2).map((tag) {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.purple.withValues(alpha: 0.2),
+                  color: Colors.purple.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -308,21 +312,21 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _trendingRooms.length,
-      itemBuilder: (BuildContext context, int index) {
-        final RoomRecommendation room = _trendingRooms[index];
+      itemBuilder: (context, index) {
+        final room = _trendingRooms[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: Colors.white.withOpacity(0.1),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
-            children: <>[
+            children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.2),
+                  color: Colors.orange.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.trending_up, color: Colors.orange),
@@ -331,7 +335,7 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     Text(
                       room.title,
                       style: const TextStyle(
@@ -348,13 +352,13 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: <>[
+                children: [
                   Text(
                     '${room.viewers} viewers',
                     style: const TextStyle(color: Colors.green, fontSize: 12),
                   ),
                   Row(
-                    children: <>[
+                    children: [
                       const Icon(Icons.favorite, color: Colors.red, size: 12),
                       const SizedBox(width: 4),
                       Text(
@@ -376,7 +380,7 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (BuildContext context) => Container(
+      builder: (context) => Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
           color: AppColors.surfaceDark,
@@ -387,17 +391,17 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             const Text(
               'Select Country',
               style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            ...Country.getSupportedCountries().map((Country country) {
+            ...CountryModel.getCountries().map((country) {
               return ListTile(
                 leading: Text(country.flag, style: const TextStyle(fontSize: 24)),
                 title: Text(country.name, style: const TextStyle(color: Colors.white)),
-                trailing: country.id == widget.countryId
+                trailing: country.code == widget.countryId
                     ? const Icon(Icons.check, color: Colors.green)
                     : null,
                 onTap: () {
@@ -405,12 +409,12 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => RecommendedRoomsScreen(countryId: country.id),
+                      builder: (_) => RecommendedRoomsScreen(countryId: country.code),
                     ),
                   );
                 },
               );
-            }),
+            }).toList(),
           ],
         ),
       ),
@@ -419,13 +423,6 @@ class _RecommendedRoomsScreenState extends State<RecommendedRoomsScreen> {
 }
 
 class RoomRecommendation {
-
-  RoomRecommendation({
-    required this.id,
-    required this.title,
-    required this.hostName,
-    required this.viewers, required this.tags, required this.countryId, required this.countryFlag, this.hostAvatar,
-  });
   final String id;
   final String title;
   final String hostName;
@@ -434,4 +431,15 @@ class RoomRecommendation {
   final List<String> tags;
   final String countryId;
   final String countryFlag;
+
+  RoomRecommendation({
+    required this.id,
+    required this.title,
+    required this.hostName,
+    this.hostAvatar,
+    required this.viewers,
+    required this.tags,
+    required this.countryId,
+    required this.countryFlag,
+  });
 }

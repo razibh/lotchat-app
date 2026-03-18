@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/chat_model.dart';
-import '../../../core/utils/date_formatter.dart';
+import '../../core/utils/date_formatters.dart';
+
 
 class ChatTile extends StatelessWidget {
-
   const ChatTile({
-    required this.chat, required this.onTap, super.key,
+    super.key,
+    required this.chat,
+    required this.onTap,
     this.onLongPress,
     this.onMute,
     this.onPin,
     this.onArchive,
     this.onDelete,
   });
+
   final ChatModel chat;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
@@ -25,64 +29,36 @@ class ChatTile extends StatelessWidget {
     return ListTile(
       leading: _buildAvatar(),
       title: Row(
-        children: <>[
+        children: [
           Expanded(
             child: Text(
-              chat.type == 'private' 
-                  ? chat.participants.first 
-                  : chat.groupName ?? 'Group',
+              chat.type == 'private'
+                  ? (chat.participants.isNotEmpty ? chat.participants.first : 'User')
+                  : (chat.groupName ?? 'Group'),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
-          if (chat.isPinned)
-            const Icon(Icons.push_pin, size: 16, color: Colors.grey),
           const SizedBox(width: 4),
+          // 🟢 lastMessageTime ব্যবহার করুন
           Text(
-            DateFormatter.formatChatTime(chat.updatedAt),
+            _formatTime(chat.lastMessageTime),
             style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],
       ),
       subtitle: Row(
-        children: <>[
-          if (chat.lastMessage != null) ...<>[
-            Expanded(
-              child: Text(
-                chat.lastMessage!.content,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: chat.unreadCount > 0 
-                      ? Colors.black 
-                      : Colors.grey,
-                  fontWeight: chat.unreadCount > 0 
-                      ? FontWeight.bold 
-                      : FontWeight.normal,
-                ),
+        children: [
+          Expanded(
+            child: Text(
+              chat.lastMessage ?? 'No messages yet',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.grey,
               ),
             ),
-          ],
-          if (chat.isMuted)
-            const Padding(
-              padding: EdgeInsets.only(left: 4),
-              child: Icon(Icons.volume_off, size: 16, color: Colors.grey),
-            ),
-          if (chat.unreadCount > 0)
-            Container(
-              margin: const EdgeInsets.only(left: 8),
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: Colors.blue,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                '${chat.unreadCount}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                ),
-              ),
-            ),
+          ),
+          // 🟢 Mute/Pin/Archive features সরিয়ে দেওয়া হয়েছে কারণ ChatModel এ fields নেই
         ],
       ),
       onTap: onTap,
@@ -97,7 +73,9 @@ class ChatTile extends StatelessWidget {
             ? NetworkImage(chat.groupAvatar!)
             : null,
         child: chat.groupAvatar == null
-            ? Text(chat.participants.first[0].toUpperCase())
+            ? Text(chat.participants.isNotEmpty
+            ? chat.participants.first[0].toUpperCase()
+            : '?')
             : null,
       );
     } else {
@@ -112,66 +90,53 @@ class ChatTile extends StatelessWidget {
     }
   }
 
+  String _formatTime(DateTime? time) {
+    if (time == null) return '';
+
+    final now = DateTime.now();
+    final diff = now.difference(time);
+
+    if (diff.inDays > 0) {
+      return '${diff.inDays}d';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours}h';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes}m';
+    } else {
+      return 'now';
+    }
+  }
+
   void _showOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) => SafeArea(
         child: Wrap(
-          children: <>[
-            if (!chat.isPinned)
-              ListTile(
-                leading: const Icon(Icons.push_pin),
-                title: const Text('Pin Chat'),
-                onTap: () {
-                  Navigator.pop(context);
-                  onPin?.call();
-                },
-              )
-            else
-              ListTile(
-                leading: const Icon(Icons.push_pin_outlined),
-                title: const Text('Unpin Chat'),
-                onTap: () {
-                  Navigator.pop(context);
-                  onPin?.call();
-                },
-              ),
-            if (!chat.isMuted)
-              ListTile(
-                leading: const Icon(Icons.volume_off),
-                title: const Text('Mute Notifications'),
-                onTap: () {
-                  Navigator.pop(context);
-                  onMute?.call();
-                },
-              )
-            else
-              ListTile(
-                leading: const Icon(Icons.volume_up),
-                title: const Text('Unmute Notifications'),
-                onTap: () {
-                  Navigator.pop(context);
-                  onMute?.call();
-                },
-              ),
-            if (!chat.isArchived)
-              ListTile(
-                leading: const Icon(Icons.archive),
-                title: const Text('Archive Chat'),
-                onTap: () {
-                  Navigator.pop(context);
-                  onArchive?.call();
-                },
-              )
-            else
-              ListTile(
-                leading: const Icon(Icons.unarchive),
-                title: const Text('Unarchive Chat'),
-                onTap: () {
-                  Navigator.pop(context);
-                  onArchive?.call();
-                },
-              ),
+          children: [
+            ListTile(
+              leading: const Icon(Icons.push_pin),
+              title: const Text('Pin Chat'),
+              onTap: () {
+                Navigator.pop(context);
+                onPin?.call();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.volume_off),
+              title: const Text('Mute Notifications'),
+              onTap: () {
+                Navigator.pop(context);
+                onMute?.call();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.archive),
+              title: const Text('Archive Chat'),
+              onTap: () {
+                Navigator.pop(context);
+                onArchive?.call();
+              },
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),

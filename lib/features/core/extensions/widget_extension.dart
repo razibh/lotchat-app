@@ -127,7 +127,7 @@ extension WidgetExtension on Widget {
     double width = 1,
     double radius = 0,
   }) {
-    return DecoratedBox(
+    return Container(
       decoration: BoxDecoration(
         border: Border.all(color: color, width: width),
         borderRadius: radius > 0 ? BorderRadius.circular(radius) : null,
@@ -142,9 +142,9 @@ extension WidgetExtension on Widget {
     double spreadRadius = 0,
     Offset offset = Offset.zero,
   }) {
-    return DecoratedBox(
+    return Container(
       decoration: BoxDecoration(
-        boxShadow: <>[
+        boxShadow: [
           BoxShadow(
             color: color,
             blurRadius: blurRadius,
@@ -161,7 +161,7 @@ extension WidgetExtension on Widget {
     required Gradient gradient,
     double? radius,
   }) {
-    return DecoratedBox(
+    return Container(
       decoration: BoxDecoration(
         gradient: gradient,
         borderRadius: radius != null ? BorderRadius.circular(radius) : null,
@@ -266,67 +266,6 @@ extension WidgetExtension on Widget {
     );
   }
 
-  // Animation extensions
-  Widget fadeIn({
-    Duration duration = const Duration(milliseconds: 300),
-    Curve curve = Curves.easeIn,
-  }) {
-    return FadeTransition(
-      opacity: CurvedAnimation(
-        parent: AnimationController(
-          duration: duration,
-          vsync: _getVSync(),
-        )..forward(),
-        curve: curve,
-      ),
-      child: this,
-    );
-  }
-
-  Widget slideIn({
-    Duration duration = const Duration(milliseconds: 300),
-    Offset begin = const Offset(1, 0),
-    Curve curve = Curves.easeOut,
-  }) {
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: begin,
-        end: Offset.zero,
-      ).animate(
-        CurvedAnimation(
-          parent: AnimationController(
-            duration: duration,
-            vsync: _getVSync(),
-          )..forward(),
-          curve: curve,
-        ),
-      ),
-      child: this,
-    );
-  }
-
-  Widget scaleIn({
-    Duration duration = const Duration(milliseconds: 300),
-    double begin = 0.8,
-    Curve curve = Curves.elasticOut,
-  }) {
-    return ScaleTransition(
-      scale: Tween<double>(
-        begin: begin,
-        end: 1,
-      ).animate(
-        CurvedAnimation(
-          parent: AnimationController(
-            duration: duration,
-            vsync: _getVSync(),
-          )..forward(),
-          curve: curve,
-        ),
-      ),
-      child: this,
-    );
-  }
-
   // Container extensions
   Widget backgroundColor(Color color) {
     return ColoredBox(
@@ -351,17 +290,112 @@ extension WidgetExtension on Widget {
     );
   }
 
-  // Helper for VSync (needs to be used in StatefulWidget)
-  TickerProvider? _getVSync() {
-    // This should be overridden when used
-    return null;
+  // Simple animations without VSync
+  Widget fadeIn({
+    Duration duration = const Duration(milliseconds: 300),
+    Curve curve = Curves.easeIn,
+  }) {
+    return AnimatedOpacity(
+      opacity: 1.0,
+      duration: duration,
+      curve: curve,
+      child: this,
+    );
+  }
+
+  Widget slideIn({
+    Duration duration = const Duration(milliseconds: 300),
+    Offset begin = const Offset(1, 0),
+    Curve curve = Curves.easeOut,
+  }) {
+    return TweenAnimationBuilder<Offset>(
+      tween: Tween<Offset>(begin: begin, end: Offset.zero),
+      duration: duration,
+      curve: curve,
+      builder: (context, offset, child) {
+        return Transform.translate(
+          offset: offset * 100, // Convert to pixels
+          child: child,
+        );
+      },
+      child: this,
+    );
+  }
+
+  Widget scaleIn({
+    Duration duration = const Duration(milliseconds: 300),
+    double begin = 0.8,
+    Curve curve = Curves.elasticOut,
+  }) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: begin, end: 1.0),
+      duration: duration,
+      curve: curve,
+      builder: (context, scale, child) {
+        return Transform.scale(
+          scale: scale,
+          child: child,
+        );
+      },
+      child: this,
+    );
+  }
+
+  Widget sizeTransition({
+    Duration duration = const Duration(milliseconds: 300),
+    Axis axis = Axis.vertical,
+    Curve curve = Curves.easeOut,
+  }) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: duration,
+      curve: curve,
+      builder: (context, factor, child) {
+        if (axis == Axis.vertical) {
+          return ClipRect(
+            child: Align(
+              alignment: Alignment.topCenter,
+              heightFactor: factor,
+              child: child,
+            ),
+          );
+        } else {
+          return ClipRect(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              widthFactor: factor,
+              child: child,
+            ),
+          );
+        }
+      },
+      child: this,
+    );
+  }
+
+  Widget rotationTransition({
+    Duration duration = const Duration(milliseconds: 300),
+    Curve curve = Curves.easeOut,
+  }) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: duration,
+      curve: curve,
+      builder: (context, turns, child) {
+        return Transform.rotate(
+          angle: turns * 2 * 3.14159, // Full rotation
+          child: child,
+        );
+      },
+      child: this,
+    );
   }
 }
 
 extension ListWidgetExtension on List<Widget> {
   // Add spacing between widgets
   List<Widget> spaced(double space) {
-    final List<Widget> result = <Widget>[];
+    final result = <Widget>[];
     for (int i = 0; i < length; i++) {
       result.add(this[i]);
       if (i < length - 1) {

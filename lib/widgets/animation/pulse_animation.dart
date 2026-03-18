@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class PulseAnimation extends StatefulWidget {
-
-  const PulseAnimation({
-    required this.child, super.key,
-    this.animate = true,
-    this.duration = const Duration(milliseconds: 800),
-    this.minScale = 1.0,
-    this.maxScale = 1.1,
-    this.curve = Curves.easeInOut,
-  });
   final Widget child;
   final bool animate;
   final Duration duration;
   final double minScale;
   final double maxScale;
   final Curve curve;
+
+  const PulseAnimation({
+    super.key,
+    required this.child,
+    this.animate = true,
+    this.duration = const Duration(milliseconds: 800),
+    this.minScale = 1.0,
+    this.maxScale = 1.1,
+    this.curve = Curves.easeInOut,
+  });
 
   @override
   State<PulseAnimation> createState() => _PulseAnimationState();
@@ -49,7 +51,7 @@ class _PulseAnimationState extends State<PulseAnimation> with SingleTickerProvid
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: widget.curve,
-    ),);
+    ));
 
     if (widget.animate) {
       _controller.repeat(reverse: true);
@@ -90,6 +92,10 @@ class _PulseAnimationState extends State<PulseAnimation> with SingleTickerProvid
 }
 
 class CircularPulseAnimation extends StatefulWidget {
+  final Color color;
+  final double size;
+  final Duration duration;
+  final int ringCount;
 
   const CircularPulseAnimation({
     super.key,
@@ -98,10 +104,6 @@ class CircularPulseAnimation extends StatefulWidget {
     this.duration = const Duration(seconds: 2),
     this.ringCount = 3,
   });
-  final Color color;
-  final double size;
-  final Duration duration;
-  final int ringCount;
 
   @override
   State<CircularPulseAnimation> createState() => _CircularPulseAnimationState();
@@ -148,28 +150,28 @@ class _CircularPulseAnimationState extends State<CircularPulseAnimation> with Si
 }
 
 class _CircularPulsePainter extends CustomPainter {
+  final Color color;
+  final double progress;
+  final int ringCount;
 
   _CircularPulsePainter({
     required this.color,
     required this.progress,
     required this.ringCount,
   });
-  final Color color;
-  final double progress;
-  final int ringCount;
 
   @override
   void paint(Canvas canvas, Size size) {
     final Offset center = Offset(size.width / 2, size.height / 2);
     final double maxRadius = size.width / 2;
 
-    for (var i = 0; i < ringCount; i++) {
+    for (int i = 0; i < ringCount; i++) {
       final double ringProgress = (progress + i / ringCount) % 1.0;
       final double radius = maxRadius * (0.3 + ringProgress * 0.7);
       final double opacity = (1.0 - ringProgress).clamp(0.0, 1.0);
 
       final Paint paint = Paint()
-        ..color = color.withValues(alpha: opacity * 0.3)
+        ..color = color.withOpacity(opacity * 0.3)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2;
 
@@ -184,17 +186,18 @@ class _CircularPulsePainter extends CustomPainter {
 }
 
 class ScaleInAnimation extends StatefulWidget {
-
-  const ScaleInAnimation({
-    required this.child, super.key,
-    this.duration = const Duration(milliseconds: 300),
-    this.begin = 0.8,
-    this.curve = Curves.elasticOut,
-  });
   final Widget child;
   final Duration duration;
   final double begin;
   final Curve curve;
+
+  const ScaleInAnimation({
+    super.key,
+    required this.child,
+    this.duration = const Duration(milliseconds: 300),
+    this.begin = 0.8,
+    this.curve = Curves.elasticOut,
+  });
 
   @override
   State<ScaleInAnimation> createState() => _ScaleInAnimationState();
@@ -222,11 +225,11 @@ class _ScaleInAnimationState extends State<ScaleInAnimation> with SingleTickerPr
 
     _animation = Tween<double>(
       begin: widget.begin,
-      end: 1,
+      end: 1.0,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: widget.curve,
-    ),);
+    ));
 
     _controller.forward();
   }
@@ -252,17 +255,18 @@ class _ScaleInAnimationState extends State<ScaleInAnimation> with SingleTickerPr
 }
 
 class SlideInAnimation extends StatefulWidget {
-
-  const SlideInAnimation({
-    required this.child, super.key,
-    this.duration = const Duration(milliseconds: 300),
-    this.begin = const Offset(0, 0.1),
-    this.curve = Curves.easeOut,
-  });
   final Widget child;
   final Duration duration;
   final Offset begin;
   final Curve curve;
+
+  const SlideInAnimation({
+    super.key,
+    required this.child,
+    this.duration = const Duration(milliseconds: 300),
+    this.begin = const Offset(0, 0.1),
+    this.curve = Curves.easeOut,
+  });
 
   @override
   State<SlideInAnimation> createState() => _SlideInAnimationState();
@@ -294,7 +298,7 @@ class _SlideInAnimationState extends State<SlideInAnimation> with SingleTickerPr
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: widget.curve,
-    ),);
+    ));
 
     _controller.forward();
   }
@@ -309,6 +313,128 @@ class _SlideInAnimationState extends State<SlideInAnimation> with SingleTickerPr
   Widget build(BuildContext context) {
     return SlideTransition(
       position: _animation,
+      child: widget.child,
+    );
+  }
+}
+
+// Bounce animation
+class BounceAnimation extends StatefulWidget {
+  final Widget child;
+  final Duration duration;
+  final double height;
+  final Curve curve;
+
+  const BounceAnimation({
+    super.key,
+    required this.child,
+    this.duration = const Duration(milliseconds: 500),
+    this.height = 10.0,
+    this.curve = Curves.easeInOut,
+  });
+
+  @override
+  State<BounceAnimation> createState() => _BounceAnimationState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<Duration>('duration', duration));
+    properties.add(DoubleProperty('height', height));
+    properties.add(DiagnosticsProperty<Curve>('curve', curve));
+  }
+}
+
+class _BounceAnimationState extends State<BounceAnimation> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    )..repeat(reverse: true);
+
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: widget.curve,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (BuildContext context, Widget? child) {
+        return Transform.translate(
+          offset: Offset(0, -widget.height * _animation.value),
+          child: widget.child,
+        );
+      },
+    );
+  }
+}
+
+// Rotate animation
+class RotateAnimation extends StatefulWidget {
+  final Widget child;
+  final Duration duration;
+  final bool isInfinite;
+
+  const RotateAnimation({
+    super.key,
+    required this.child,
+    this.duration = const Duration(seconds: 2),
+    this.isInfinite = true,
+  });
+
+  @override
+  State<RotateAnimation> createState() => _RotateAnimationState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<Duration>('duration', duration));
+    properties.add(DiagnosticsProperty<bool>('isInfinite', isInfinite));
+  }
+}
+
+class _RotateAnimationState extends State<RotateAnimation> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    );
+
+    if (widget.isInfinite) {
+      _controller.repeat();
+    } else {
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RotationTransition(
+      turns: _controller,
       child: widget.child,
     );
   }

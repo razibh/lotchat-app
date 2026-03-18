@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 
 class AppTabController extends ChangeNotifier {
   int _currentIndex = 0;
@@ -36,14 +37,16 @@ class AppTabController extends ChangeNotifier {
 
 // Custom Tab Bar with Indicator
 class CustomTabBar extends StatelessWidget implements PreferredSizeWidget {
-
   const CustomTabBar({
-    required this.tabs, required this.controller, super.key,
+    super.key,
+    required this.tabs,
+    required this.controller,
     this.indicatorColor,
     this.labelColor,
     this.unselectedLabelColor,
     this.isScrollable = false,
   });
+
   final List<Tab> tabs;
   final TabController controller;
   final Color? indicatorColor;
@@ -56,7 +59,7 @@ class CustomTabBar extends StatelessWidget implements PreferredSizeWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Theme.of(context).appBarTheme.backgroundColor,
-        boxShadow: <>[
+        boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 5,
@@ -93,13 +96,15 @@ class CustomTabBar extends StatelessWidget implements PreferredSizeWidget {
 
 // Animated Tab Bar
 class AnimatedTabBar extends StatefulWidget {
-
   const AnimatedTabBar({
-    required this.tabs, required this.onTabChanged, super.key,
+    super.key,
+    required this.tabs,
+    required this.onTabChanged,
     this.initialIndex = 0,
     this.activeColor,
     this.inactiveColor,
   });
+
   final List<Widget> tabs;
   final int initialIndex;
   final ValueChanged<int> onTabChanged;
@@ -119,7 +124,7 @@ class AnimatedTabBar extends StatefulWidget {
   }
 }
 
-class _AnimatedTabBarState extends State<AnimatedTabBar> 
+class _AnimatedTabBarState extends State<AnimatedTabBar>
     with SingleTickerProviderStateMixin {
   late int _currentIndex;
   late AnimationController _animationController;
@@ -183,7 +188,7 @@ class _AnimatedTabBarState extends State<AnimatedTabBar>
                     decoration: BoxDecoration(
                       color: _currentIndex == index
                           ? (widget.activeColor ?? Theme.of(context).primaryColor)
-                              .withValues(alpha: 0.1 + _animations[index].value * 0.1)
+                          .withValues(alpha: 0.1 + _animations[index].value * 0.1)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(21),
                     ),
@@ -206,11 +211,13 @@ class _AnimatedTabBarState extends State<AnimatedTabBar>
 
 // Custom Tab for Tab Bar
 class CustomTab extends StatelessWidget {
-
   const CustomTab({
-    required this.icon, required this.label, super.key,
+    super.key,
+    required this.icon,
+    required this.label,
     this.isSelected = false,
   });
+
   final IconData icon;
   final String label;
   final bool isSelected;
@@ -221,10 +228,10 @@ class CustomTab extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
+        children: [
           Icon(
             icon,
-            color: isSelected 
+            color: isSelected
                 ? Theme.of(context).primaryColor
                 : Colors.grey,
             size: 20,
@@ -234,7 +241,7 @@ class CustomTab extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 12,
-              color: isSelected 
+              color: isSelected
                   ? Theme.of(context).primaryColor
                   : Colors.grey,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

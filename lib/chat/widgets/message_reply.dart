@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 import '../models/message_model.dart';
 
 class MessageReply extends StatelessWidget {
-
   const MessageReply({
-    required this.message, required this.onCancel, super.key,
+    super.key,
+    required this.message,
+    required this.onCancel,
   });
+
   final MessageModel message;
   final VoidCallback onCancel;
 
@@ -18,7 +21,7 @@ class MessageReply extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
       ),
       child: Row(
-        children: <>[
+        children: [
           Container(
             width: 4,
             height: 40,
@@ -31,7 +34,7 @@ class MessageReply extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   message.senderName,
                   style: const TextStyle(

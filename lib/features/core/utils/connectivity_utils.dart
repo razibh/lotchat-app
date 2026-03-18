@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../core/di/service_locator.dart';
 import '../services/connectivity_service.dart';
 
+// ConnectionStatus enum টি import করতে হবে
+import '../services/connectivity_service.dart' show ConnectionStatus;
+
 class ConnectivityUtils {
-  static final ConnectivityService _connectivityService = 
-      ServiceLocator().get<ConnectivityService>();
+  static final ConnectivityService _connectivityService =
+  ServiceLocator().get<ConnectivityService>();
 
   // Check if connected
   static Future<bool> isConnected() async {
@@ -36,7 +40,7 @@ class ConnectivityUtils {
         builder: (BuildContext context) => AlertDialog(
           title: const Text('No Internet Connection'),
           content: const Text('Please check your internet connection and try again.'),
-          actions: <>[
+          actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('OK'),
@@ -58,9 +62,9 @@ class ConnectivityUtils {
 
   // Execute with connection check
   static Future<T?> withConnectionCheck<T>(
-    BuildContext context,
-    Future<T> Function() action,
-  ) async {
+      BuildContext context,
+      Future<T> Function() action,
+      ) async {
     if (await isConnected()) {
       return action();
     } else {

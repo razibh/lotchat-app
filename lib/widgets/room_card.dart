@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../core/models/room_model.dart';
 import 'animation/pulse_animation.dart';
-import 'badge_widget.dart';
 
 class RoomCard extends StatelessWidget {
-
-  const RoomCard({
-    required this.room, required this.onTap, super.key,
-  });
   final RoomModel room;
   final VoidCallback onTap;
+
+  const RoomCard({
+    super.key,
+    required this.room,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,23 +24,23 @@ class RoomCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           image: room.coverImage != null
               ? DecorationImage(
-                  image: NetworkImage(room.coverImage!),
-                  fit: BoxFit.cover,
-                )
+            image: NetworkImage(room.coverImage!),
+            fit: BoxFit.cover,
+          )
               : null,
           gradient: room.coverImage == null
               ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: <>[
-                    Colors.primaries[room.name.hashCode % Colors.primaries.length],
-                    Colors.primaries[(room.name.hashCode + 1) % Colors.primaries.length],
-                  ],
-                )
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.primaries[room.name.hashCode % Colors.primaries.length],
+              Colors.primaries[(room.name.hashCode + 1) % Colors.primaries.length],
+            ],
+          )
               : null,
         ),
         child: Stack(
-          children: <>[
+          children: [
             // Dark Overlay
             Positioned.fill(
               child: Container(
@@ -47,9 +49,9 @@ class RoomCard extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: <>[
+                    colors: [
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.7),
+                      Colors.black.withOpacity(0.7),
                     ],
                   ),
                 ),
@@ -65,10 +67,10 @@ class RoomCard extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     // Room Name
                     Row(
-                      children: <>[
+                      children: [
                         Expanded(
                           child: Text(
                             room.name,
@@ -90,12 +92,12 @@ class RoomCard extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: <>[Colors.red, Colors.orange],
+                                  colors: [Colors.red, Colors.orange],
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Row(
-                                children: <>[
+                                children: [
                                   Icon(
                                     Icons.emoji_events,
                                     color: Colors.white,
@@ -121,10 +123,15 @@ class RoomCard extends StatelessWidget {
 
                     // Host Info
                     Row(
-                      children: <>[
+                      children: [
                         CircleAvatar(
                           radius: 12,
-                          backgroundImage: NetworkImage(room.hostAvatar),
+                          backgroundImage: room.hostAvatar != null
+                              ? NetworkImage(room.hostAvatar!)
+                              : null,
+                          child: room.hostAvatar == null
+                              ? Text(room.hostName[0].toUpperCase())
+                              : null,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -143,7 +150,7 @@ class RoomCard extends StatelessWidget {
 
                     // Room Stats
                     Row(
-                      children: <>[
+                      children: [
                         const Icon(
                           Icons.people,
                           color: Colors.white70,
@@ -178,14 +185,14 @@ class RoomCard extends StatelessWidget {
 
                     // Category & Tags
                     Row(
-                      children: <>[
+                      children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.3),
+                            color: Colors.blue.withOpacity(0.3),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -204,11 +211,11 @@ class RoomCard extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.orange.withValues(alpha: 0.3),
+                              color: Colors.orange.withOpacity(0.3),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Row(
-                              children: <>[
+                              children: [
                                 Icon(
                                   Icons.lock,
                                   color: Colors.white,
@@ -233,40 +240,41 @@ class RoomCard extends StatelessWidget {
             ),
 
             // Live Indicator
-            Positioned(
-              top: 12,
-              right: 12,
-              child: PulseAnimation(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    children: <>[
-                      Icon(
-                        Icons.fiber_manual_record,
-                        color: Colors.white,
-                        size: 10,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'LIVE',
-                        style: TextStyle(
+            if (room.isActive)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: PulseAnimation(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.fiber_manual_record,
                           color: Colors.white,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
+                          size: 10,
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 4),
+                        Text(
+                          'LIVE',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -294,18 +302,18 @@ class RoomCardSkeleton extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Stack(
-        children: <>[
+        children: [
           // Shimmer Effect
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: <>[
+                  colors: [
                     Colors.grey.shade300,
                     Colors.grey.shade100,
                     Colors.grey.shade300,
                   ],
-                  stops: const <num>[0, 0.5, 1],
+                  stops: const [0.0, 0.5, 1.0],
                   begin: const Alignment(-1, -0.5),
                   end: const Alignment(1, 0.5),
                 ),
@@ -320,7 +328,7 @@ class RoomCardSkeleton extends StatelessWidget {
             right: 16,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Container(
                   width: 150,
                   height: 20,
@@ -342,6 +350,252 @@ class RoomCardSkeleton extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// Room Card Grid variant
+class RoomCardGrid extends StatelessWidget {
+  final RoomModel room;
+  final VoidCallback onTap;
+
+  const RoomCardGrid({
+    super.key,
+    required this.room,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          image: room.coverImage != null
+              ? DecorationImage(
+            image: NetworkImage(room.coverImage!),
+            fit: BoxFit.cover,
+          )
+              : null,
+          color: Colors.primaries[room.name.hashCode % Colors.primaries.length],
+        ),
+        child: Stack(
+          children: [
+            // Dark Overlay
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.7),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Content
+            Positioned(
+              bottom: 8,
+              left: 8,
+              right: 8,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    room.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.people,
+                        color: Colors.white70,
+                        size: 12,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${room.viewerCount}',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Live Badge
+            if (room.isActive)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'LIVE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Horizontal Room Card
+class RoomCardHorizontal extends StatelessWidget {
+  final RoomModel room;
+  final VoidCallback onTap;
+
+  const RoomCardHorizontal({
+    super.key,
+    required this.room,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 280,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          image: room.coverImage != null
+              ? DecorationImage(
+            image: NetworkImage(room.coverImage!),
+            fit: BoxFit.cover,
+          )
+              : null,
+          color: Colors.primaries[room.name.hashCode % Colors.primaries.length],
+        ),
+        child: Stack(
+          children: [
+            // Dark Overlay
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.7),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Content
+            Positioned(
+              bottom: 12,
+              left: 12,
+              right: 12,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    room.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 10,
+                        backgroundImage: room.hostAvatar != null
+                            ? NetworkImage(room.hostAvatar!)
+                            : null,
+                        child: room.hostAvatar == null
+                            ? Text(room.hostName[0].toUpperCase(), style: const TextStyle(fontSize: 8))
+                            : null,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        room.hostName,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.people, color: Colors.white70, size: 12),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${room.viewerCount}',
+                        style: const TextStyle(color: Colors.white70, fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Live Badge
+            if (room.isActive)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'LIVE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

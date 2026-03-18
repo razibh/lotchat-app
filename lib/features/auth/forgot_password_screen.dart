@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../core/di/service_locator.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/utils/validators.dart';
@@ -16,9 +15,9 @@ class ForgotPasswordScreen extends StatefulWidget {
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> 
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     with LoadingMixin, ToastMixin, FormMixin {
-  
+
   final AuthService _authService = ServiceLocator().get<AuthService>();
   final TextEditingController _emailController = TextEditingController();
   bool _emailSent = false;
@@ -31,7 +30,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
   Future<void> _sendResetEmail() async {
     if (!validateForm()) return;
-    
+
     await runWithLoading(() async {
       try {
         await _authService.resetPassword(_emailController.text.trim());
@@ -58,15 +57,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
             key: formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <>[
+              children: [
                 const SizedBox(height: 40),
-                
+
                 // Icon
                 Container(
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
+                    color: Colors.blue.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -76,7 +75,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Title
                 const Text(
                   'Reset Password',
@@ -87,7 +86,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Description
                 const Text(
                   "Enter your email address and we'll send you a link to reset your password.",
@@ -98,9 +97,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Email Field
-                if (!_emailSent) ...<>[
+                if (!_emailSent) ...[
                   CustomTextField(
                     controller: _emailController,
                     label: 'Email',
@@ -109,23 +108,23 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                     validator: Validators.validateEmail,
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Send Button
                   CustomButton(
                     text: 'Send Reset Link',
                     onPressed: _sendResetEmail,
                     isLoading: isButtonLoading,
                   ),
-                ] else ...<>[
+                ] else ...[
                   // Success Message
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.1),
+                      color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(
-                      children: <>[
+                      children: [
                         const Icon(
                           Icons.check_circle,
                           color: Colors.green,

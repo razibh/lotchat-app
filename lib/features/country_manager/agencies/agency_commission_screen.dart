@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/gradient_background.dart';
 import '../../../core/widgets/neumorphic_button.dart';
 import '../../../core/widgets/neumorphic_text_field.dart';
 
 class AgencyCommissionScreen extends StatefulWidget {
-
-  const AgencyCommissionScreen({
-    required this.managerId, required this.agencyId, required this.agencyName, super.key,
-  });
   final String managerId;
   final String agencyId;
   final String agencyName;
+
+  const AgencyCommissionScreen({
+    required this.managerId,
+    required this.agencyId,
+    required this.agencyName,
+    super.key,
+  });
 
   @override
   State<AgencyCommissionScreen> createState() => _AgencyCommissionScreenState();
@@ -28,12 +32,12 @@ class AgencyCommissionScreen extends StatefulWidget {
 class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
-  
+
   // Agency Commission Data
   AgencyCommission? _agencyCommission;
-  List<HostCommission> _hostCommissions = <HostCommission>[];
-  List<CommissionTransaction> _transactions = <CommissionTransaction>[];
-  List<CommissionRule> _commissionRules = <CommissionRule>[];
+  List<HostCommission> _hostCommissions = [];
+  List<CommissionTransaction> _transactions = [];
+  List<CommissionRule> _commissionRules = [];
 
   // Summary Stats
   double _totalCommission = 0;
@@ -60,17 +64,17 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(seconds: 1));
 
-    // Sample data generation
+    // Sample data generation - সব int মানকে double এ convert করা হয়েছে
     _agencyCommission = AgencyCommission(
       agencyId: widget.agencyId,
       agencyName: widget.agencyName,
-      baseCommissionRate: 10,
-      totalEarnings: 1250000,
-      totalCommission: 125000,
-      paidCommission: 85000,
-      pendingCommission: 40000,
-      thisMonthEarnings: 145000,
-      thisMonthCommission: 14500,
+      baseCommissionRate: 10.0,
+      totalEarnings: 1250000.0,
+      totalCommission: 125000.0,
+      paidCommission: 85000.0,
+      pendingCommission: 40000.0,
+      thisMonthEarnings: 145000.0,
+      thisMonthCommission: 14500.0,
       lastPaymentDate: DateTime.now().subtract(const Duration(days: 5)),
       nextPaymentDate: DateTime.now().add(const Duration(days: 25)),
       commissionStructure: 'Tiered',
@@ -83,17 +87,17 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
     _commissionRules = _generateCommissionRules();
 
     _calculateStats();
-    
+
     setState(() => _isLoading = false);
   }
 
   List<HostCommission> _generateHostCommissions(int count) {
-    final var hosts = <HostCommission><HostCommission><dynamic>[];
+    final hosts = <HostCommission>[];
     for (var i = 0; i < count; i++) {
-      final var earnings = 50000 + (i * 15000);
-      final var rate = 8 + (i % 8);
-      final var commission = earnings * rate / 100;
-      
+      final earnings = (50000 + (i * 15000)).toDouble(); // int to double
+      final rate = (8 + (i % 8)).toDouble(); // int to double
+      final commission = earnings * rate / 100;
+
       hosts.add(HostCommission(
         hostId: 'host_${100 + i}',
         hostName: 'Host ${i + 1}',
@@ -108,15 +112,15 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
         status: i % 3 == 0 ? 'Active' : (i % 3 == 1 ? 'Pending' : 'Suspended'),
         performanceScore: 70 + (i % 30),
         rank: i + 1,
-      ),);
+      ));
     }
     return hosts;
   }
 
   List<CommissionTransaction> _generateTransactions(int count) {
-    final var transactions = <CommissionTransaction><CommissionTransaction><dynamic>[];
+    final transactions = <CommissionTransaction>[];
     for (var i = 0; i < count; i++) {
-      final var amount = 5000 + (i * 2000);
+      final amount = (5000 + (i * 2000)).toDouble(); // int to double
       transactions.add(CommissionTransaction(
         id: 'txn_${100 + i}',
         date: DateTime.now().subtract(Duration(days: i * 3)),
@@ -126,46 +130,46 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
         description: i % 2 == 0 ? 'Monthly commission' : 'Host earnings commission',
         reference: 'REF${1000 + i}',
         fromTo: i % 2 == 0 ? 'Platform to Agency' : 'Agency to Bank',
-      ),);
+      ));
     }
     return transactions;
   }
 
   List<CommissionRule> _generateCommissionRules() {
-    return <CommissionRule>[
+    return [
       CommissionRule(
         id: 'rule_1',
         name: 'Base Rule',
-        minEarnings: 0,
-        maxEarnings: 50000,
-        rate: 8,
+        minEarnings: 0.0,
+        maxEarnings: 50000.0,
+        rate: 8.0,
         description: 'Standard commission for earnings up to 50k',
         isActive: true,
       ),
       CommissionRule(
         id: 'rule_2',
         name: 'Silver Tier',
-        minEarnings: 50001,
-        maxEarnings: 100000,
-        rate: 10,
+        minEarnings: 50001.0,
+        maxEarnings: 100000.0,
+        rate: 10.0,
         description: 'Increased commission for 50k-100k earnings',
         isActive: true,
       ),
       CommissionRule(
         id: 'rule_3',
         name: 'Gold Tier',
-        minEarnings: 100001,
-        maxEarnings: 200000,
-        rate: 12,
+        minEarnings: 100001.0,
+        maxEarnings: 200000.0,
+        rate: 12.0,
         description: 'Premium rate for top performers',
         isActive: true,
       ),
       CommissionRule(
         id: 'rule_4',
         name: 'Platinum Tier',
-        minEarnings: 200001,
+        minEarnings: 200001.0,
         maxEarnings: double.infinity,
-        rate: 15,
+        rate: 15.0,
         description: 'Maximum commission rate',
         isActive: true,
       ),
@@ -173,14 +177,14 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
   }
 
   void _calculateStats() {
-    _totalCommission = _agencyCommission?.totalCommission ?? 0;
-    _paidCommission = _agencyCommission?.paidCommission ?? 0;
-    _pendingCommission = _agencyCommission?.pendingCommission ?? 0;
-    _thisMonthCommission = _agencyCommission?.thisMonthCommission ?? 0;
+    _totalCommission = _agencyCommission?.totalCommission ?? 0.0;
+    _paidCommission = _agencyCommission?.paidCommission ?? 0.0;
+    _pendingCommission = _agencyCommission?.pendingCommission ?? 0.0;
+    _thisMonthCommission = _agencyCommission?.thisMonthCommission ?? 0.0;
     _totalHosts = _hostCommissions.length;
-    _averageCommissionRate = _hostCommissions.isEmpty 
-        ? 0 
-        : _hostCommissions.fold(0, (int sum, HostCommission h) => sum + h.commissionRate) / _hostCommissions.length;
+    _averageCommissionRate = _hostCommissions.isEmpty
+        ? 0.0
+        : _hostCommissions.fold(0.0, (sum, h) => sum + h.commissionRate) / _hostCommissions.length;
   }
 
   @override
@@ -189,9 +193,9 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
-              if (!_isLoading) ...<>[
+              if (!_isLoading) ...[
                 _buildSummaryCards(),
                 _buildTabBar(),
               ],
@@ -199,13 +203,13 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : TabBarView(
-                        controller: _tabController,
-                        children: <>[
-                          _buildOverviewTab(),
-                          _buildHostsTab(),
-                          _buildTransactionsTab(),
-                        ],
-                      ),
+                  controller: _tabController,
+                  children: [
+                    _buildOverviewTab(),
+                    _buildHostsTab(),
+                    _buildTransactionsTab(),
+                  ],
+                ),
               ),
             ],
           ),
@@ -218,7 +222,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -227,7 +231,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 const Text(
                   'Commission Management',
                   style: TextStyle(
@@ -246,7 +250,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.2),
+              color: Colors.green.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -263,9 +267,9 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
-        children: <>[
+        children: [
           Row(
-            children: <>[
+            children: [
               Expanded(
                 child: _buildSummaryCard(
                   'Total Commission',
@@ -296,7 +300,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
           ),
           const SizedBox(height: 8),
           Row(
-            children: <>[
+            children: [
               Expanded(
                 child: _buildSummaryCard(
                   'This Month',
@@ -334,12 +338,12 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Column(
-        children: <>[
+        children: [
           Icon(icon, color: color, size: 18),
           const SizedBox(height: 4),
           Text(
@@ -359,7 +363,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
     return Container(
       margin: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(30),
       ),
       child: TabBar(
@@ -370,7 +374,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
         ),
         labelColor: Colors.white,
         unselectedLabelColor: Colors.white70,
-        tabs: const <>[
+        tabs: const [
           Tab(text: 'Overview'),
           Tab(text: 'Hosts'),
           Tab(text: 'Transactions'),
@@ -383,7 +387,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
-        children: <>[
+        children: [
           _buildAgencyInfoCard(),
           const SizedBox(height: 20),
           _buildCommissionRulesCard(),
@@ -403,24 +407,24 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <>[
-            Colors.purple.withValues(alpha: 0.3),
-            Colors.blue.withValues(alpha: 0.3),
+          colors: [
+            Colors.purple.withOpacity(0.3),
+            Colors.blue.withOpacity(0.3),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Column(
-        children: <>[
+        children: [
           Row(
-            children: <>[
+            children: [
               const Icon(Icons.business, color: Colors.white, size: 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     Text(
                       widget.agencyName,
                       style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -435,7 +439,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.2),
+                  color: Colors.green.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(
@@ -450,7 +454,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <>[
+            children: [
               _buildInfoItem('Total Earnings', '৳${_agencyCommission?.totalEarnings ?? 0}'),
               _buildInfoItem('Commission Rate', '${_agencyCommission?.baseCommissionRate ?? 0}%'),
               _buildInfoItem('Payment Method', _agencyCommission?.paymentMethod ?? 'N/A'),
@@ -463,7 +467,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
 
   Widget _buildInfoItem(String label, String value) {
     return Column(
-      children: <>[
+      children: [
         Text(
           value,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -480,15 +484,15 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <>[
+            children: [
               Text(
                 'Commission Rules',
                 style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -497,7 +501,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
             ],
           ),
           const SizedBox(height: 16),
-          ..._commissionRules.map(_buildRuleTile),
+          ..._commissionRules.map(_buildRuleTile).toList(),
         ],
       ),
     );
@@ -508,18 +512,18 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: rule.isActive ? Colors.green.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
+        color: rule.isActive ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: rule.isActive ? Colors.green.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.3),
+          color: rule.isActive ? Colors.green.withOpacity(0.3) : Colors.grey.withOpacity(0.3),
         ),
       ),
       child: Row(
-        children: <>[
+        children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   rule.name,
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -533,11 +537,11 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: <>[
+            children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.purple.withValues(alpha: 0.2),
+                  color: Colors.purple.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -560,12 +564,12 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           const Text(
             'Payment Information',
             style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -573,15 +577,15 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
           const SizedBox(height: 16),
           _buildPaymentRow('Payment Method', _agencyCommission?.paymentMethod ?? 'N/A'),
           _buildPaymentRow('Bank Details', _agencyCommission?.bankDetails ?? 'N/A'),
-          _buildPaymentRow('Last Payment', _agencyCommission?.lastPaymentDate != null 
-              ? _formatDate(_agencyCommission!.lastPaymentDate!) 
-              : 'No payments yet',),
-          _buildPaymentRow('Next Payment', _agencyCommission?.nextPaymentDate != null 
-              ? _formatDate(_agencyCommission!.nextPaymentDate!) 
-              : 'Not scheduled',),
+          _buildPaymentRow('Last Payment', _agencyCommission?.lastPaymentDate != null
+              ? _formatDate(_agencyCommission!.lastPaymentDate!)
+              : 'No payments yet'),
+          _buildPaymentRow('Next Payment', _agencyCommission?.nextPaymentDate != null
+              ? _formatDate(_agencyCommission!.nextPaymentDate!)
+              : 'Not scheduled'),
           const SizedBox(height: 16),
           Row(
-            children: <>[
+            children: [
               Expanded(
                 child: _buildPaymentAction('Request Payout', Colors.green, () {}),
               ),
@@ -601,7 +605,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
           Expanded(
             child: Text(
@@ -621,9 +625,9 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
+          color: color.withOpacity(0.2),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.5)),
+          border: Border.all(color: color.withOpacity(0.5)),
         ),
         child: Center(
           child: Text(
@@ -639,12 +643,12 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           const Text(
             'Monthly Commission',
             style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -654,13 +658,13 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
             height: 150,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: <>[
-                _buildChartBar('Jan', 65),
-                _buildChartBar('Feb', 45),
-                _buildChartBar('Mar', 80),
-                _buildChartBar('Apr', 70),
-                _buildChartBar('May', 90),
-                _buildChartBar('Jun', 55),
+              children: [
+                _buildChartBar('Jan', 65.0),
+                _buildChartBar('Feb', 45.0),
+                _buildChartBar('Mar', 80.0),
+                _buildChartBar('Apr', 70.0),
+                _buildChartBar('May', 90.0),
+                _buildChartBar('Jun', 55.0),
               ],
             ),
           ),
@@ -671,25 +675,25 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
 
   Widget _buildChartBar(String month, double percentage) {
     return Column(
-      children: <>[
+      children: [
         Container(
           width: 30,
           height: 100,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: Colors.white.withOpacity(0.1),
             borderRadius: BorderRadius.circular(15),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
-            children: <>[
+            children: [
               Container(
                 height: percentage,
                 width: 30,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: <>[
+                    colors: [
                       Colors.purple,
-                      Colors.purple.withValues(alpha: 0.5),
+                      Colors.purple.withOpacity(0.5),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(15),
@@ -710,13 +714,13 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
   Widget _buildRecentTransactions() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         const Text(
           'Recent Transactions',
           style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        ..._transactions.take(5).map(_buildTransactionTile),
+        ..._transactions.take(5).map(_buildTransactionTile).toList(),
         if (_transactions.length > 5)
           Center(
             child: TextButton(
@@ -732,14 +736,14 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
 
   Widget _buildHostsTab() {
     return Column(
-      children: <>[
+      children: [
         _buildHostSummary(),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(20),
             itemCount: _hostCommissions.length,
             itemBuilder: (BuildContext context, int index) {
-              final HostCommission host = _hostCommissions[index];
+              final host = _hostCommissions[index];
               return _buildHostCommissionTile(host);
             },
           ),
@@ -749,19 +753,19 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
   }
 
   Widget _buildHostSummary() {
-    final var totalHostEarnings = _hostCommissions.fold(0, (num sum, HostCommission h) => sum + h.monthlyEarnings);
-    final var totalHostCommission = _hostCommissions.fold(0, (num sum, HostCommission h) => sum + h.commissionAmount);
+    final totalHostEarnings = _hostCommissions.fold(0.0, (sum, h) => sum + h.monthlyEarnings);
+    final totalHostCommission = _hostCommissions.fold(0.0, (sum, h) => sum + h.commissionAmount);
 
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.1),
+        color: Colors.blue.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: <>[
+        children: [
           _buildHostSummaryItem('Total Hosts', '${_hostCommissions.length}'),
           _buildHostSummaryItem('Total Earnings', '৳${totalHostEarnings.toStringAsFixed(0)}'),
           _buildHostSummaryItem('Total Commission', '৳${totalHostCommission.toStringAsFixed(0)}'),
@@ -772,7 +776,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
 
   Widget _buildHostSummaryItem(String label, String value) {
     return Column(
-      children: <>[
+      children: [
         Text(
           value,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -786,20 +790,20 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
   }
 
   Widget _buildHostCommissionTile(HostCommission host) {
-    final MaterialColor statusColor = host.status == 'Active' ? Colors.green : 
-                        host.status == 'Pending' ? Colors.orange : Colors.red;
+    final statusColor = host.status == 'Active' ? Colors.green :
+    host.status == 'Pending' ? Colors.orange : Colors.red;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        children: <>[
+        children: [
           Row(
-            children: <>[
+            children: [
               CircleAvatar(
                 radius: 20,
                 backgroundColor: Colors.purple,
@@ -812,9 +816,9 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     Row(
-                      children: <>[
+                      children: [
                         Expanded(
                           child: Text(
                             host.hostName,
@@ -824,7 +828,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.2),
+                            color: statusColor.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -846,7 +850,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <>[
+            children: [
               _buildHostStat('Earnings', '৳${host.monthlyEarnings}'),
               _buildHostStat('Rate', '${host.commissionRate}%'),
               _buildHostStat('Commission', '৳${host.commissionAmount}'),
@@ -855,7 +859,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
           ),
           const SizedBox(height: 12),
           Row(
-            children: <>[
+            children: [
               Expanded(
                 child: _buildHostAction('Details', Colors.blue, () {
                   _showHostCommissionDetails(host);
@@ -882,7 +886,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
 
   Widget _buildHostStat(String label, String value) {
     return Column(
-      children: <>[
+      children: [
         Text(
           value,
           style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
@@ -901,9 +905,9 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
+          color: color.withOpacity(0.2),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.5)),
+          border: Border.all(color: color.withOpacity(0.5)),
         ),
         child: Center(
           child: Text(
@@ -917,14 +921,14 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
 
   Widget _buildTransactionsTab() {
     return Column(
-      children: <>[
+      children: [
         _buildTransactionFilters(),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(20),
             itemCount: _transactions.length,
             itemBuilder: (BuildContext context, int index) {
-              final CommissionTransaction transaction = _transactions[index];
+              final transaction = _transactions[index];
               return _buildTransactionTile(transaction);
             },
           ),
@@ -938,11 +942,11 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        children: <>[
+        children: [
           Expanded(
             child: _buildFilterChip('All', true),
           ),
@@ -965,7 +969,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.purple : Colors.white.withValues(alpha: 0.1),
+          color: isSelected ? Colors.purple : Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Center(
@@ -982,27 +986,27 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
   }
 
   Widget _buildTransactionTile(CommissionTransaction transaction) {
-    final MaterialColor typeColor = transaction.type == 'Commission' ? Colors.green :
-                      transaction.type == 'Withdrawal' ? Colors.blue : Colors.orange;
-    final MaterialColor statusColor = transaction.status == 'Completed' ? Colors.green : Colors.orange;
+    final typeColor = transaction.type == 'Commission' ? Colors.green :
+    transaction.type == 'Withdrawal' ? Colors.blue : Colors.orange;
+    final statusColor = transaction.status == 'Completed' ? Colors.green : Colors.orange;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: typeColor.withValues(alpha: 0.2),
+              color: typeColor.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
-              transaction.type == 'Commission' ? Iocks.arrow_downward :
+              transaction.type == 'Commission' ? Icons.arrow_downward :
               transaction.type == 'Withdrawal' ? Icons.arrow_upward : Icons.star,
               color: typeColor,
               size: 16,
@@ -1012,9 +1016,9 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Row(
-                  children: <>[
+                  children: [
                     Expanded(
                       child: Text(
                         transaction.description,
@@ -1024,7 +1028,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.2),
+                        color: statusColor.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -1043,7 +1047,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: <>[
+            children: [
               Text(
                 '৳${transaction.amount.toStringAsFixed(0)}',
                 style: TextStyle(
@@ -1072,7 +1076,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
           padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: <>[
+            children: [
               const Text(
                 'Host Commission Details',
                 style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
@@ -1101,7 +1105,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2,
                 childAspectRatio: 2,
-                children: <>[
+                children: [
                   _buildDetailItem('Total Earnings', '৳${host.totalEarnings}'),
                   _buildDetailItem('Monthly', '৳${host.monthlyEarnings}'),
                   _buildDetailItem('Commission Rate', '${host.commissionRate}%'),
@@ -1112,7 +1116,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
                   _buildDetailItem('Score', '${host.performanceScore}'),
                 ],
               ),
-              if (host.lastPaidDate != null) ...<>[
+              if (host.lastPaidDate != null) ...[
                 const SizedBox(height: 16),
                 Text(
                   'Last Paid: ${_formatDate(host.lastPaidDate!)}',
@@ -1135,7 +1139,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
     return Padding(
       padding: const EdgeInsets.all(4),
       child: Row(
-        children: <>[
+        children: [
           Text('$label:', style: const TextStyle(color: Colors.white70, fontSize: 12)),
           const SizedBox(width: 4),
           Expanded(
@@ -1160,7 +1164,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
         title: const Text('Adjust Commission Rate', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Text(
               'Current rate: ${host.commissionRate}%',
               style: const TextStyle(color: Colors.white70),
@@ -1178,16 +1182,36 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
+              final newRate = double.parse(rateController.text);
               setState(() {
-                host.commissionRate = double.parse(rateController.text);
-                host.commissionAmount = host.monthlyEarnings * host.commissionRate / 100;
+                final updatedHost = HostCommission(
+                  hostId: host.hostId,
+                  hostName: host.hostName,
+                  hostUsername: host.hostUsername,
+                  avatar: host.avatar,
+                  totalEarnings: host.totalEarnings,
+                  monthlyEarnings: host.monthlyEarnings,
+                  commissionRate: newRate,
+                  commissionAmount: host.monthlyEarnings * newRate / 100,
+                  paidCommission: host.paidCommission,
+                  pendingCommission: host.pendingCommission,
+                  lastPaidDate: host.lastPaidDate,
+                  status: host.status,
+                  performanceScore: host.performanceScore,
+                  rank: host.rank,
+                );
+
+                final index = _hostCommissions.indexWhere((h) => h.hostId == host.hostId);
+                if (index != -1) {
+                  _hostCommissions[index] = updatedHost;
+                }
               });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1212,7 +1236,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
         title: const Text('Pay Commission', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Text(
               'Pay commission to ${host.hostName}',
               style: const TextStyle(color: Colors.white70),
@@ -1224,7 +1248,7 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
@@ -1232,9 +1256,27 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
           ElevatedButton(
             onPressed: () {
               setState(() {
-                host.paidCommission += host.pendingCommission;
-                host.pendingCommission = 0;
-                host.lastPaidDate = DateTime.now();
+                final updatedHost = HostCommission(
+                  hostId: host.hostId,
+                  hostName: host.hostName,
+                  hostUsername: host.hostUsername,
+                  avatar: host.avatar,
+                  totalEarnings: host.totalEarnings,
+                  monthlyEarnings: host.monthlyEarnings,
+                  commissionRate: host.commissionRate,
+                  commissionAmount: host.commissionAmount,
+                  paidCommission: host.paidCommission + host.pendingCommission,
+                  pendingCommission: 0,
+                  lastPaidDate: DateTime.now(),
+                  status: host.status,
+                  performanceScore: host.performanceScore,
+                  rank: host.rank,
+                );
+
+                final index = _hostCommissions.indexWhere((h) => h.hostId == host.hostId);
+                if (index != -1) {
+                  _hostCommissions[index] = updatedHost;
+                }
               });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1258,20 +1300,6 @@ class _AgencyCommissionScreenState extends State<AgencyCommissionScreen> with Si
 
 // Models
 class AgencyCommission {
-
-  AgencyCommission({
-    required this.agencyId,
-    required this.agencyName,
-    required this.baseCommissionRate,
-    required this.totalEarnings,
-    required this.totalCommission,
-    required this.paidCommission,
-    required this.pendingCommission,
-    required this.thisMonthEarnings,
-    required this.thisMonthCommission,
-    required this.commissionStructure, required this.paymentMethod, required this.bankDetails, this.lastPaymentDate,
-    this.nextPaymentDate,
-  });
   final String agencyId;
   final String agencyName;
   final double baseCommissionRate;
@@ -1286,34 +1314,68 @@ class AgencyCommission {
   final String commissionStructure;
   final String paymentMethod;
   final String bankDetails;
+
+  AgencyCommission({
+    required this.agencyId,
+    required this.agencyName,
+    required this.baseCommissionRate,
+    required this.totalEarnings,
+    required this.totalCommission,
+    required this.paidCommission,
+    required this.pendingCommission,
+    required this.thisMonthEarnings,
+    required this.thisMonthCommission,
+    required this.commissionStructure,
+    required this.paymentMethod,
+    required this.bankDetails,
+    this.lastPaymentDate,
+    this.nextPaymentDate,
+  });
 }
 
 class HostCommission {
-
-  HostCommission({
-    required this.hostId,
-    required this.hostName,
-    required this.hostUsername,
-    required this.totalEarnings, required this.monthlyEarnings, required this.commissionRate, required this.commissionAmount, required this.paidCommission, required this.pendingCommission, required this.status, required this.performanceScore, required this.rank, this.avatar,
-    this.lastPaidDate,
-  });
   final String hostId;
   final String hostName;
   final String hostUsername;
   final String? avatar;
   final double totalEarnings;
   final double monthlyEarnings;
-  double commissionRate;
-  double commissionAmount;
-  double paidCommission;
-  double pendingCommission;
+  final double commissionRate;
+  final double commissionAmount;
+  final double paidCommission;
+  final double pendingCommission;
   final DateTime? lastPaidDate;
   final String status;
   final int performanceScore;
   final int rank;
+
+  HostCommission({
+    required this.hostId,
+    required this.hostName,
+    required this.hostUsername,
+    this.avatar,
+    required this.totalEarnings,
+    required this.monthlyEarnings,
+    required this.commissionRate,
+    required this.commissionAmount,
+    required this.paidCommission,
+    required this.pendingCommission,
+    this.lastPaidDate,
+    required this.status,
+    required this.performanceScore,
+    required this.rank,
+  });
 }
 
 class CommissionTransaction {
+  final String id;
+  final DateTime date;
+  final double amount;
+  final String type;
+  final String status;
+  final String description;
+  final String reference;
+  final String fromTo;
 
   CommissionTransaction({
     required this.id,
@@ -1325,17 +1387,16 @@ class CommissionTransaction {
     required this.reference,
     required this.fromTo,
   });
-  final String id;
-  final DateTime date;
-  final double amount;
-  final String type;
-  final String status;
-  final String description;
-  final String reference;
-  final String fromTo;
 }
 
 class CommissionRule {
+  final String id;
+  final String name;
+  final double minEarnings;
+  final double maxEarnings;
+  final double rate;
+  final String description;
+  final bool isActive;
 
   CommissionRule({
     required this.id,
@@ -1346,11 +1407,4 @@ class CommissionRule {
     required this.description,
     required this.isActive,
   });
-  final String id;
-  final String name;
-  final double minEarnings;
-  final double maxEarnings;
-  final double rate;
-  final String description;
-  final bool isActive;
 }

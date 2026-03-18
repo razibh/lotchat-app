@@ -16,7 +16,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
   String? _selectedPaymentMethod;
   final double _currentBalance = 250.50; // This would come from user data
 
-  final List<PaymentMethod> _paymentMethods = <PaymentMethod>[
+  final List<PaymentMethod> _paymentMethods = [
     PaymentMethod(name: 'bKash', icon: Icons.phone_android, color: Colors.pink),
     PaymentMethod(name: 'Nagad', icon: Icons.mobile_friendly, color: Colors.orange),
     PaymentMethod(name: 'Rocket', icon: Icons.rocket_launch, color: Colors.red),
@@ -24,7 +24,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
     PaymentMethod(name: 'PayPal', icon: Icons.paypal, color: Colors.blueAccent),
   ];
 
-  final List<double> _presetAmounts = <double>[100, 250, 500, 1000, 2500, 5000];
+  final List<double> _presetAmounts = [100, 250, 500, 1000, 2500, 5000];
 
   @override
   void dispose() {
@@ -34,7 +34,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
 
   void _processRecharge() {
     final double amount = double.tryParse(_amountController.text) ?? 0;
-    
+
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid amount')),
@@ -57,7 +57,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
         title: const Text('Confirm Recharge', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Text(
               'Amount: ৳${amount.toStringAsFixed(2)}',
               style: const TextStyle(color: Colors.white, fontSize: 18),
@@ -69,7 +69,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
@@ -97,7 +97,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
         title: const Icon(Icons.check_circle, color: Colors.green, size: 60),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             const Text(
               'Recharge Successful!',
               style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
@@ -109,7 +109,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
@@ -131,7 +131,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildBalanceCard(),
               Expanded(
@@ -139,7 +139,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <>[
+                    children: [
                       _buildPresetAmounts(),
                       const SizedBox(height: 20),
                       _buildCustomAmount(),
@@ -163,7 +163,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -172,9 +172,13 @@ class _RechargeScreenState extends State<RechargeScreen> {
           Text(
             'Recharge Wallet',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ) ?? const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -187,7 +191,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <>[
+          colors: [
             AppColors.accentPurple.withValues(alpha: 0.3),
             AppColors.accentBlue.withValues(alpha: 0.3),
           ],
@@ -198,7 +202,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
         border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Row(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -210,7 +214,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: <>[
+            children: [
               const Text(
                 'Current Balance',
                 style: TextStyle(color: Colors.white70, fontSize: 14),
@@ -234,7 +238,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
   Widget _buildPresetAmounts() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         const Text(
           'Quick Amounts',
           style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -258,7 +262,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
                   _amountController.text = amount.toString();
                 });
               },
-              child: DecoratedBox(
+              child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -289,7 +293,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
   Widget _buildCustomAmount() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         const Text(
           'Custom Amount',
           style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -308,20 +312,20 @@ class _RechargeScreenState extends State<RechargeScreen> {
   Widget _buildPaymentMethods() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         const Text(
           'Payment Method',
           style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        ..._paymentMethods.map(_buildPaymentMethodTile),
+        ..._paymentMethods.map((method) => _buildPaymentMethodTile(method)).toList(),
       ],
     );
   }
 
   Widget _buildPaymentMethodTile(PaymentMethod method) {
     final bool isSelected = _selectedPaymentMethod == method.name;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -332,7 +336,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected 
+          color: isSelected
               ? method.color.withValues(alpha: 0.2)
               : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
@@ -342,7 +346,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
           ),
         ),
         child: Row(
-          children: <>[
+          children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -368,7 +372,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
 
   Widget _buildPaymentDetails() {
     if (_selectedPaymentMethod == null) return const SizedBox();
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -377,7 +381,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           const Text(
             'Payment Details',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -402,7 +406,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           Text(
             label,
             style: TextStyle(
@@ -448,13 +452,13 @@ class _RechargeScreenState extends State<RechargeScreen> {
 }
 
 class PaymentMethod {
+  final String name;
+  final IconData icon;
+  final Color color;
 
   PaymentMethod({
     required this.name,
     required this.icon,
     required this.color,
   });
-  final String name;
-  final IconData icon;
-  final Color color;
 }

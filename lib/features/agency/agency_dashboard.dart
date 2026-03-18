@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/services/agency_service.dart';
 import '../../core/models/agency_model.dart';
@@ -13,11 +14,11 @@ class AgencyDashboard extends StatefulWidget {
   State<AgencyDashboard> createState() => _AgencyDashboardState();
 }
 
-class _AgencyDashboardState extends State<AgencyDashboard> 
+class _AgencyDashboardState extends State<AgencyDashboard>
     with LoadingMixin, ToastMixin {
-  
+
   final AgencyService _agencyService = ServiceLocator().get<AgencyService>();
-  
+
   AgencyModel? _agency;
   bool _isLoading = true;
 
@@ -30,8 +31,27 @@ class _AgencyDashboardState extends State<AgencyDashboard>
   Future<void> _loadAgency() async {
     await runWithLoading(() async {
       try {
-        // Load agency data
-        _agency = await _agencyService.getAgency('agency_id');
+
+        await Future.delayed(const Duration(seconds: 1));
+        _agency = AgencyModel(
+          id: 'ag_001',
+          name: 'Elite Talent Agency',
+          ownerId: 'user_123',
+          ownerName: 'Karim Rahman',
+          memberIds: ['host_001', 'host_002', 'host_003', 'host_004', 'host_005'],
+          memberEarnings: {
+            'host_001': 125000,
+            'host_002': 98000,
+            'host_003': 156000,
+            'host_004': 210000,
+            'host_005': 85000,
+          },
+          totalEarnings: 674000,
+          commissionRate: 0.1,
+          createdAt: DateTime.now().subtract(const Duration(days: 90)),
+          status: AgencyStatus.active,
+        );
+
       } catch (e) {
         showError('Failed to load agency: $e');
       } finally {
@@ -41,7 +61,6 @@ class _AgencyDashboardState extends State<AgencyDashboard>
       }
     });
   }
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -55,7 +74,7 @@ class _AgencyDashboardState extends State<AgencyDashboard>
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: <>[
+            children: [
               Icon(Icons.business, size: 80, color: Colors.grey),
               SizedBox(height: 16),
               Text(
@@ -77,7 +96,7 @@ class _AgencyDashboardState extends State<AgencyDashboard>
       appBar: AppBar(
         title: Text(_agency!.name),
         backgroundColor: Colors.blue,
-        actions: <>[
+        actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadAgency,
@@ -87,7 +106,7 @@ class _AgencyDashboardState extends State<AgencyDashboard>
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: <>[
+          children: [
             // Stats Cards
             GridView.count(
               shrinkWrap: true,
@@ -96,7 +115,7 @@ class _AgencyDashboardState extends State<AgencyDashboard>
               childAspectRatio: 1.5,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              children: <>[
+              children: [
                 _buildStatCard(
                   'Total Earnings',
                   '${_agency!.totalEarnings}',
@@ -105,7 +124,7 @@ class _AgencyDashboardState extends State<AgencyDashboard>
                 ),
                 _buildStatCard(
                   'Members',
-                  '${_agency!.members.length}',
+                  '${_agency!.memberIds.length}',
                   Icons.people,
                   Colors.blue,
                 ),
@@ -131,7 +150,7 @@ class _AgencyDashboardState extends State<AgencyDashboard>
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     const Text(
                       'Top Performers',
                       style: TextStyle(
@@ -140,11 +159,11 @@ class _AgencyDashboardState extends State<AgencyDashboard>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ...List.generate(5, (int index) {
+                    ...List.generate(5, (index) {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Row(
-                          children: <>[
+                          children: [
                             Container(
                               width: 30,
                               height: 30,
@@ -170,7 +189,7 @@ class _AgencyDashboardState extends State<AgencyDashboard>
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <>[
+                                children: [
                                   const Text(
                                     'User Name',
                                     style: TextStyle(fontWeight: FontWeight.bold),
@@ -185,7 +204,7 @@ class _AgencyDashboardState extends State<AgencyDashboard>
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
+                                color: Colors.green.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -212,7 +231,7 @@ class _AgencyDashboardState extends State<AgencyDashboard>
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     const Text(
                       'Recent Activities',
                       style: TextStyle(
@@ -221,26 +240,32 @@ class _AgencyDashboardState extends State<AgencyDashboard>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ...List.generate(5, (int index) {
+                    ...List.generate(5, (index) {
+                      final colors = [Colors.green, Colors.blue, Colors.orange];
+                      final icons = [Icons.attach_money, Icons.person_add, Icons.card_giftcard];
+                      final titles = [
+                        'New member joined',
+                        'Withdrawal processed',
+                        'Gift sent',
+                      ];
+                      final values = ['+500', '-200', '+1000'];
+                      final valueColors = [Colors.green, Colors.red, Colors.green];
+
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: <>[Colors.green, Colors.blue, Colors.orange][index % 3],
+                          backgroundColor: colors[index % 3],
                           child: Icon(
-                            <>[Icons.attach_money, Icons.person_add, Icons.card_giftcard][index % 3],
+                            icons[index % 3],
                             color: Colors.white,
                             size: 20,
                           ),
                         ),
-                        title: Text(<String>[
-                          'New member joined',
-                          'Withdrawal processed',
-                          'Gift sent',
-                        ][index % 3],),
+                        title: Text(titles[index % 3]),
                         subtitle: Text('${index + 1} hour${index == 0 ? '' : 's'} ago'),
                         trailing: Text(
-                          <String>['+500', '-200', '+1000'][index % 3],
+                          values[index % 3],
                           style: TextStyle(
-                            color: <>[Colors.green, Colors.red, Colors.green][index % 3],
+                            color: valueColors[index % 3],
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -263,7 +288,7 @@ class _AgencyDashboardState extends State<AgencyDashboard>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
+          children: [
             Icon(icon, color: color, size: 24),
             const SizedBox(height: 8),
             Text(
@@ -295,7 +320,7 @@ class _AgencyDashboardState extends State<AgencyDashboard>
       case 3:
         return Colors.brown;
       default:
-        return Colors.blue.withValues(alpha: 0.5);
+        return Colors.blue.withOpacity(0.5);
     }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/gradient_background.dart';
 import '../../core/widgets/neumorphic_button.dart';
@@ -10,13 +11,13 @@ import '../games/trivia_game.dart';
 import '../games/truth_or_dare_game.dart';
 import '../games/werewolf_game.dart';
 
-class CreateRoomScreen extends StatefulWidget { // If provided, we're editing an existing room
+class CreateRoomScreen extends StatefulWidget {
+  final String? roomId;
 
   const CreateRoomScreen({
     super.key,
     this.roomId,
   });
-  final String? roomId;
 
   @override
   State<CreateRoomScreen> createState() => _CreateRoomScreenState();
@@ -30,34 +31,34 @@ class CreateRoomScreen extends StatefulWidget { // If provided, we're editing an
 
 class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+
   final TextEditingController _roomNameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _maxPlayersController = TextEditingController(text: '8');
-  
+
   String? _selectedGame;
   bool _isPrivate = false;
   bool _isTeamGame = false;
   int _teamSize = 4;
   String? _selectedDifficulty;
   int _gameDuration = 30; // in minutes
-  
-  final List<GameOption> _availableGames = <GameOption>[
-    GameOption(name: 'Chess', icon: Icons.chess_board, category: 'Board', players: '2'),
+
+  final List<GameOption> _availableGames = [
+    GameOption(name: 'Chess', icon: Icons.architecture, category: 'Board', players: '2'), // chess_board পরিবর্তে architecture
     GameOption(name: 'Carrom', icon: Icons.sports_esports, category: 'Board', players: '2-4'),
     GameOption(name: 'Pictionary', icon: Icons.brush, category: 'Party', players: '4-8'),
     GameOption(name: 'Trivia', icon: Icons.quiz, category: 'Quiz', players: '2-8'),
     GameOption(name: 'Truth or Dare', icon: Icons.psychology, category: 'Party', players: '3-8'),
     GameOption(name: 'Werewolf', icon: Icons.nightlife, category: 'Social', players: '6-12'),
   ];
-  
-  final List<String> _difficulties = <String>['Easy', 'Medium', 'Hard', 'Expert'];
+
+  final List<String> _difficulties = ['Easy', 'Medium', 'Hard', 'Expert'];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    
+
     // If editing existing room, load data
     if (widget.roomId != null) {
       _loadRoomData();
@@ -111,16 +112,22 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
     switch (_selectedGame) {
       case 'Chess':
         gameWidget = ChessGame(gameId: 'room_${DateTime.now().millisecondsSinceEpoch}');
+        break;
       case 'Carrom':
         gameWidget = CarromGame(gameId: 'room_${DateTime.now().millisecondsSinceEpoch}');
+        break;
       case 'Pictionary':
         gameWidget = PictionaryGame(gameId: 'room_${DateTime.now().millisecondsSinceEpoch}');
+        break;
       case 'Trivia':
         gameWidget = TriviaGame(gameId: 'room_${DateTime.now().millisecondsSinceEpoch}');
+        break;
       case 'Truth or Dare':
         gameWidget = TruthOrDareGame(gameId: 'room_${DateTime.now().millisecondsSinceEpoch}');
+        break;
       case 'Werewolf':
         gameWidget = WerewolfGame(gameId: 'room_${DateTime.now().millisecondsSinceEpoch}');
+        break;
       default:
         gameWidget = ChessGame(gameId: 'room_${DateTime.now().millisecondsSinceEpoch}');
     }
@@ -137,13 +144,13 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildTabBar(),
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
-                  children: <>[
+                  children: [
                     _buildBasicSettings(),
                     _buildAdvancedSettings(),
                   ],
@@ -161,7 +168,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -170,9 +177,13 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
           Text(
             widget.roomId == null ? 'Create Room' : 'Edit Room',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ) ?? const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -194,7 +205,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
         ),
         labelColor: Colors.white,
         unselectedLabelColor: Colors.white70,
-        tabs: const <>[
+        tabs: const [
           Tab(text: 'Basic'),
           Tab(text: 'Advanced'),
         ],
@@ -207,7 +218,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           // Room Name
           const Text(
             'Room Name',
@@ -256,8 +267,8 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
               });
             },
           ),
-          
-          if (_isPrivate) ...<>[
+
+          if (_isPrivate) ...[
             const SizedBox(height: 16),
             NeumorphicTextField(
               controller: _passwordController,
@@ -285,29 +296,29 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
       itemBuilder: (BuildContext context, int index) {
         final GameOption game = _availableGames[index];
         final bool isSelected = _selectedGame == game.name;
-        
+
         return GestureDetector(
           onTap: () {
             setState(() {
               _selectedGame = game.name;
             });
           },
-          child: DecoratedBox(
+          child: Container(
             decoration: BoxDecoration(
-              color: isSelected 
+              color: isSelected
                   ? AppColors.accentPurple.withValues(alpha: 0.3)
                   : Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected 
-                    ? AppColors.accentPurple 
+                color: isSelected
+                    ? AppColors.accentPurple
                     : Colors.transparent,
                 width: 2,
               ),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: <>[
+              children: [
                 Icon(
                   game.icon,
                   size: 32,
@@ -351,7 +362,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           // Team Game Toggle
           _buildSwitchTile(
             title: 'Team Game',
@@ -364,8 +375,8 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
               });
             },
           ),
-          
-          if (_isTeamGame) ...<>[
+
+          if (_isTeamGame) ...[
             const SizedBox(height: 16),
             const Text(
               'Team Size',
@@ -400,7 +411,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
             style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          
+
           _buildCheckboxTile(
             title: 'Enable Voice Chat',
             value: true,
@@ -435,7 +446,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -448,7 +459,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   title,
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -463,7 +474,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: AppColors.accentPurple,
+            activeColor: AppColors.accentPurple,
           ),
         ],
       ),
@@ -478,7 +489,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: Row(
-        children: <>[
+        children: [
           Checkbox(
             value: value,
             onChanged: onChanged,
@@ -497,7 +508,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
 
   Widget _buildTeamSizeSelector() {
     return Row(
-      children: <>[
+      children: [
         _buildSizeButton(Icons.remove, () {
           if (_teamSize > 2) {
             setState(() {
@@ -558,7 +569,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected 
+                  color: isSelected
                       ? AppColors.accentPurple.withValues(alpha: 0.3)
                       : Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -585,7 +596,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
 
   Widget _buildDurationSlider() {
     return Column(
-      children: <>[
+      children: [
         Slider(
           value: _gameDuration.toDouble(),
           min: 5,
@@ -601,7 +612,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <>[
+          children: [
             Text(
               '$_gameDuration minutes',
               style: const TextStyle(color: Colors.white, fontSize: 16),
@@ -641,6 +652,10 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
 }
 
 class GameOption {
+  final String name;
+  final IconData icon;
+  final String category;
+  final String players;
 
   GameOption({
     required this.name,
@@ -648,8 +663,4 @@ class GameOption {
     required this.category,
     required this.players,
   });
-  final String name;
-  final IconData icon;
-  final String category;
-  final String players;
 }

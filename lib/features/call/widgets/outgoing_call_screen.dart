@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../../core/models/user_model.dart';
-import '../audio_wave.dart';
+import 'package:flutter/foundation.dart';  // DiagnosticPropertiesBuilder এর জন্য
+import '../../../core/models/user_models.dart' as app;
+import 'audio_wave.dart';
 
 class OutgoingCallScreen extends StatefulWidget {
+  final app.User user;  // ← app.User ব্যবহার
+  final bool isVideoCall;
 
   const OutgoingCallScreen({
-    required this.user, required this.isVideoCall, super.key,
+    required this.user,
+    required this.isVideoCall,
+    super.key,
   });
-  final UserModel user;
-  final bool isVideoCall;
 
   @override
   State<OutgoingCallScreen> createState() => _OutgoingCallScreenState();
@@ -16,14 +19,14 @@ class OutgoingCallScreen extends StatefulWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<UserModel>('user', user));
+    properties.add(DiagnosticsProperty<app.User>('user', user));
     properties.add(DiagnosticsProperty<bool>('isVideoCall', isVideoCall));
   }
 }
 
-class _OutgoingCallScreenState extends State<OutgoingCallScreen> 
+class _OutgoingCallScreenState extends State<OutgoingCallScreen>
     with SingleTickerProviderStateMixin {
-  
+
   late AnimationController _pulseController;
   int _ringingDuration = 0;
 
@@ -67,22 +70,22 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen>
       backgroundColor: Colors.black87,
       body: SafeArea(
         child: Column(
-          children: <>[
+          children: [
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: <>[
+                children: [
                   // User Avatar with pulse animation
                   ScaleTransition(
                     scale: _pulseController,
-                    child: DecoratedBox(
+                    child: Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        boxShadow: <>[
+                        boxShadow: [
                           BoxShadow(
-                            color: widget.isVideoCall 
-                                ? Colors.red.withValues(alpha: 0.5)
-                                : Colors.green.withValues(alpha: 0.5),
+                            color: widget.isVideoCall
+                                ? Colors.red.withOpacity(0.5)
+                                : Colors.green.withOpacity(0.5),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
@@ -95,15 +98,15 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen>
                             : null,
                         child: widget.user.photoURL == null
                             ? Text(
-                                widget.user.username[0].toUpperCase(),
-                                style: const TextStyle(fontSize: 40),
-                              )
+                          widget.user.username[0].toUpperCase(),
+                          style: const TextStyle(fontSize: 40),
+                        )
                             : null,
                       ),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // User Name
                   Text(
                     widget.user.username,
@@ -114,11 +117,11 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   // Call Type
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: <>[
+                    children: [
                       Icon(
                         widget.isVideoCall ? Icons.videocam : Icons.call,
                         color: Colors.white70,
@@ -134,14 +137,14 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen>
                     ],
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Audio Wave
                   AudioWave(
                     isActive: true,
                     color: widget.isVideoCall ? Colors.red : Colors.green,
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Ringing Timer
                   Text(
                     _formatDuration(_ringingDuration),
@@ -152,7 +155,7 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   // Status Text
                   const Text(
                     'Ringing...',
@@ -164,27 +167,27 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen>
                 ],
               ),
             ),
-            
+
             // Call Controls
             Padding(
               padding: const EdgeInsets.all(32),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <>[
+                children: [
                   // Mute Button
                   _buildControlButton(
                     icon: Icons.mic,
                     color: Colors.white,
                     onTap: () {},
                   ),
-                  
+
                   // Speaker Button
                   _buildControlButton(
                     icon: Icons.volume_up,
                     color: Colors.white,
                     onTap: () {},
                   ),
-                  
+
                   // End Call Button
                   _buildControlButton(
                     icon: Icons.call_end,
@@ -194,7 +197,7 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen>
                       Navigator.pop(context);
                     },
                   ),
-                  
+
                   // Camera Flip (Video only)
                   if (widget.isVideoCall)
                     _buildControlButton(
@@ -202,7 +205,7 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen>
                       color: Colors.white,
                       onTap: () {},
                     ),
-                  
+
                   // Keypad Button
                   _buildControlButton(
                     icon: Icons.dialpad,
@@ -230,7 +233,7 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen>
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
+          color: color.withOpacity(0.2),
           shape: BoxShape.circle,
           border: Border.all(color: color, width: 2),
         ),

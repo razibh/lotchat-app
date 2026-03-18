@@ -9,14 +9,9 @@ import '../../../core/services/logger_service.dart';
 enum ConnectionStatus { wifi, mobile, none }
 
 class ConnectivityProvider extends ChangeNotifier {
-
-  ConnectivityProvider() {
-    _initConnectivity();
-    _subscribeToChanges();
-  }
   final LoggerService _logger = ServiceLocator().get<LoggerService>();
   final Connectivity _connectivity = Connectivity();
-  
+
   ConnectionStatus _connectionStatus = ConnectionStatus.none;
   bool _isConnected = false;
   StreamSubscription<List<ConnectivityResult>>? _subscription;
@@ -25,6 +20,11 @@ class ConnectivityProvider extends ChangeNotifier {
   bool get isConnected => _isConnected;
   bool get isOnWifi => _connectionStatus == ConnectionStatus.wifi;
   bool get isOnMobile => _connectionStatus == ConnectionStatus.mobile;
+
+  ConnectivityProvider() {
+    _initConnectivity();
+    _subscribeToChanges();
+  }
 
   Future<void> _initConnectivity() async {
     try {
@@ -46,15 +46,33 @@ class ConnectivityProvider extends ChangeNotifier {
 
   void _updateConnectionStatus(List<ConnectivityResult> results) {
     final ConnectivityResult result = results.isNotEmpty ? results.first : ConnectivityResult.none;
-    
+
     ConnectionStatus newStatus;
     switch (result) {
       case ConnectivityResult.wifi:
         newStatus = ConnectionStatus.wifi;
         _isConnected = true;
+        break;
       case ConnectivityResult.mobile:
         newStatus = ConnectionStatus.mobile;
         _isConnected = true;
+        break;
+      case ConnectivityResult.ethernet:
+        newStatus = ConnectionStatus.wifi; // ethernet কে wifi হিসেবে গণ্য
+        _isConnected = true;
+        break;
+      case ConnectivityResult.vpn:
+        newStatus = ConnectionStatus.wifi; // VPN থাকলে wifi হিসেবে গণ্য
+        _isConnected = true;
+        break;
+      case ConnectivityResult.bluetooth:
+        newStatus = ConnectionStatus.none; // bluetooth connection সাধারণত internet দেয় না
+        _isConnected = false;
+        break;
+      case ConnectivityResult.other:
+        newStatus = ConnectionStatus.none;
+        _isConnected = false;
+        break;
       default:
         newStatus = ConnectionStatus.none;
         _isConnected = false;
@@ -82,7 +100,7 @@ class ConnectivityProvider extends ChangeNotifier {
         builder: (BuildContext context) => AlertDialog(
           title: const Text('No Internet Connection'),
           content: const Text('Please check your internet connection and try again.'),
-          actions: <>[
+          actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('OK'),

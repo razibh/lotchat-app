@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/gradient_background.dart';
 import '../../core/widgets/neumorphic_button.dart';
 
 class PictionaryGame extends StatefulWidget {
-
-  const PictionaryGame({
-    required this.gameId, super.key,
-    this.gameData,
-  });
   final String gameId;
   final Map<String, dynamic>? gameData;
+
+  const PictionaryGame({
+    required this.gameId,
+    this.gameData,
+    super.key,
+  });
 
   @override
   State<PictionaryGame> createState() => _PictionaryGameState();
@@ -27,8 +30,8 @@ class _PictionaryGameState extends State<PictionaryGame> {
   bool isDrawing = true;
   Color selectedColor = Colors.black;
   double strokeWidth = 3;
-  List<DrawingPoint> points = <DrawingPoint>[];
-  List<String> words = <String>['House', 'Cat', 'Tree', 'Car', 'Sun', 'Flower'];
+  List<DrawingPoint> points = [];
+  List<String> words = ['House', 'Cat', 'Tree', 'Car', 'Sun', 'Flower'];
   String currentWord = 'House';
   int timeLeft = 60;
   int score = 0;
@@ -67,7 +70,7 @@ class _PictionaryGameState extends State<PictionaryGame> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildGameInfo(),
               Expanded(
@@ -87,7 +90,7 @@ class _PictionaryGameState extends State<PictionaryGame> {
       padding: const EdgeInsets.all(16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -95,9 +98,9 @@ class _PictionaryGameState extends State<PictionaryGame> {
           Text(
             'Pictionary',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.white),
@@ -113,14 +116,14 @@ class _PictionaryGameState extends State<PictionaryGame> {
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           Column(
-            children: <>[
+            children: [
               const Text('Score', style: TextStyle(color: Colors.white70)),
               Text(
                 '$score',
@@ -133,7 +136,7 @@ class _PictionaryGameState extends State<PictionaryGame> {
             ],
           ),
           Column(
-            children: <>[
+            children: [
               const Text('Time', style: TextStyle(color: Colors.white70)),
               Text(
                 '$timeLeft',
@@ -147,7 +150,7 @@ class _PictionaryGameState extends State<PictionaryGame> {
           ),
           if (isDrawing)
             Column(
-              children: <>[
+              children: [
                 const Text('Draw', style: TextStyle(color: Colors.white70)),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -172,31 +175,31 @@ class _PictionaryGameState extends State<PictionaryGame> {
 
   Widget _buildDrawingCanvas() {
     return GestureDetector(
-      onPanStart: (DragStartDetails details) {
+      onPanStart: (details) {
         if (!isDrawing) return;
-        final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+        final renderBox = context.findRenderObject() as RenderBox?;
         if (renderBox != null) {
-          final Offset localPosition = renderBox.globalToLocal(details.globalPosition);
+          final localPosition = renderBox.globalToLocal(details.globalPosition);
           setState(() {
             points.add(DrawingPoint(
               offset: localPosition,
               color: selectedColor,
               strokeWidth: strokeWidth,
-            ),);
+            ));
           });
         }
       },
-      onPanUpdate: (DragUpdateDetails details) {
+      onPanUpdate: (details) {
         if (!isDrawing) return;
-        final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+        final renderBox = context.findRenderObject() as RenderBox?;
         if (renderBox != null) {
-          final Offset localPosition = renderBox.globalToLocal(details.globalPosition);
+          final localPosition = renderBox.globalToLocal(details.globalPosition);
           setState(() {
             points.add(DrawingPoint(
               offset: localPosition,
               color: selectedColor,
               strokeWidth: strokeWidth,
-            ),);
+            ));
           });
         }
       },
@@ -205,9 +208,9 @@ class _PictionaryGameState extends State<PictionaryGame> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: <>[
+          boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withOpacity(0.3),
               blurRadius: 10,
               spreadRadius: 2,
             ),
@@ -225,10 +228,10 @@ class _PictionaryGameState extends State<PictionaryGame> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Column(
-        children: <>[
+        children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <>[
+            children: [
               _buildColorButton(Colors.black),
               _buildColorButton(Colors.red),
               _buildColorButton(Colors.blue),
@@ -240,7 +243,7 @@ class _PictionaryGameState extends State<PictionaryGame> {
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <>[
+            children: [
               _buildStrokeButton(2, 'S'),
               _buildStrokeButton(5, 'M'),
               _buildStrokeButton(8, 'L'),
@@ -292,7 +295,7 @@ class _PictionaryGameState extends State<PictionaryGame> {
         width: 30,
         height: 30,
         decoration: BoxDecoration(
-          color: strokeWidth == width ? Colors.white : Colors.white.withValues(alpha: 0.3),
+          color: strokeWidth == width ? Colors.white : Colors.white.withOpacity(0.3),
           shape: BoxShape.circle,
         ),
         child: Center(
@@ -313,14 +316,14 @@ class _PictionaryGameState extends State<PictionaryGame> {
       padding: const EdgeInsets.all(20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <>[
+        children: [
           NeumorphicButton(
             onPressed: isDrawing
                 ? () {
-                    setState(() {
-                      isDrawing = false;
-                    });
-                  }
+              setState(() {
+                isDrawing = false;
+              });
+            }
                 : null,
             child: const Icon(Icons.check, color: Colors.white),
           ),
@@ -355,26 +358,26 @@ class _PictionaryGameState extends State<PictionaryGame> {
 }
 
 class DrawingPoint {
+  final Offset offset;
+  final Color color;
+  final double strokeWidth;
 
   DrawingPoint({
     required this.offset,
     required this.color,
     required this.strokeWidth,
   });
-  final Offset offset;
-  final Color color;
-  final double strokeWidth;
 }
 
 class DrawingPainter extends CustomPainter {
+  final List<DrawingPoint> points;
 
   DrawingPainter({required this.points});
-  final List<DrawingPoint> points;
 
   @override
   void paint(Canvas canvas, Size size) {
     for (var i = 0; i < points.length - 1; i++) {
-      final Paint paint = Paint()
+      final paint = Paint()
         ..color = points[i].color
         ..strokeWidth = points[i].strokeWidth
         ..strokeCap = StrokeCap.round

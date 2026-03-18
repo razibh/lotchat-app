@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 kDebugMode এর জন্য
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'navigation_service.dart';
@@ -11,21 +12,24 @@ class DeepLinkingService {
   static final DeepLinkingService _instance = DeepLinkingService._internal();
 
   final FirebaseDynamicLinks _dynamicLinks = FirebaseDynamicLinks.instance;
-  StreamSubscription? _dynamicLinksSubscription;
+  StreamSubscription<PendingDynamicLinkData>? _dynamicLinksSubscription; // 🟢 Fixed type
 
   // Initialize deep linking
   Future<void> initDynamicLinks() async {
     // Handle links when app is already running
     _dynamicLinksSubscription = _dynamicLinks.onLink.listen(
-      _handleDeepLink,
+          (PendingDynamicLinkData dynamicLink) {
+        _handleDeepLink(dynamicLink);
+      },
       onError: (e) {
-        print('Error handling dynamic link: $e');
+        if (kDebugMode) {
+          print('Error handling dynamic link: $e');
+        }
       },
     );
 
     // Handle links that opened the app
-    final initialLink =
-        await _dynamicLinks.getInitialLink();
+    final PendingDynamicLinkData? initialLink = await _dynamicLinks.getInitialLink();
     if (initialLink != null) {
       _handleDeepLink(initialLink);
     }
@@ -38,7 +42,9 @@ class DeepLinkingService {
     final Uri? deepLink = dynamicLink.link;
     if (deepLink == null) return;
 
-    print('Deep link received: $deepLink');
+    if (kDebugMode) {
+      print('Deep link received: $deepLink');
+    }
 
     // Parse the link and navigate
     _navigateToDeepLink(deepLink);
@@ -53,8 +59,8 @@ class DeepLinkingService {
     if (path.startsWith('/user/')) {
       final String userId = path.replaceFirst('/user/', '');
       NavigationService.navigateTo(
-        RouteConstants.profile,
-        arguments: <String, String>{'userId': userId},
+        RouteConstants.profileView,
+        arguments: {'userId': userId},
       );
     }
     // Example: https://lotchat.app/room/456
@@ -62,7 +68,7 @@ class DeepLinkingService {
       final String roomId = path.replaceFirst('/room/', '');
       NavigationService.navigateTo(
         RouteConstants.room,
-        arguments: <String, String>{'roomId': roomId},
+        arguments: {'roomId': roomId},
       );
     }
     // Example: https://lotchat.app/clan/789
@@ -70,7 +76,7 @@ class DeepLinkingService {
       final String clanId = path.replaceFirst('/clan/', '');
       NavigationService.navigateTo(
         RouteConstants.clanDetail,
-        arguments: <String, String>{'clanId': clanId},
+        arguments: {'clanId': clanId},
       );
     }
     // Example: https://lotchat.app/promotion?code=WELCOME50
@@ -78,8 +84,8 @@ class DeepLinkingService {
       final String? code = queryParams['code'];
       if (code != null) {
         NavigationService.navigateTo(
-          RouteConstants.promotion,
-          arguments: <String, String>{'code': code},
+          '/promotion',
+          arguments: {'code': code},
         );
       }
     }
@@ -95,13 +101,18 @@ class DeepLinkingService {
   }) async {
     try {
       // Build the link
-      var link = 'https://lotchat.app$path';
+      String link = 'https://lotchat.app$path';
       if (queryParams != null && queryParams.isNotEmpty) {
-        final String queryString = Uri(queryParameters: queryParams).query;
-        link += '?$queryString';
+        final uri = Uri(
+          scheme: 'https',
+          host: 'lotchat.app',
+          path: path,
+          queryParameters: queryParams,
+        );
+        link = uri.toString();
       }
 
-      final parameters = DynamicLinkParameters(
+      final DynamicLinkParameters parameters = DynamicLinkParameters(
         uriPrefix: 'https://lotchat.page.link',
         link: Uri.parse(link),
         androidParameters: const AndroidParameters(
@@ -120,12 +131,13 @@ class DeepLinkingService {
         ),
       );
 
-      final shortLink =
-          await _dynamicLinks.buildShortLink(parameters);
-      
+      final ShortDynamicLink shortLink = await _dynamicLinks.buildShortLink(parameters);
+
       return shortLink.shortUrl.toString();
     } catch (e) {
-      print('Error creating dynamic link: $e');
+      if (kDebugMode) {
+        print('Error creating dynamic link: $e');
+      }
       return null;
     }
   }
@@ -138,7 +150,9 @@ class DeepLinkingService {
         await launchUrl(uri);
       }
     } catch (e) {
-      print('Error sharing deep link: $e');
+      if (kDebugMode) {
+        print('Error sharing deep link: $e');
+      }
     }
   }
 
@@ -149,7 +163,7 @@ class DeepLinkingService {
   }) async {
     return createDynamicLink(
       path: '/invite',
-      queryParams: <String, String>{
+      queryParams: {
         'ref': referralCode ?? userId,
         'user': userId,
       },

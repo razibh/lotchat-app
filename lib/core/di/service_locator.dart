@@ -26,7 +26,8 @@ import '../services/gift_service.dart';
 import '../services/leaderboard_service.dart';
 import '../services/search_service.dart';
 import '../services/friend_service.dart';
-import '../services/clan_service.dart';
+import '../../features/clan/services/clan_service.dart';
+
 import '../services/pk_service.dart';
 
 final GetIt getIt = GetIt.instance;

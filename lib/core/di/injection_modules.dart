@@ -3,6 +3,8 @@ import 'package:get_it/get_it.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
+import '../services/socket_service.dart'; // 🟢 SocketService import
+// import '../repositories/auth_repository.dart'; // 🟢 AuthRepository import (if exists)
 
 abstract class InjectionModule {
   Future<void> register(GetIt getIt);
@@ -23,9 +25,10 @@ class AuthModule implements InjectionModule {
   @override
   Future<void> register(GetIt getIt) async {
     getIt.registerSingleton<AuthService>(AuthService());
-    
+
     // Register repositories if needed
-    getIt.registerFactory(() => AuthRepository(getIt<AuthService>()));
+    // 🟢 Comment out if AuthRepository doesn't exist
+    // getIt.registerFactory(() => AuthRepository(getIt<AuthService>()));
   }
 }
 
@@ -49,7 +52,7 @@ class SocketModule implements InjectionModule {
 
 // Module loader
 class ModuleLoader {
-  static final List<InjectionModule> modules = <InjectionModule>[
+  static final List<InjectionModule> modules = [
     ApiModule(),
     AuthModule(),
     DatabaseModule(),

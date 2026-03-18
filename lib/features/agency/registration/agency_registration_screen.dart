@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/gradient_background.dart';
 import '../../../core/widgets/neumorphic_button.dart';
 import '../../../core/widgets/neumorphic_text_field.dart';
-import '../../../core/models/country_models.dart';
+import '../../../core/models/country_model.dart';
 
 class AgencyRegistrationScreen extends StatefulWidget {
   const AgencyRegistrationScreen({super.key});
@@ -30,7 +31,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
   final TextEditingController _websiteController = TextEditingController();
 
   // Step 3: Commission & Plan
-  double _commissionRate = 10;
+  double _commissionRate = 10.0;
   int _proposedHosts = 20;
   final TextEditingController _businessPlanController = TextEditingController();
 
@@ -40,7 +41,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
   bool _taxDocUploaded = false;
   bool _agreeToTerms = false;
 
-  final List<Country> _countries = Country.getSupportedCountries();
+  final List<CountryModel> _countries = CountryModel.getCountries();
 
   @override
   void dispose() {
@@ -62,7 +63,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               Expanded(
                 child: Stepper(
@@ -71,11 +72,11 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
                   onStepContinue: _nextStep,
                   onStepCancel: _previousStep,
                   steps: _getSteps(),
-                  controlsBuilder: (BuildContext context, ControlsDetails details) {
+                  controlsBuilder: (context, details) {
                     return Container(
                       margin: const EdgeInsets.only(top: 20),
                       child: Row(
-                        children: <>[
+                        children: [
                           if (_currentStep > 0)
                             Expanded(
                               child: NeumorphicButton(
@@ -99,7 +100,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: <>[
+                                    colors: [
                                       Colors.purple,
                                       Colors.purple.shade700,
                                     ],
@@ -135,7 +136,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -160,7 +161,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
   }
 
   List<Step> _getSteps() {
-    return <>[
+    return [
       Step(
         title: const Text('Basic Info'),
         content: _buildBasicInfoStep(),
@@ -186,7 +187,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
 
   Widget _buildBasicInfoStep() {
     return Column(
-      children: <>[
+      children: [
         NeumorphicTextField(
           controller: _agencyNameController,
           hintText: 'Agency Name',
@@ -214,7 +215,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: Colors.white.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: DropdownButton<String>(
@@ -224,16 +225,16 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
             isExpanded: true,
             underline: const SizedBox(),
             icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-            items: _countries.map((Country country) {
-              return DropdownMenuItem(
-                value: country.id,
+            items: _countries.map((country) {
+              return DropdownMenuItem<String>(
+                value: country.code,
                 child: Text(
                   '${country.flag} ${country.name}',
                   style: const TextStyle(color: Colors.white),
                 ),
               );
             }).toList(),
-            onChanged: (String? value) {
+            onChanged: (value) {
               setState(() {
                 _selectedCountry = value;
               });
@@ -246,7 +247,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
 
   Widget _buildBusinessStep() {
     return Column(
-      children: <>[
+      children: [
         NeumorphicTextField(
           controller: _addressController,
           hintText: 'Business Address',
@@ -278,21 +279,21 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
   Widget _buildCommissionStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         const Text(
           'Commission Rate',
           style: TextStyle(color: Colors.white70, fontSize: 14),
         ),
         const SizedBox(height: 8),
         Row(
-          children: <>[
+          children: [
             Expanded(
               child: Slider(
                 value: _commissionRate,
                 min: 5,
                 max: 20,
                 divisions: 15,
-                onChanged: (double value) {
+                onChanged: (value) {
                   setState(() {
                     _commissionRate = value;
                   });
@@ -303,7 +304,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.purple.withValues(alpha: 0.2),
+                color: Colors.purple.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -320,7 +321,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
         ),
         const SizedBox(height: 8),
         Row(
-          children: <>[
+          children: [
             IconButton(
               icon: const Icon(Icons.remove_circle, color: Colors.white70),
               onPressed: () {
@@ -364,12 +365,12 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
 
   Widget _buildDocumentsStep() {
     return Column(
-      children: <>[
+      children: [
         _buildDocumentTile(
           'Owner NID/Passport',
           Icons.badge,
           _nidUploaded,
-          () {
+              () {
             setState(() {
               _nidUploaded = true;
             });
@@ -380,7 +381,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
           'Trade License',
           Icons.description,
           _licenseUploaded,
-          () {
+              () {
             setState(() {
               _licenseUploaded = true;
             });
@@ -391,7 +392,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
           'Tax Document',
           Icons.receipt,
           _taxDocUploaded,
-          () {
+              () {
             setState(() {
               _taxDocUploaded = true;
             });
@@ -401,11 +402,11 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: Colors.white.withOpacity(0.05),
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Column(
-            children: <>[
+            children: [
               Text(
                 'Terms & Conditions',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -413,9 +414,9 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
               SizedBox(height: 8),
               Text(
                 '• Agency must maintain minimum 10 active hosts\n'
-                '• Commission will be deducted from host earnings\n'
-                '• Monthly reports must be submitted\n'
-                '• Violation may lead to termination',
+                    '• Commission will be deducted from host earnings\n'
+                    '• Monthly reports must be submitted\n'
+                    '• Violation may lead to termination',
                 style: TextStyle(color: Colors.white70, fontSize: 12),
               ),
             ],
@@ -423,12 +424,12 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
         ),
         const SizedBox(height: 16),
         Row(
-          children: <>[
+          children: [
             Checkbox(
               value: _agreeToTerms,
-              onChanged: (bool? value) {
+              onChanged: (value) {
                 setState(() {
-                  _agreeToTerms = value!;
+                  _agreeToTerms = value ?? false;
                 });
               },
               checkColor: Colors.white,
@@ -450,15 +451,15 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isUploaded ? Colors.green.withValues(alpha: 0.2) : Colors.orange.withValues(alpha: 0.2),
+              color: isUploaded ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -529,7 +530,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
         title: const Icon(Icons.hourglass_empty, color: Colors.purple, size: 60),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Text(
               'Application Submitted!',
               style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
@@ -542,7 +543,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);

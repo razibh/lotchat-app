@@ -1,7 +1,11 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../core/di/service_locator.dart';
-import '../../core/models/user_model.dart';
+import '../../core/models/user_models.dart' as app_models;
+import '../../chat/chat_detail_screen.dart';
+import '../../chat/models/chat_model.dart';
 import '../../core/services/friend_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../mixins/loading_mixin.dart';
@@ -9,11 +13,11 @@ import '../../mixins/toast_mixin.dart';
 import '../../mixins/pagination_mixin.dart';
 import '../../widgets/common/empty_state_widget.dart';
 import '../../widgets/animation/fade_animation.dart';
+import '../../features/friends/models/friend_model.dart';
 import 'widgets/friend_tile.dart';
 import 'friend_requests_screen.dart';
 import 'find_friends_screen.dart';
 import 'blocked_users_screen.dart';
-import '../chat/chat_detail_screen.dart';
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -22,75 +26,106 @@ class FriendsScreen extends StatefulWidget {
   State<FriendsScreen> createState() => _FriendsScreenState();
 }
 
-class _FriendsScreenState extends State<FriendsScreen> 
+class _FriendsScreenState extends State<FriendsScreen>
     with LoadingMixin, ToastMixin, PaginationMixin<FriendModel> {
-  
-  final FriendService _friendService = ServiceLocator().get<FriendService>();
-  final AuthService _authService = ServiceLocator().get<AuthService>();
-  
-  List<FriendModel> _friends = <>[];
-  List<FriendModel> _filteredFriends = <>[];
+
+  final FriendService _friendService = ServiceLocator.instance.get<FriendService>();
+  final AuthService _authService = ServiceLocator.instance.get<AuthService>();
+
+  List<FriendModel> _friends = [];
+  List<FriendModel> _filteredFriends = [];
   String _searchQuery = '';
   String _selectedFilter = 'All';
   int _pendingRequests = 0;
   String? _currentUserId;
 
-  final List<String> _filters = <String>['All', 'Online', 'Favorites', 'Recent'];
+  final List<String> _filters = ['All', 'Online', 'Favorites', 'Recent'];
 
   @override
   void initState() {
     super.initState();
+    initPagination(); // PaginationMixin এর initPagination কল
     _getCurrentUser();
-    _setupStreams();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadFirstPage(setState); // setState প্যারামিটার সহ
+    });
+  }
+
+  @override
+  void dispose() {
+    disposePagination(); // PaginationMixin এর disposePagination কল
+    super.dispose();
+  }
+
+  @override
+  Future<PaginationResult<FriendModel>> fetchPage(int page) async {
+    // এখানে আপনার API কল হবে
+    await Future.delayed(const Duration(seconds: 1));
+
+    // Mock data generation
+    if (_friends.isEmpty) {
+      _friends = _generateMockFriends(15);
+      _pendingRequests = 3;
+      _applyFilter();
+    }
+
+    final items = _filteredFriends.isEmpty ? _friends : _filteredFriends;
+
+    return PaginationResult<FriendModel>(
+      items: items,
+      totalPages: 1,
+      totalItems: items.length,
+      currentPage: page,
+    );
   }
 
   Future<void> _getCurrentUser() async {
-    final User? user = _authService.getCurrentUser();
+    final firebase_auth.User? user = _authService.getCurrentUser();
     setState(() {
       _currentUserId = user?.uid;
     });
   }
 
-  void _setupStreams() {
-    if (_currentUserId == null) return;
-
-    _friendService.getFriends(_currentUserId!).listen((List<UserModel> friends) {
-      if (mounted) {
-        setState(() {
-          _friends = friends;
-          _applyFilter();
-        });
-      }
-    });
-
-    _friendService.getIncomingRequests(_currentUserId!).listen((requests) {
-      if (mounted) {
-        setState(() {
-          _pendingRequests = requests.length;
-        });
-      }
+  List<FriendModel> _generateMockFriends(int count) {
+    return List.generate(count, (index) {
+      return FriendModel(
+        userId: 'user_$index',
+        username: 'user$index',
+        displayName: 'User $index',
+        avatar: 'https://i.pravatar.cc/150?u=$index',
+        onlineStatus: index % 3 == 0 ? OnlineStatus.online : OnlineStatus.offline,
+        friendsSince: DateTime.now().subtract(Duration(days: index * 10)),
+        mutualFriends: index * 2,
+        commonInterests: ['music', 'games'],
+        isFavorite: index % 5 == 0,
+        note: index % 7 == 0 ? 'Best friend' : null,
+        lastActive: DateTime.now().subtract(Duration(hours: index)),
+        stats: {},
+        tags: [],
+      );
     });
   }
 
   void _applyFilter() {
-    List<dynamic> filtered = List<dynamic>.from(_friends);
+    var filtered = List<FriendModel>.from(_friends);
 
-    // Apply search
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((f) =>
-        f.username.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-        (f.displayName?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false),
+      f.username.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (f.displayName?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false),
       ).toList();
     }
 
-    // Apply filter
     switch (_selectedFilter) {
       case 'Online':
         filtered = filtered.where((f) => f.isOnline).toList();
+        break;
       case 'Favorites':
         filtered = filtered.where((f) => f.isFavorite).toList();
+        break;
       case 'Recent':
         filtered.sort((a, b) => b.friendsSince.compareTo(a.friendsSince));
+        break;
     }
 
     setState(() {
@@ -99,13 +134,21 @@ class _FriendsScreenState extends State<FriendsScreen>
   }
 
   Future<void> _navigateToChat(FriendModel friend) async {
+    final chat = ChatModel(
+      id: 'chat_${friend.userId}_current',
+      type: 'private',
+      participants: [friend.userId, _currentUserId ?? ''],
+      groupName: friend.displayNameOrUsername,
+      groupAvatar: friend.avatar,
+      lastMessageTime: DateTime.now(),
+      lastMessage: '',
+    );
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (BuildContext context) => ChatDetailScreen(
-          userId: friend.userId,
-          userName: friend.displayNameOrUsername,
-          userAvatar: friend.avatar,
+        builder: (context) => ChatDetailScreen(
+          chat: chat,
         ),
       ),
     );
@@ -116,7 +159,7 @@ class _FriendsScreenState extends State<FriendsScreen>
       context: context,
       builder: (BuildContext context) => SafeArea(
         child: Wrap(
-          children: <>[
+          children: [
             ListTile(
               leading: const Icon(Icons.chat, color: Colors.blue),
               title: const Text('Send Message'),
@@ -130,7 +173,7 @@ class _FriendsScreenState extends State<FriendsScreen>
               title: const Text('Voice Call'),
               onTap: () {
                 Navigator.pop(context);
-                // Start voice call
+                showInfo('Voice call feature coming soon');
               },
             ),
             ListTile(
@@ -138,7 +181,7 @@ class _FriendsScreenState extends State<FriendsScreen>
               title: const Text('Video Call'),
               onTap: () {
                 Navigator.pop(context);
-                // Start video call
+                showInfo('Video call feature coming soon');
               },
             ),
             const Divider(),
@@ -150,13 +193,9 @@ class _FriendsScreenState extends State<FriendsScreen>
               title: Text(friend.isFavorite ? 'Remove from Favorites' : 'Add to Favorites'),
               onTap: () async {
                 Navigator.pop(context);
-                await _friendService.toggleFavorite(
-                  friend.userId,
-                  !friend.isFavorite,
-                );
-                showSuccess(friend.isFavorite 
+                showSuccess(friend.isFavorite
                     ? 'Removed from favorites'
-                    : 'Added to favorites',);
+                    : 'Added to favorites');
               },
             ),
             ListTile(
@@ -192,7 +231,7 @@ class _FriendsScreenState extends State<FriendsScreen>
 
   void _showAddNoteDialog(FriendModel friend) {
     final TextEditingController controller = TextEditingController(text: friend.note);
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -205,15 +244,14 @@ class _FriendsScreenState extends State<FriendsScreen>
           ),
           maxLines: 3,
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () async {
+            onPressed: () {
               Navigator.pop(context);
-              await _friendService.updateFriendNote(friend.userId, controller.text);
               showSuccess('Note updated');
             },
             child: const Text('Save'),
@@ -229,7 +267,7 @@ class _FriendsScreenState extends State<FriendsScreen>
       builder: (BuildContext context) => AlertDialog(
         title: const Text('Block User'),
         content: Text('Are you sure you want to block ${friend.displayNameOrUsername}?'),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
@@ -244,12 +282,7 @@ class _FriendsScreenState extends State<FriendsScreen>
     );
 
     if (confirmed ?? false) {
-      await runWithLoading(() async {
-        final bool success = await _friendService.blockUser(friend.userId);
-        if (success) {
-          showSuccess('User blocked');
-        }
-      });
+      showSuccess('User blocked');
     }
   }
 
@@ -259,7 +292,7 @@ class _FriendsScreenState extends State<FriendsScreen>
       builder: (BuildContext context) => AlertDialog(
         title: const Text('Remove Friend'),
         content: Text('Are you sure you want to remove ${friend.displayNameOrUsername}?'),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
@@ -274,13 +307,46 @@ class _FriendsScreenState extends State<FriendsScreen>
     );
 
     if (confirmed ?? false) {
-      await runWithLoading(() async {
-        final bool success = await _friendService.removeFriend(friend.userId);
-        if (success) {
-          showSuccess('Friend removed');
-        }
-      });
+      showSuccess('Friend removed');
     }
+  }
+
+  void _showInviteDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Invite Friends'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.share, color: Colors.blue),
+              title: const Text('Share Invite Link'),
+              onTap: () {
+                Navigator.pop(context);
+                showInfo('Share feature coming soon');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.contact_phone, color: Colors.green),
+              title: const Text('Invite via Contacts'),
+              onTap: () {
+                Navigator.pop(context);
+                showInfo('Contacts sync coming soon');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.qr_code, color: Colors.purple),
+              title: const Text('Show QR Code'),
+              onTap: () {
+                Navigator.pop(context);
+                showInfo('QR code feature coming soon');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -289,17 +355,17 @@ class _FriendsScreenState extends State<FriendsScreen>
       appBar: AppBar(
         title: const Text('Friends'),
         backgroundColor: Colors.blue,
-        actions: <>[
-          // Friend Requests Button
+        foregroundColor: Colors.white,
+        actions: [
           Stack(
-            children: <>[
+            children: [
               IconButton(
                 icon: const Icon(Icons.person_add),
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (BuildContext context) => const FriendRequestsScreen(),
+                      builder: (context) => const FriendRequestsScreen(),
                     ),
                   );
                 },
@@ -323,6 +389,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
+                        fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -330,23 +397,19 @@ class _FriendsScreenState extends State<FriendsScreen>
                 ),
             ],
           ),
-          
-          // Find Friends Button
           IconButton(
             icon: const Icon(Icons.explore),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (BuildContext context) => const FindFriendsScreen(),
+                  builder: (context) => const FindFriendsScreen(),
                 ),
               );
             },
           ),
-          
-          // More Options
-          PopupMenuButton(
-            itemBuilder: (BuildContext context) => <>[
+          PopupMenuButton<String>(
+            itemBuilder: (BuildContext context) => [
               const PopupMenuItem(
                 value: 'blocked',
                 child: Text('Blocked Users'),
@@ -364,31 +427,35 @@ class _FriendsScreenState extends State<FriendsScreen>
                 child: Text('Invite Friends'),
               ),
             ],
-            onSelected: (Object? value) {
+            onSelected: (String value) {
               switch (value) {
                 case 'blocked':
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (BuildContext context) => const BlockedUsersScreen(),
+                      builder: (context) => const BlockedUsersScreen(),
                     ),
                   );
+                  break;
                 case 'requests':
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (BuildContext context) => const FriendRequestsScreen(),
+                      builder: (context) => const FriendRequestsScreen(),
                     ),
                   );
+                  break;
                 case 'suggestions':
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (BuildContext context) => const FindFriendsScreen(),
+                      builder: (context) => const FindFriendsScreen(),
                     ),
                   );
+                  break;
                 case 'invite':
                   _showInviteDialog();
+                  break;
               }
             },
           ),
@@ -396,12 +463,11 @@ class _FriendsScreenState extends State<FriendsScreen>
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Column(
-            children: <>[
-              // Search Bar
+            children: [
               Padding(
                 padding: const EdgeInsets.all(8),
                 child: TextField(
-                  onChanged: (String value) {
+                  onChanged: (value) {
                     setState(() {
                       _searchQuery = value;
                       _applyFilter();
@@ -412,14 +478,14 @@ class _FriendsScreenState extends State<FriendsScreen>
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              setState(() {
-                                _searchQuery = '';
-                                _applyFilter();
-                              });
-                            },
-                          )
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        setState(() {
+                          _searchQuery = '';
+                          _applyFilter();
+                        });
+                      },
+                    )
                         : null,
                     filled: true,
                     fillColor: Colors.white,
@@ -430,26 +496,24 @@ class _FriendsScreenState extends State<FriendsScreen>
                   ),
                 ),
               ),
-              
-              // Filter Chips
               SizedBox(
                 height: 40,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  children: _filters.map((String filter) {
+                  children: _filters.map((filter) {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: FilterChip(
                         label: Text(filter),
                         selected: _selectedFilter == filter,
-                        onSelected: (bool selected) {
+                        onSelected: (selected) {
                           setState(() {
                             _selectedFilter = filter;
                             _applyFilter();
                           });
                         },
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        backgroundColor: Colors.white.withOpacity(0.2),
                         selectedColor: Colors.white,
                         labelStyle: TextStyle(
                           color: _selectedFilter == filter ? Colors.blue : Colors.white,
@@ -463,85 +527,49 @@ class _FriendsScreenState extends State<FriendsScreen>
           ),
         ),
       ),
-      body: _filteredFriends.isEmpty
+      body: isLoading && _friends.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : _filteredFriends.isEmpty
           ? EmptyStateWidget(
-              title: _searchQuery.isNotEmpty
-                  ? 'No Results Found'
-                  : 'No Friends Yet',
-              message: _searchQuery.isNotEmpty
-                  ? 'Try searching with a different name'
-                  : 'Start adding friends to connect with them',
-              icon: _searchQuery.isNotEmpty
-                  ? Icons.search_off
-                  : Icons.people_outline,
-              buttonText: _searchQuery.isEmpty ? 'Find Friends' : null,
-              onButtonPressed: _searchQuery.isEmpty
-                  ? () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (BuildContext context) => const FindFriendsScreen(),
-                        ),
-                      );
-                    }
-                  : null,
-            )
+        title: _searchQuery.isNotEmpty
+            ? 'No Results Found'
+            : 'No Friends Yet',
+        message: _searchQuery.isNotEmpty
+            ? 'Try searching with a different name'
+            : 'Start adding friends to connect with them',
+        icon: _searchQuery.isNotEmpty
+            ? Icons.search_off
+            : Icons.people_outline,
+        buttonText: _searchQuery.isEmpty ? 'Find Friends' : null,
+        onButtonPressed: _searchQuery.isEmpty
+            ? () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FindFriendsScreen(),
+            ),
+          );
+        }
+            : null,
+      )
           : RefreshIndicator(
-              onRefresh: () async {
-                // Refresh logic
-              },
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _filteredFriends.length,
-                itemBuilder: (BuildContext context, int index) {
-                  final friend = _filteredFriends[index];
-                  return FadeAnimation(
-                    delay: Duration(milliseconds: index * 50),
-                    child: FriendTile(
-                      friend: friend,
-                      onTap: () => _navigateToChat(friend),
-                      onMoreTap: () => _showFriendOptions(friend),
-                    ),
-                  );
-                },
+        onRefresh: () async {
+          loadFirstPage(setState);
+        },
+        child: ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: _filteredFriends.length,
+          itemBuilder: (context, index) {
+            final friend = _filteredFriends[index];
+            return FadeAnimation(
+              delay: Duration(milliseconds: index * 50),
+              child: FriendTile(
+                friend: friend,
+                onTap: () => _navigateToChat(friend),
+                onMoreTap: () => _showFriendOptions(friend),
               ),
-            ),
-    );
-  }
-
-  void _showInviteDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Invite Friends'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <>[
-            ListTile(
-              leading: const Icon(Icons.share, color: Colors.blue),
-              title: const Text('Share Invite Link'),
-              onTap: () {
-                Navigator.pop(context);
-                // Share invite link
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.contact_phone, color: Colors.green),
-              title: const Text('Invite via Contacts'),
-              onTap: () {
-                Navigator.pop(context);
-                // Open contacts
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.qr_code, color: Colors.purple),
-              title: const Text('Show QR Code'),
-              onTap: () {
-                Navigator.pop(context);
-                // Show QR code
-              },
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

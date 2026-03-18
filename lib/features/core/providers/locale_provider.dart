@@ -4,15 +4,11 @@ import '../../../core/services/logger_service.dart';
 import '../../../core/di/service_locator.dart';
 
 class LocaleProvider extends ChangeNotifier {
-
-  LocaleProvider() {
-    _loadLocale();
-  }
   final LoggerService _logger = ServiceLocator().get<LoggerService>();
-  
+
   static const String _localeKey = 'app_locale';
   Locale _locale = const Locale('en');
-  final List<Locale> _supportedLocales = const <>[
+  final List<Locale> _supportedLocales = const [
     Locale('en', 'US'), // English
     Locale('es', 'ES'), // Spanish
     Locale('fr', 'FR'), // French
@@ -30,6 +26,10 @@ class LocaleProvider extends ChangeNotifier {
 
   Locale get locale => _locale;
   List<Locale> get supportedLocales => _supportedLocales;
+
+  LocaleProvider() {
+    _loadLocale();
+  }
 
   Future<void> _loadLocale() async {
     try {
@@ -81,10 +81,10 @@ class LocaleProvider extends ChangeNotifier {
     try {
       final String countryCode = _getCountryCode(languageCode);
       _locale = Locale(languageCode, countryCode);
-      
+
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString(_localeKey, languageCode);
-      
+
       _logger.info('Locale changed to: $_locale');
       notifyListeners();
     } catch (e) {
@@ -168,5 +168,28 @@ class LocaleProvider extends ChangeNotifier {
   // Get text direction
   TextDirection get textDirection {
     return isRtl ? TextDirection.rtl : TextDirection.ltr;
+  }
+
+  // Get all languages as list of maps for UI
+  List<Map<String, String>> getLanguageList() {
+    return _supportedLocales.map((locale) {
+      return {
+        'code': locale.languageCode,
+        'name': getLanguageName(locale.languageCode),
+        'flag': getLanguageFlag(locale.languageCode),
+        'countryCode': locale.countryCode ?? '',
+      };
+    }).toList();
+  }
+
+  // Check if current locale matches
+  bool isCurrentLocale(String languageCode) {
+    return _locale.languageCode == languageCode;
+  }
+
+  // Get localized string (simplified - you might want to use intl package)
+  String translate(String key, {Map<String, String>? params}) {
+    // This is a placeholder. In real app, use intl or similar package
+    return key;
   }
 }

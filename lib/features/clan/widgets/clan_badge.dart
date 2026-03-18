@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';  // DiagnosticPropertiesBuilder এর জন্য
 
 class ClanBadge extends StatelessWidget {
-
-  const ClanBadge({
-    required this.level, super.key,
-    this.size = 24,
-  });
   final int level;
   final double size;
+
+  const ClanBadge({
+    required this.level,
+    super.key,
+    this.size = 24,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +50,7 @@ class ClanBadge extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
+        children: [
           Text(
             icon,
             style: TextStyle(fontSize: size * 0.5),

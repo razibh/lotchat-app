@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';  // DiagnosticPropertiesBuilder এর জন্য
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../../../core/models/user_model.dart';
+import '../../../core/models/user_models.dart' as app;
 
 class CallScreen extends StatefulWidget {
-  
-  const CallScreen({
-    required this.user, required this.isVideoCall, super.key,
-  });
-  final UserModel user;
+  final app.User user;
   final bool isVideoCall;
+
+  const CallScreen({
+    required this.user,
+    required this.isVideoCall,
+    super.key,
+  });
 
   @override
   State<CallScreen> createState() => _CallScreenState();
@@ -17,7 +20,7 @@ class CallScreen extends StatefulWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<UserModel>('user', user));
+    properties.add(DiagnosticsProperty<app.User>('user', user));
     properties.add(DiagnosticsProperty<bool>('isVideoCall', isVideoCall));
   }
 }
@@ -30,7 +33,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   bool isFrontCamera = true;
   int callDuration = 0;
   late AnimationController _pulseController;
-  
+
   @override
   void initState() {
     super.initState();
@@ -38,34 +41,36 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(seconds: 1),
     )..repeat(reverse: true);
-    
+
     _initAgora();
     _startCallTimer();
   }
-  
+
   Future<void> _initAgora() async {
-    await <>[Permission.microphone, Permission.camera].request();
-    
+    await [Permission.microphone, Permission.camera].request();
+
     _engine = createAgoraRtcEngine();
     await _engine.initialize(const RtcEngineContext(
       appId: 'YOUR_AGORA_APP_ID',
-    ),);
-    
-    _engine.registerEventHandler(RtcEngineEventHandler(
-      onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-        debugPrint('Joined channel');
-      },
-      onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-        debugPrint('User joined: $remoteUid');
-      },
-      onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
-        debugPrint('User offline: $remoteUid');
-      },
-    ),);
-    
+    ));
+
+    _engine.registerEventHandler(
+      RtcEngineEventHandler(
+        onJoinChannelSuccess: (connection, elapsed) {
+          debugPrint('Joined channel');
+        },
+        onUserJoined: (connection, remoteUid, elapsed) {
+          debugPrint('User joined: $remoteUid');
+        },
+        onUserOffline: (connection, remoteUid, reason) {
+          debugPrint('User offline: $remoteUid');
+        },
+      ),
+    );
+
     await _engine.enableVideo();
     await _engine.startPreview();
-    
+
     await _engine.joinChannel(
       token: 'YOUR_TOKEN',
       channelId: 'channel_${DateTime.now().millisecondsSinceEpoch}',
@@ -73,7 +78,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       options: const ChannelMediaOptions(),
     );
   }
-  
+
   void _startCallTimer() {
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
@@ -84,25 +89,25 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       }
     });
   }
-  
+
   String _formatDuration(int seconds) {
     final int hours = seconds ~/ 3600;
     final int minutes = (seconds % 3600) ~/ 60;
     final int secs = seconds % 60;
-    
+
     if (hours > 0) {
       return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
     }
     return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
-        children: <>[
+        children: [
           // Remote Video
-          ColoredBox(
+          Container(
             color: Colors.black,
             child: const Center(
               child: Text(
@@ -111,7 +116,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
               ),
             ),
           ),
-          
+
           // Local Video (Picture in Picture)
           Positioned(
             top: 40,
@@ -126,28 +131,28 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
               ),
               child: widget.isVideoCall && isCameraOn
                   ? AgoraVideoView(
-                      controller: VideoViewController(
-                        rtcEngine: _engine,
-                        canvas: const VideoCanvas(uid: 0),
-                      ),
-                    )
+                controller: VideoViewController(
+                  rtcEngine: _engine,
+                  canvas: const VideoCanvas(uid: 0),
+                ),
+              )
                   : const Center(
-                      child: Icon(
-                        Icons.person,
-                        color: Colors.white,
-                        size: 50,
-                      ),
-                    ),
+                child: Icon(
+                  Icons.person,
+                  color: Colors.white,
+                  size: 50,
+                ),
+              ),
             ),
           ),
-          
+
           // Call Info
           Positioned(
             top: 40,
             left: 20,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   widget.user.username,
                   style: const TextStyle(
@@ -163,7 +168,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
               ],
             ),
           ),
-          
+
           // Controls
           Positioned(
             bottom: 50,
@@ -171,7 +176,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
             right: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <>[
+              children: [
                 _buildControlButton(
                   icon: isMicMuted ? Icons.mic_off : Icons.mic,
                   color: isMicMuted ? Colors.red : Colors.white,
@@ -200,7 +205,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                     });
                   },
                 ),
-                if (widget.isVideoCall) ...<>[
+                if (widget.isVideoCall) ...[
                   _buildControlButton(
                     icon: isCameraOn ? Icons.videocam : Icons.videocam_off,
                     color: isCameraOn ? Colors.green : Colors.red,
@@ -225,16 +230,16 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
               ],
             ),
           ),
-          
+
           // Ringing Animation (for incoming call)
           if (callDuration == 0)
             Positioned.fill(
-              child: ColoredBox(
+              child: Container(
                 color: Colors.black54,
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: <>[
+                    children: [
                       ScaleTransition(
                         scale: _pulseController,
                         child: const Icon(
@@ -257,7 +262,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       ),
     );
   }
-  
+
   Widget _buildControlButton({
     required IconData icon,
     required Color color,
@@ -269,7 +274,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
         width: 60,
         height: 60,
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
+          color: color.withOpacity(0.2),
           shape: BoxShape.circle,
           border: Border.all(color: color, width: 2),
         ),
@@ -277,7 +282,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       ),
     );
   }
-  
+
   @override
   void dispose() {
     _engine.leaveChannel();

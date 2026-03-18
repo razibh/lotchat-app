@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/di/service_locator.dart';
-import '../../core/models/user_model.dart';
+import '../../core/models/user_models.dart';  // ← এই ইম্পোর্ট ঠিক আছে
 import '../../core/services/auth_service.dart';
 import '../../core/utils/validators.dart';
 import '../../mixins/loading_mixin.dart';
@@ -17,17 +17,17 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> 
+class _RegisterScreenState extends State<RegisterScreen>
     with LoadingMixin, ToastMixin, FormMixin {
-  
+
   final AuthService _authService = ServiceLocator().get<AuthService>();
-  
+
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
-  
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _acceptTerms = false;
@@ -44,15 +44,15 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   Future<void> _register() async {
     if (!validateForm()) return;
-    
+
     if (!_acceptTerms) {
       showError('Please accept terms and conditions');
       return;
     }
-    
+
     await runWithLoading(() async {
       try {
-        final UserModel? user = await _authService.signUpWithEmail(
+        final User? user = await _authService.signUpWithEmail(  // ← UserModel → User
           email: _emailController.text.trim(),
           password: _passwordController.text,
           username: _usernameController.text.trim(),
@@ -60,7 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           country: 'Unknown', // Get from location
           region: 'Unknown',
         );
-        
+
         if (user != null) {
           showSuccess('Registration successful!');
           Navigator.pushReplacementNamed(context, '/home');
@@ -72,6 +72,9 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   String? _validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please confirm your password';
+    }
     if (value != _passwordController.text) {
       return 'Passwords do not match';
     }
@@ -92,9 +95,9 @@ class _RegisterScreenState extends State<RegisterScreen>
             autovalidateMode: autovalidateMode,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <>[
+              children: [
                 const SizedBox(height: 20),
-                
+
                 // Username
                 CustomTextField(
                   controller: _usernameController,
@@ -103,7 +106,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   validator: Validators.validateUsername,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Email
                 CustomTextField(
                   controller: _emailController,
@@ -113,7 +116,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   validator: Validators.validateEmail,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Phone
                 CustomTextField(
                   controller: _phoneController,
@@ -123,7 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   validator: Validators.validatePhone,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Password
                 CustomTextField(
                   controller: _passwordController,
@@ -133,6 +136,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.grey,
                     ),
                     onPressed: () {
                       setState(() {
@@ -143,7 +147,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   validator: Validators.validatePassword,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Confirm Password
                 CustomTextField(
                   controller: _confirmPasswordController,
@@ -153,6 +157,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.grey,
                     ),
                     onPressed: () {
                       setState(() {
@@ -163,13 +168,13 @@ class _RegisterScreenState extends State<RegisterScreen>
                   validator: _validateConfirmPassword,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Terms & Conditions
                 Row(
-                  children: <>[
+                  children: [
                     Checkbox(
                       value: _acceptTerms,
-                      onChanged: (bool? value) {
+                      onChanged: (value) {
                         setState(() {
                           _acceptTerms = value ?? false;
                         });
@@ -186,7 +191,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                           text: const TextSpan(
                             text: 'I accept the ',
                             style: TextStyle(color: Colors.black),
-                            children: <>[
+                            children: [
                               TextSpan(
                                 text: 'Terms & Conditions',
                                 style: TextStyle(
@@ -210,7 +215,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   ],
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Register Button
                 CustomButton(
                   text: 'Create Account',
@@ -218,18 +223,18 @@ class _RegisterScreenState extends State<RegisterScreen>
                   isLoading: isButtonLoading,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Login link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: <>[
+                  children: [
                     const Text('Already have an account? '),
                     TextButton(
                       onPressed: () {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (BuildContext context) => const LoginScreen(),
+                            builder: (context) => const LoginScreen(),
                           ),
                         );
                       },

@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
+  // Private constructor to prevent instantiation
+  AppTheme._();
+
   static const Color primaryColor = Color(0xFF8B5CF6); // Purple
   static const Color secondaryColor = Color(0xFFEC4899); // Pink
   static const Color accentColor = Color(0xFF3B82F6); // Blue
-  
+
   static const Color backgroundColor = Color(0xFFF5F5F5);
   static const Color surfaceColor = Colors.white;
-  
+
   static const Color textPrimary = Color(0xFF1F2937);
   static const Color textSecondary = Color(0xFF6B7280);
   static const Color textHint = Color(0xFF9CA3AF);
-  
+
   static const Color success = Color(0xFF10B981);
   static const Color error = Color(0xFFEF4444);
   static const Color warning = Color(0xFFF59E0B);
@@ -54,7 +57,7 @@ class AppTheme {
       filled: true,
       fillColor: Colors.grey.shade50,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData( // 🟢 Fixed: CardTheme -> CardThemeData
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
@@ -102,7 +105,7 @@ class AppTheme {
       fillColor: Colors.white.withValues(alpha: 0.1),
       hintStyle: const TextStyle(color: Colors.white38),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData( // 🟢 Fixed: CardTheme -> CardThemeData
       color: const Color(0xFF16213e),
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -117,62 +120,68 @@ class AppTheme {
 }
 
 class AppGradients {
+  // Private constructor to prevent instantiation
+  AppGradients._();
+
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[Color(0xFF8B5CF6), Color(0xFFEC4899)],
+    colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)], // 🟢 Fixed: removed <>
   );
 
   static const LinearGradient darkGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: <>[Color(0xFF1a1a2e), Color(0xFF16213e)],
+    colors: [Color(0xFF1a1a2e), Color(0xFF16213e)], // 🟢 Fixed: removed <>
   );
 
   static const LinearGradient purpleGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+    colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)], // 🟢 Fixed: removed <>
   );
 
   static const LinearGradient pinkGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[Color(0xFFEC4899), Color(0xFFBE185D)],
+    colors: [Color(0xFFEC4899), Color(0xFFBE185D)], // 🟢 Fixed: removed <>
   );
 
   static const LinearGradient orangeGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[Color(0xFFF59E0B), Color(0xFFD97706)],
+    colors: [Color(0xFFF59E0B), Color(0xFFD97706)], // 🟢 Fixed: removed <>
   );
 
   static const LinearGradient greenGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[Color(0xFF10B981), Color(0xFF059669)],
+    colors: [Color(0xFF10B981), Color(0xFF059669)], // 🟢 Fixed: removed <>
   );
 
   static const LinearGradient blueGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+    colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)], // 🟢 Fixed: removed <>
   );
 
   static const LinearGradient vipGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[Color(0xFFFBBF24), Color(0xFFF59E0B)],
+    colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)], // 🟢 Fixed: removed <>
   );
 
   static const LinearGradient svipGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[Color(0xFF8B5CF6), Color(0xFFEC4899)],
+    colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)], // 🟢 Fixed: removed <>
   );
 }
 
 class AppShadows {
+  // Private constructor to prevent instantiation
+  AppShadows._();
+
   static BoxShadow small = BoxShadow(
     color: Colors.black.withValues(alpha: 0.1),
     blurRadius: 5,
@@ -199,7 +208,11 @@ class AppShadows {
 }
 
 class AppDurations {
-  static const Duration fastest = Duration(milliseconds  : 150);
+  // Private constructor to prevent instantiation
+  AppDurations._();
+
+  // 🟢 Fixed: Duration syntax
+  static const Duration fastest = Duration(milliseconds: 150);
   static const Duration fast = Duration(milliseconds: 300);
   static const Duration normal = Duration(milliseconds: 500);
   static const Duration slow = Duration(milliseconds: 800);
@@ -207,6 +220,9 @@ class AppDurations {
 }
 
 class AppAnimations {
+  // Private constructor to prevent instantiation
+  AppAnimations._();
+
   static const Curve defaultCurve = Curves.easeInOut;
   static const Curve bounceCurve = Curves.bounceOut;
   static const Curve elasticCurve = Curves.elasticOut;

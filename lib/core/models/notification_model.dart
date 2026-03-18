@@ -1,3 +1,8 @@
+// lib/core/models/notification_model.dart
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart'; // 🟢 Icons, Colors, VoidCallback এর জন্য
+
 enum NotificationType {
   gift,
   message,
@@ -23,45 +28,6 @@ enum NotificationPriority {
 }
 
 class NotificationModel {
-
-  NotificationModel({
-    required this.id,
-    required this.userId,
-    required this.type,
-    required this.priority,
-    required this.title,
-    required this.body,
-    required this.createdAt, this.imageUrl,
-    this.deepLink,
-    this.data = const <String, dynamic>{},
-    this.isRead = false,
-    this.isArchived = false,
-    this.expiresAt,
-    this.actionButton,
-    this.onAction,
-    this.onDismiss,
-  });
-
-  factory NotificationModel.fromJson(Map<String, dynamic> json) {
-    return NotificationModel(
-      id: json['id'],
-      userId: json['userId'],
-      type: NotificationType.values[json['type']],
-      priority: NotificationPriority.values[json['priority']],
-      title: json['title'],
-      body: json['body'],
-      imageUrl: json['imageUrl'],
-      deepLink: json['deepLink'],
-      data: json['data'] ?? <String, dynamic>{},
-      isRead: json['isRead'] ?? false,
-      isArchived: json['isArchived'] ?? false,
-      createdAt: DateTime.parse(json['createdAt']),
-      expiresAt: json['expiresAt'] != null 
-          ? DateTime.parse(json['expiresAt']) 
-          : null,
-      actionButton: json['actionButton'],
-    );
-  }
   final String id;
   final String userId;
   final NotificationType type;
@@ -79,22 +45,66 @@ class NotificationModel {
   final VoidCallback? onAction;
   final VoidCallback? onDismiss;
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'id': id,
-    'userId': userId,
-    'type': type.index,
-    'priority': priority.index,
-    'title': title,
-    'body': body,
-    'imageUrl': imageUrl,
-    'deepLink': deepLink,
-    'data': data,
-    'isRead': isRead,
-    'isArchived': isArchived,
-    'createdAt': createdAt.toIso8601String(),
-    'expiresAt': expiresAt?.toIso8601String(),
-    'actionButton': actionButton,
-  };
+  NotificationModel({
+    required this.id,
+    required this.userId,
+    required this.type,
+    required this.priority,
+    required this.title,
+    required this.body,
+    required this.createdAt,
+    this.imageUrl,
+    this.deepLink,
+    this.data = const {},
+    this.isRead = false,
+    this.isArchived = false,
+    this.expiresAt,
+    this.actionButton,
+    this.onAction,
+    this.onDismiss,
+  });
+
+  factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    return NotificationModel(
+      id: json['id'] ?? '',
+      userId: json['userId'] ?? '',
+      type: NotificationType.values[json['type'] ?? 0],
+      priority: NotificationPriority.values[json['priority'] ?? 1],
+      title: json['title'] ?? '',
+      body: json['body'] ?? '',
+      imageUrl: json['imageUrl'],
+      deepLink: json['deepLink'],
+      data: json['data'] ?? {},
+      isRead: json['isRead'] ?? false,
+      isArchived: json['isArchived'] ?? false,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      expiresAt: json['expiresAt'] != null
+          ? DateTime.parse(json['expiresAt'])
+          : null,
+      actionButton: json['actionButton'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'type': type.index,
+      'priority': priority.index,
+      'title': title,
+      'body': body,
+      'imageUrl': imageUrl,
+      'deepLink': deepLink,
+      'data': data,
+      'isRead': isRead,
+      'isArchived': isArchived,
+      'createdAt': createdAt.toIso8601String(),
+      'expiresAt': expiresAt?.toIso8601String(),
+      'actionButton': actionButton,
+    };
+  }
 
   bool get isExpired {
     if (expiresAt == null) return false;
@@ -166,9 +176,54 @@ class NotificationModel {
         return Colors.brown;
     }
   }
+
+  NotificationModel copyWith({
+    String? id,
+    String? userId,
+    NotificationType? type,
+    NotificationPriority? priority,
+    String? title,
+    String? body,
+    String? imageUrl,
+    String? deepLink,
+    Map<String, dynamic>? data,
+    bool? isRead,
+    bool? isArchived,
+    DateTime? createdAt,
+    DateTime? expiresAt,
+    String? actionButton,
+    VoidCallback? onAction,
+    VoidCallback? onDismiss,
+  }) {
+    return NotificationModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      type: type ?? this.type,
+      priority: priority ?? this.priority,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      imageUrl: imageUrl ?? this.imageUrl,
+      deepLink: deepLink ?? this.deepLink,
+      data: data ?? this.data,
+      isRead: isRead ?? this.isRead,
+      isArchived: isArchived ?? this.isArchived,
+      createdAt: createdAt ?? this.createdAt,
+      expiresAt: expiresAt ?? this.expiresAt,
+      actionButton: actionButton ?? this.actionButton,
+      onAction: onAction ?? this.onAction,
+      onDismiss: onDismiss ?? this.onDismiss,
+    );
+  }
 }
 
 class NotificationSettings {
+  final bool enablePush;
+  final bool enableEmail;
+  final bool enableSound;
+  final bool enableVibration;
+  final bool enableLed;
+  final String sound;
+  final Map<NotificationType, bool> typeSettings;
 
   NotificationSettings({
     this.enablePush = true,
@@ -187,7 +242,7 @@ class NotificationSettings {
         typeSettings[NotificationType.values[int.parse(key)]] = value as bool;
       });
     }
-    
+
     return NotificationSettings(
       enablePush: json['enablePush'] ?? true,
       enableEmail: json['enableEmail'] ?? false,
@@ -198,16 +253,9 @@ class NotificationSettings {
       typeSettings: typeSettings,
     );
   }
-  final bool enablePush;
-  final bool enableEmail;
-  final bool enableSound;
-  final bool enableVibration;
-  final bool enableLed;
-  final String sound;
-  final Map<NotificationType, bool> typeSettings;
 
   static Map<NotificationType, bool> _defaultTypeSettings() {
-    return <NotificationType, bool>{
+    return {
       NotificationType.gift: true,
       NotificationType.message: true,
       NotificationType.friendRequest: true,
@@ -226,12 +274,12 @@ class NotificationSettings {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, bool> typeSettingsJson = <String, bool>{};
+    final Map<String, bool> typeSettingsJson = {};
     typeSettings.forEach((NotificationType key, bool value) {
       typeSettingsJson[key.index.toString()] = value;
     });
-    
-    return <String, dynamic>{
+
+    return {
       'enablePush': enablePush,
       'enableEmail': enableEmail,
       'enableSound': enableSound,
@@ -245,9 +293,31 @@ class NotificationSettings {
   bool isEnabled(NotificationType type) {
     return typeSettings[type] ?? true;
   }
+
+  NotificationSettings copyWith({
+    bool? enablePush,
+    bool? enableEmail,
+    bool? enableSound,
+    bool? enableVibration,
+    bool? enableLed,
+    String? sound,
+    Map<NotificationType, bool>? typeSettings,
+  }) {
+    return NotificationSettings(
+      enablePush: enablePush ?? this.enablePush,
+      enableEmail: enableEmail ?? this.enableEmail,
+      enableSound: enableSound ?? this.enableSound,
+      enableVibration: enableVibration ?? this.enableVibration,
+      enableLed: enableLed ?? this.enableLed,
+      sound: sound ?? this.sound,
+      typeSettings: typeSettings ?? this.typeSettings,
+    );
+  }
 }
 
 class NotificationBadge {
+  final int count;
+  final bool showDot;
 
   NotificationBadge({
     required this.count,
@@ -260,11 +330,21 @@ class NotificationBadge {
       showDot: json['showDot'] ?? false,
     );
   }
-  final int count;
-  final bool showDot;
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'count': count,
-    'showDot': showDot,
-  };
+  Map<String, dynamic> toJson() {
+    return {
+      'count': count,
+      'showDot': showDot,
+    };
+  }
+
+  NotificationBadge copyWith({
+    int? count,
+    bool? showDot,
+  }) {
+    return NotificationBadge(
+      count: count ?? this.count,
+      showDot: showDot ?? this.showDot,
+    );
+  }
 }

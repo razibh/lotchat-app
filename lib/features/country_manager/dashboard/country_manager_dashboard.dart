@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/gradient_background.dart';
-import '../../../core/widgets/neumorphic_button.dart';
-import '../models/country_manager_models.dart';
-import '../agencies/manage_agencies_screen.dart';
-import '../recruitment/recruit_agency_screen.dart';
-import '../monitoring/monitor_hosts_screen.dart';
-import '../issues/solve_issues_screen.dart';
+import 'package:flutter/foundation.dart';
 
 class CountryManagerDashboard extends StatefulWidget {
+  final String countryId;
+  final String? managerId;
 
   const CountryManagerDashboard({
-    required this.managerId, super.key,
+    super.key,
+    required this.countryId,
+    this.managerId,
   });
-  final String managerId;
 
   @override
   State<CountryManagerDashboard> createState() => _CountryManagerDashboardState();
@@ -21,910 +17,520 @@ class CountryManagerDashboard extends StatefulWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
+    properties.add(StringProperty('countryId', countryId));
     properties.add(StringProperty('managerId', managerId));
   }
 }
 
 class _CountryManagerDashboardState extends State<CountryManagerDashboard> {
-  bool _isLoading = true;
-  CountryManager? _manager;
-  List<ManagerAgency> _recentAgencies = <ManagerAgency>[];
-  List<ManagerIssue> _recentIssues = <>[];
-  List<AgencyRecruitmentRequest> _pendingRequests = <>[];
-  List<HostPerformance> _topHosts = <>[];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDashboardData();
-  }
-
-  Future<void> _loadDashboardData() async {
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-
-    setState(() {
-      _manager = CountryManager(
-        id: 'cm_001',
-        userId: 'user_001',
-        name: 'Rahim Khan',
-        email: 'rahim.khan@platform.com',
-        phone: '+8801712345678',
-        countryId: 'bd',
-        joinedDate: DateTime.now().subtract(const Duration(days: 180)),
-        status: ManagerStatus.active,
-        totalAgencies: 45,
-        activeAgencies: 38,
-        pendingAgencies: 5,
-        totalHosts: 320,
-        activeHosts: 280,
-        totalCommission: 125000,
-        monthlyTarget: 500000,
-        achievedTarget: 425000,
-        monthlyEarnings: 425000,
-        agencyGrowthRate: 12.5,
-        hostGrowthRate: 18.3,
-        revenueGrowthRate: 15.2,
-        resolvedIssues: 28,
-        pendingIssues: 5,
-      );
-
-      _recentAgencies = _generateSampleAgencies();
-      _recentIssues = _generateSampleIssues();
-      _pendingRequests = _generateSampleRequests();
-      _topHosts = _generateSampleHosts();
-      
-      _isLoading = false;
-    });
-  }
-
-  List<ManagerAgency> _generateSampleAgencies() {
-    return List.generate(5, (int index) {
-      return ManagerAgency(
-        id: 'ag_00$index',
-        name: 'Agency ${index + 1}',
-        ownerName: 'Owner ${index + 1}',
-        email: 'agency$index@example.com',
-        phone: '017xxxxxx',
-        address: 'Dhaka, Bangladesh',
-        registrationDate: DateTime.now().subtract(Duration(days: 30 * (index + 1))),
-        status: AgencyStatus.active,
-        isVerified: true,
-        totalHosts: 10 + index * 5,
-        activeHosts: 8 + index * 4,
-        monthlyEarnings: 50000 + index * 10000,
-        totalEarnings: 500000 + index * 100000,
-        commissionRate: 10 + index,
-        lastContact: DateTime.now().subtract(Duration(days: index)),
-        totalIssues: 3 - index,
-        resolvedIssues: 2 - index,
-        monthlyGrowth: 5 + index * 2,
-        topHosts: <String>[],
-        stats: ManagerAgencyStats(
-          newHostsThisMonth: 2 + index,
-          lostHostsThisMonth: 1,
-          revenueThisMonth: 50000 + index * 10000,
-          revenueLastMonth: 45000 + index * 9000,
-          growthRate: 10 + index * 2,
-          monthlyData: <dynamic>[],
-        ),
-      );
-    });
-  }
-
-  List<ManagerIssue> _generateSampleIssues() {
-    return <>[
-      ManagerIssue(
-        id: 'iss_001',
-        agencyId: 'ag_001',
-        agencyName: 'Elite Agency',
-        reportedBy: 'Host Rahman',
-        reportedById: 'host_001',
-        title: 'Commission Payment Delay',
-        description: "Last month's commission not received yet",
-        priority: IssuePriority.high,
-        status: IssueStatus.open,
-        reportedDate: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      ManagerIssue(
-        id: 'iss_002',
-        agencyId: 'ag_002',
-        agencyName: 'Star Makers',
-        reportedBy: 'Agency Owner',
-        reportedById: 'agency_002',
-        title: 'Withdrawal Issue',
-        description: 'Withdrawal pending for 5 days',
-        priority: IssuePriority.medium,
-        status: IssueStatus.inProgress,
-        reportedDate: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      ManagerIssue(
-        id: 'iss_003',
-        agencyId: 'ag_003',
-        agencyName: 'Pro Talent',
-        reportedBy: 'Host Shilpi',
-        reportedById: 'host_003',
-        title: 'Account Suspension',
-        description: 'Host account suspended without reason',
-        priority: IssuePriority.critical,
-        status: IssueStatus.open,
-        reportedDate: DateTime.now().subtract(const Duration(hours: 5)),
-      ),
-    ];
-  }
-
-  List<AgencyRecruitmentRequest> _generateSampleRequests() {
-    return <>[
-      AgencyRecruitmentRequest(
-        id: 'req_001',
-        agencyName: 'New Talent Agency',
-        ownerName: 'Karim Ahmed',
-        email: 'karim@newtalent.com',
-        phone: '01712345678',
-        address: 'Chittagong',
-        licenseNumber: 'LIC12345',
-        businessPlan: 'We will recruit 50 hosts in first month...',
-        proposedHosts: 50,
-        expectedInvestment: 500000,
-        requestDate: DateTime.now().subtract(const Duration(days: 1)),
-        status: AgencyRequestStatus.pending,
-      ),
-      AgencyRecruitmentRequest(
-        id: 'req_002',
-        agencyName: 'Digital Stars',
-        ownerName: 'Rina Begum',
-        email: 'rina@digitalstars.com',
-        phone: '01812345678',
-        address: 'Sylhet',
-        licenseNumber: 'LIC67890',
-        businessPlan: 'Focus on female hosts and family content...',
-        proposedHosts: 30,
-        expectedInvestment: 300000,
-        requestDate: DateTime.now().subtract(const Duration(days: 2)),
-        status: AgencyRequestStatus.pending,
-      ),
-    ];
-  }
-
-  List<HostPerformance> _generateSampleHosts() {
-    return List.generate(5, (int index) {
-      return HostPerformance(
-        hostId: 'host_00$index',
-        name: 'Host ${index + 1}',
-        username: 'host_${index + 1}',
-        agencyId: 'ag_001',
-        agencyName: 'Elite Agency',
-        followers: 5000 + (index * 2000),
-        followersGrowth: 10 + index * 2,
-        monthlyEarnings: 15000 + (index * 5000),
-        totalEarnings: 150000 + (index * 50000),
-        totalRooms: 50 + index * 10,
-        totalHours: 200 + index * 40,
-        avgRating: 4.5 + (index * 0.1),
-        giftsReceived: 1000 + index * 200,
-        recentEvents: <dynamic>[],
-      );
-    });
-  }
+  int _selectedIndex = 0;
+  int _pendingApprovals = 3;
+  int _totalAgencies = 12;
+  int _totalHosts = 45;
+  int _activeIssues = 2;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GradientBackground(
-        child: SafeArea(
-          child: _isLoading
-              ? _buildLoadingState()
-              : _buildDashboard(),
+      appBar: AppBar(
+        title: Text('Country Manager - ${widget.countryId}'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        actions: [
+          if (widget.managerId != null)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'ID: ${widget.managerId}',
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+      body: Row(
+        children: [
+          // Left Side Menu
+          Container(
+            width: 250,
+            color: Colors.grey.shade100,
+            child: Column(
+              children: [
+                _buildMenuItem(0, Icons.dashboard, 'Dashboard'),
+                _buildMenuItem(1, Icons.business, 'Agencies', badge: _pendingApprovals),
+                _buildMenuItem(2, Icons.people, 'Hosts'),
+                _buildMenuItem(3, Icons.assessment, 'Reports'),
+                _buildMenuItem(4, Icons.warning, 'Issues', badge: _activeIssues),
+                _buildMenuItem(5, Icons.person_add, 'Recruitment'),
+                _buildMenuItem(6, Icons.bar_chart, 'Statistics'),
+                _buildMenuItem(7, Icons.settings, 'Settings'),
+                const Spacer(),
+                _buildLogoutButton(),
+              ],
+            ),
+          ),
+
+          // Right Side Content
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: _buildContent(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(int index, IconData icon, String title, {int? badge}) {
+    final isSelected = _selectedIndex == index;
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _selectedIndex = index;
+        });
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.blue : Colors.grey,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: isSelected ? Colors.blue : Colors.black87,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ),
+            if (badge != null && badge > 0)
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                constraints: const BoxConstraints(
+                  minWidth: 20,
+                  minHeight: 20,
+                ),
+                child: Center(
+                  child: Text(
+                    '$badge',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildLoadingState() {
-    return const Center(
-      child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(AppColors.accentPurple),
+  Widget _buildLogoutButton() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      child: ElevatedButton.icon(
+        onPressed: () {
+          _showLogoutDialog();
+        },
+        icon: const Icon(Icons.logout),
+        label: const Text('Logout'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 45),
+        ),
       ),
     );
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildDashboard();
+      case 1:
+        return _buildAgencies();
+      case 2:
+        return _buildHosts();
+      case 3:
+        return _buildReports();
+      case 4:
+        return _buildIssues();
+      case 5:
+        return _buildRecruitment();
+      case 6:
+        return _buildStatistics();
+      case 7:
+        return _buildSettings();
+      default:
+        return _buildDashboard();
+    }
   }
 
   Widget _buildDashboard() {
-    return Column(
-      children: <>[
-        _buildHeader(),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: <>[
-                _buildWelcomeCard(),
-                const SizedBox(height: 20),
-                _buildStatsGrid(),
-                const SizedBox(height: 20),
-                _buildTargetProgress(),
-                const SizedBox(height: 20),
-                _buildQuickActions(),
-                const SizedBox(height: 20),
-                _buildPendingRequests(),
-                const SizedBox(height: 20),
-                _buildRecentIssues(),
-                const SizedBox(height: 20),
-                _buildTopHosts(),
-                const SizedBox(height: 20),
-                _buildRecentAgencies(),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: <>[
-          CircleAvatar(
-            radius: 25,
-            backgroundColor: AppColors.accentPurple,
-            child: Text(
-              _manager?.name[0] ?? 'M',
-              style: const TextStyle(color: Colors.white, fontSize: 20),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
-                Text(
-                  'Welcome, ${_manager?.name}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  _manager?.email ?? '',
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-          Stack(
-            children: <>[
-              IconButton(
-                icon: const Icon(Icons.notifications, color: Colors.white),
-                onPressed: () {},
-              ),
-              if (_manager?.pendingIssues != null && _manager!.pendingIssues > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '${_manager!.pendingIssues}',
-                      style: const TextStyle(color: Colors.white, fontSize: 8),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWelcomeCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: <>[
-            AppColors.accentPurple.withValues(alpha: 0.3),
-            AppColors.accentBlue.withValues(alpha: 0.3),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: <>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
-                Text(
-                  'Country: ${_manager?.countryId.toUpperCase()}',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Monthly Target: ৳${_manager?.monthlyTarget}',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: <>[
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Text(
-                  'Active',
-                  style: TextStyle(color: Colors.green),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsGrid() {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      childAspectRatio: 1.5,
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      children: <>[
-        _buildStatCard(
-          'Total Agencies',
-          '${_manager?.totalAgencies ?? 0}',
-          Icons.business,
-          Colors.purple,
-        ),
-        _buildStatCard(
-          'Active Agencies',
-          '${_manager?.activeAgencies ?? 0}',
-          Icons.check_circle,
-          Colors.green,
-        ),
-        _buildStatCard(
-          'Total Hosts',
-          '${_manager?.totalHosts ?? 0}',
-          Icons.people,
-          Colors.blue,
-        ),
-        _buildStatCard(
-          'Active Hosts',
-          '${_manager?.activeHosts ?? 0}',
-          Icons.person,
-          Colors.orange,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <>[
-          Icon(icon, color: color),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white70, fontSize: 10),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTargetProgress() {
-    final double progress = _manager?.targetProgress ?? 0;
-    
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           const Text(
-            'Monthly Target Progress',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            'Dashboard Overview',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: progress / 100,
-            backgroundColor: Colors.white.withValues(alpha: 0.1),
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
-            minHeight: 8,
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <>[
-              Text(
-                'Achieved: ৳${_manager?.achievedTarget}',
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-              Text(
-                'Target: ৳${_manager?.monthlyTarget}',
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-              ),
+          const SizedBox(height: 20),
+
+          // Stats Cards
+          GridView.count(
+            shrinkWrap: true,
+            crossAxisCount: 4,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.5,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              _buildStatCard('Total Agencies', '$_totalAgencies', Icons.business, Colors.blue),
+              _buildStatCard('Total Hosts', '$_totalHosts', Icons.people, Colors.green),
+              _buildStatCard('Pending Approvals', '$_pendingApprovals', Icons.pending, Colors.orange),
+              _buildStatCard('Active Issues', '$_activeIssues', Icons.warning, Colors.red),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            '${progress.toStringAsFixed(1)}% Complete',
-            style: TextStyle(
-              color: progress >= 100 ? Colors.green : Colors.orange,
-              fontWeight: FontWeight.bold,
-            ),
+
+          const SizedBox(height: 30),
+
+          // Recent Activities
+          const Text(
+            'Recent Activities',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-        ],
-      ),
-    );
-  }
+          const SizedBox(height: 16),
 
-  Widget _buildQuickActions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
-        const Text(
-          'Quick Actions',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: <>[
-            Expanded(
-              child: _buildActionButton(
-                'Manage\nAgencies',
-                Icons.business,
-                Colors.purple,
-                () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ManageAgenciesScreen(managerId: widget.managerId),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 5,
+            itemBuilder: (context, index) {
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: index % 3 == 0 ? Colors.green : Colors.blue,
+                    child: Icon(
+                      index % 3 == 0 ? Icons.check : Icons.access_time,
+                      color: Colors.white,
                     ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildActionButton(
-                'Recruit\nAgency',
-                Icons.person_add,
-                Colors.green,
-                () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => RecruitAgencyScreen(managerId: widget.managerId),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildActionButton(
-                'Monitor\nHosts',
-                Icons.visibility,
-                Colors.blue,
-                () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MonitorHostsScreen(managerId: widget.managerId),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildActionButton(
-                'Solve\nIssues',
-                Icons.help,
-                Colors.orange,
-                () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SolveIssuesScreen(managerId: widget.managerId),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButton(String label, IconData icon, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.5)),
-        ),
-        child: Column(
-          children: <>[
-            Icon(icon, color: color),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(color: color, fontSize: 10),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPendingRequests() {
-    if (_pendingRequests.isEmpty) return const SizedBox();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <>[
-            const Text(
-              'Pending Agency Requests',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            TextButton(
-              onPressed: () {},
-              child: const Text('View All'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        ..._pendingRequests.map(_buildRequestTile),
-      ],
-    );
-  }
-
-  Widget _buildRequestTile(AgencyRecruitmentRequest req) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        children: <>[
-          Row(
-            children: <>[
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
+                  ),
+                  title: Text('Agency Application ${index + 1}'),
+                  subtitle: Text('Submitted ${index + 1} hours ago'),
+                  trailing: index % 3 == 0
+                      ? const Text('Approved', style: TextStyle(color: Colors.green))
+                      : const Text('Pending', style: TextStyle(color: Colors.orange)),
                 ),
-                child: const Icon(Icons.business, color: Colors.orange),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
-                    Text(
-                      req.agencyName,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      req.ownerName,
-                      style: const TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${req.proposedHosts} hosts',
-                  style: const TextStyle(color: Colors.orange, fontSize: 10),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <>[
-              _buildRequestAction('Approve', Colors.green, () {}),
-              _buildRequestAction('Reject', Colors.red, () {}),
-              _buildRequestAction('Review', Colors.blue, () {}),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRequestAction(String label, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(color: color, fontSize: 12),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecentIssues() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <>[
-            const Text(
-              'Recent Issues',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            TextButton(
-              onPressed: () {},
-              child: const Text('View All'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        ..._recentIssues.map(_buildIssueTile),
-      ],
-    );
-  }
-
-  Widget _buildIssueTile(ManagerIssue issue) {
-    Color priorityColor;
-    switch (issue.priority) {
-      case IssuePriority.low:
-        priorityColor = Colors.green;
-      case IssuePriority.medium:
-        priorityColor = Colors.orange;
-      case IssuePriority.high:
-        priorityColor = Colors.red;
-      case IssuePriority.critical:
-        priorityColor = Colors.purple;
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: <>[
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: priorityColor.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.warning, color: priorityColor, size: 16),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
-                Text(
-                  issue.title,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  issue.agencyName,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: issue.status == IssueStatus.open
-                  ? Colors.red.withValues(alpha: 0.2)
-                  : Colors.orange.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              issue.status.toString().split('.').last,
-              style: TextStyle(
-                color: issue.status == IssueStatus.open ? Colors.red : Colors.orange,
-                fontSize: 10,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopHosts() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
-        const Text(
-          'Top Performing Hosts',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 120,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _topHosts.length,
-            itemBuilder: (BuildContext context, int index) {
-              final host = _topHosts[index];
-              return _buildHostCard(host);
+              );
             },
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              title,
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAgencies() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Agency Management',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  '/country-manager/agencies',
+                  arguments: {'countryId': widget.countryId},
+                );
+              },
+              icon: const Icon(Icons.visibility),
+              label: const Text('View All'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Pending Approvals
+        const Text(
+          'Pending Approvals',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _pendingApprovals,
+          itemBuilder: (context, index) {
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.orange.shade100,
+                  child: const Icon(Icons.business, color: Colors.orange),
+                ),
+                title: Text('Agency ${index + 1}'),
+                subtitle: Text('Applied ${index + 1} day${index == 0 ? '' : 's'} ago'),
+                trailing: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/country-manager/agency-approval',
+                      arguments: {
+                        'agencyId': 'agency_${index + 1}',
+                        'countryId': widget.countryId,
+                      },
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Review'),
+                ),
+              ),
+            );
+          },
         ),
       ],
     );
   }
 
-  Widget _buildHostCard(HostPerformance host) {
-    return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
+  Widget _buildHosts() {
+    return Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
-          Row(
-            children: <>[
-              CircleAvatar(
-                radius: 15,
-                backgroundColor: Colors.blue,
-                child: Text(
-                  host.name[0],
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  host.name,
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.people, size: 80, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text(
+            'Host Management',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
-            '${host.followers} followers',
-            style: const TextStyle(color: Colors.white70, fontSize: 10),
-          ),
-          Text(
-            '৳${host.monthlyEarnings}',
-            style: const TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
+            'Total Hosts: $_totalHosts',
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRecentAgencies() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
-        const Text(
-          'Recent Agencies',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        ..._recentAgencies.map(_buildAgencyTile),
-      ],
-    );
-  }
-
-  Widget _buildAgencyTile(ManagerAgency agency) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: <>[
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.purple.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.business, color: Colors.purple, size: 16),
+  Widget _buildReports() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.assessment, size: 80, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text(
+            'Reports',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
-                Text(
-                  agency.name,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '${agency.activeHosts}/${agency.totalHosts} active hosts',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            '৳${agency.monthlyEarnings}',
-            style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                '/country-manager/statistics',
+                arguments: widget.countryId,
+              );
+            },
+            child: const Text('View Statistics'),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildIssues() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.warning, size: 80, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text(
+            'Issue Management',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Active Issues: $_activeIssues',
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecruitment() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.person_add, size: 80, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text(
+            'Recruitment',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                '/country-manager/recruitment',
+                arguments: widget.countryId,
+              );
+            },
+            child: const Text('Open Recruitment'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatistics() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.bar_chart, size: 80, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text(
+            'Statistics',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                '/country-manager/statistics',
+                arguments: widget.countryId,
+              );
+            },
+            child: const Text('View Statistics'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettings() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.settings, size: 80, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text(
+            'Settings',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Country: ${widget.countryId}',
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(IntProperty('selectedIndex', _selectedIndex));
+    properties.add(IntProperty('pendingApprovals', _pendingApprovals));
+    properties.add(IntProperty('totalAgencies', _totalAgencies));
+    properties.add(IntProperty('totalHosts', _totalHosts));
+    properties.add(IntProperty('activeIssues', _activeIssues));
   }
 }

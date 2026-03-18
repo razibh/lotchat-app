@@ -15,7 +15,7 @@ class AppColors {
   static const Color primaryTeal = Color(0xFF14B8A6);
   static const Color primaryCyan = Color(0xFF06B6D4);
   static const Color primaryYellow = Color(0xFFFBBF24);
-  
+
   // Background Colors
   static const Color backgroundDark = Color(0xFF0F0F1A);
   static const Color backgroundDarker = Color(0xFF0A0A14);
@@ -25,7 +25,7 @@ class AppColors {
   static const Color surfaceDarker = Color(0xFF0F1A2F);
   static const Color surfaceLight = Color(0xFF1F2A44);
   static const Color surfaceLighter = Color(0xFF2A3555);
-  
+
   // Accent Colors
   static const Color accentPurple = Color(0xFFA78BFA);
   static const Color accentPurpleLight = Color(0xFFC4B5FD);
@@ -51,7 +51,7 @@ class AppColors {
   static const Color accentTeal = Color(0xFF2DD4BF);
   static const Color accentTealLight = Color(0xFF5EEAD4);
   static const Color accentTealDark = Color(0xFF0D9488);
-  
+
   // Text Colors
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFA0A0B0);
@@ -59,7 +59,7 @@ class AppColors {
   static const Color textHint = Color(0xFF4A4A5A);
   static const Color textDisabled = Color(0xFF3A3A4A);
   static const Color textInverse = Color(0xFF000000);
-  
+
   // Status Colors
   static const Color success = Color(0xFF10B981);
   static const Color successLight = Color(0xFFD1FAE5);
@@ -73,7 +73,7 @@ class AppColors {
   static const Color info = Color(0xFF3B82F6);
   static const Color infoLight = Color(0xFFDBEAFE);
   static const Color infoDark = Color(0xFF1E40AF);
-  
+
   // Badge Colors
   static const Color badgeAgency = Color(0xFF9C27B0); // Purple
   static const Color badgeAgencyLight = Color(0xFFE1BEE7);
@@ -96,7 +96,7 @@ class AppColors {
   static const Color badgeStreamer = Color(0xFF673AB7); // Deep Purple
   static const Color badgeStreamerLight = Color(0xFFD1C4E9);
   static const Color badgeStreamerDark = Color(0xFF512DA8);
-  
+
   // Tier Colors
   static const Color tierBronze = Color(0xFFCD7F32);
   static const Color tierBronzeLight = Color(0xFFE6B17E);
@@ -119,7 +119,7 @@ class AppColors {
   static const Color tierLegend = Color(0xFFFFD166);
   static const Color tierLegendLight = Color(0xFFFFE699);
   static const Color tierLegendDark = Color(0xFFCC9C33);
-  
+
   // Game Colors
   static const Color gameChess = Color(0xFF795548);
   static const Color gameCarrom = Color(0xFFFFA726);
@@ -129,93 +129,97 @@ class AppColors {
   static const Color gameWerewolf = Color(0xFFF44336);
   static const Color gameLudo = Color(0xFF4CAF50);
   static const Color gameSnakeLadder = Color(0xFFFF9800);
-  
+
+  // 🟢 Fixed: 'accentYellow' is not defined, using primaryYellow instead
+  static const Color _accentYellow = Color(0xFFFFE55C); // Add if needed
+
   // Gradient Colors
   static const Gradient gradientPrimary = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[accentPurple, accentBlue],
+    colors: [accentPurple, accentBlue],
   );
-  
+
   static const Gradient gradientSecondary = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[accentOrange, accentPink],
+    colors: [accentOrange, accentPink],
   );
-  
+
   static const Gradient gradientSuccess = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[accentGreen, accentTeal],
+    colors: [accentGreen, accentTeal],
   );
-  
+
+  // 🟢 Fixed: Replaced 'accentYellow' with primaryYellow
   static const Gradient gradientWarning = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[accentOrange, accentYellow],
+    colors: [accentOrange, primaryYellow],
   );
-  
+
   static const Gradient gradientError = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[accentRed, accentPink],
+    colors: [accentRed, accentPink],
   );
-  
+
   static const Gradient gradientInfo = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[accentBlue, accentIndigo],
+    colors: [accentBlue, accentIndigo],
   );
-  
+
   static const Gradient gradientPurple = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[accentPurple, accentIndigo],
+    colors: [accentPurple, accentIndigo],
   );
-  
+
   static const Gradient gradientGold = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[tierGold, tierGoldLight],
+    colors: [tierGold, tierGoldLight],
   );
-  
+
   static const Gradient gradientSilver = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[tierSilver, tierSilverLight],
+    colors: [tierSilver, tierSilverLight],
   );
-  
+
   static const Gradient gradientBronze = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[tierBronze, tierBronzeLight],
+    colors: [tierBronze, tierBronzeLight],
   );
-  
+
   static const Gradient gradientDiamond = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[tierDiamond, tierDiamondLight],
+    colors: [tierDiamond, tierDiamondLight],
   );
-  
+
   // Background Gradients
   static const Gradient gradientBackgroundDark = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: <>[backgroundDark, backgroundDarker],
+    colors: [backgroundDark, backgroundDarker],
   );
-  
+
   static const Gradient gradientBackgroundLight = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: <>[backgroundLight, backgroundLighter],
+    colors: [backgroundLight, backgroundLighter],
   );
-  
+
   static const Gradient gradientSurface = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[surfaceDark, surfaceLight],
+    colors: [surfaceDark, surfaceLight],
   );
-  
+
   // Glass Effect Colors
   static Color glassWhite = Colors.white.withValues(alpha: 0.1);
   static Color glassBlack = Colors.black.withValues(alpha: 0.3);
@@ -224,12 +228,12 @@ class AppColors {
   static Color glassGreen = accentGreen.withValues(alpha: 0.1);
   static Color glassOrange = accentOrange.withValues(alpha: 0.1);
   static Color glassRed = accentRed.withValues(alpha: 0.1);
-  
+
   // Border Colors
   static const Color borderLight = Color(0x1FFFFFFF);
   static const Color borderMedium = Color(0x33FFFFFF);
   static const Color borderDark = Color(0x4DFFFFFF);
-  
+
   // Shadow Colors
   static Color shadowLight = Colors.black.withValues(alpha: 0.1);
   static Color shadowMedium = Colors.black.withValues(alpha: 0.2);
@@ -237,15 +241,15 @@ class AppColors {
   static Color shadowPurple = accentPurple.withValues(alpha: 0.3);
   static Color shadowBlue = accentBlue.withValues(alpha: 0.3);
   static Color shadowGreen = accentGreen.withValues(alpha: 0.3);
-  
+
   // Overlay Colors
   static const Color overlayLight = Color(0x0A000000);
   static const Color overlayMedium = Color(0x1A000000);
   static const Color overlayDark = Color(0x33000000);
   static const Color overlayDarker = Color(0x66000000);
-  
+
   // Chart Colors
-  static const List<Color> chartColors = <>[
+  static const List<Color> chartColors = [
     primaryPurple,
     primaryBlue,
     primaryGreen,
@@ -257,7 +261,7 @@ class AppColors {
     primaryCyan,
     primaryYellow,
   ];
-  
+
   // Status Methods
   static Color getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -283,7 +287,7 @@ class AppColors {
         return textSecondary;
     }
   }
-  
+
   // Priority Methods
   static Color getPriorityColor(String priority) {
     switch (priority.toLowerCase()) {
@@ -300,7 +304,7 @@ class AppColors {
         return textSecondary;
     }
   }
-  
+
   // Role Methods
   static Color getRoleColor(String role) {
     switch (role.toLowerCase()) {
@@ -328,7 +332,7 @@ class AppColors {
         return textSecondary;
     }
   }
-  
+
   // Badge Methods
   static Color getBadgeColor(String badgeType) {
     switch (badgeType.toLowerCase()) {
@@ -351,7 +355,7 @@ class AppColors {
         return textSecondary;
     }
   }
-  
+
   // Tier Methods
   static Color getTierColor(String tier) {
     switch (tier.toLowerCase()) {
@@ -373,7 +377,7 @@ class AppColors {
         return textSecondary;
     }
   }
-  
+
   // Game Methods
   static Color getGameColor(String game) {
     switch (game.toLowerCase()) {
@@ -399,12 +403,12 @@ class AppColors {
         return textSecondary;
     }
   }
-  
+
   // Opacity Methods
   static Color withOpacity(Color color, double opacity) {
     return color.withValues(alpha: opacity);
   }
-  
+
   // Brightness Methods
   static Color darken(Color color, [double amount = 0.1]) {
     assert(amount >= 0 && amount <= 1);
@@ -412,24 +416,24 @@ class AppColors {
     final HSLColor hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
     return hslDark.toColor();
   }
-  
+
   static Color lighten(Color color, [double amount = 0.1]) {
     assert(amount >= 0 && amount <= 1);
     final HSLColor hsl = HSLColor.fromColor(color);
     final HSLColor hslLight = hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
     return hslLight.toColor();
   }
-  
+
   // Contrast Methods
   static bool isLightColor(Color color) {
     final luminance = color.computeLuminance();
     return luminance > 0.5;
   }
-  
+
   static Color getContrastColor(Color color) {
     return isLightColor(color) ? textInverse : textPrimary;
   }
-  
+
   // Theme Methods
   static ColorScheme get lightColorScheme => const ColorScheme(
     brightness: Brightness.light,
@@ -442,7 +446,7 @@ class AppColors {
     surface: surfaceLight,
     onSurface: textPrimary,
   );
-  
+
   static ColorScheme get darkColorScheme => const ColorScheme(
     brightness: Brightness.dark,
     primary: accentPurple,

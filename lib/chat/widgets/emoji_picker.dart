@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 
 class EmojiPicker extends StatelessWidget {
-
   const EmojiPicker({
-    required this.onEmojiSelected, super.key,
+    super.key,
+    required this.onEmojiSelected,
   });
+
   final Function(String) onEmojiSelected;
 
-  final List<String> recentEmojis = const <String>[
+  final List<String> recentEmojis = const [
     '😊', '😂', '❤️', '👍', '😍', '😢', '😭', '😘', '🥰', '😁',
   ];
 
-  final List<List<String>> emojiCategories = const <List<String>>[
-    <String>['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇'],
-    <String>['😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜'],
-    <String>['🤪', '🤨', '🧐', '🤓', '😎', '🥸', '🤩', '🥳', '😏', '😒'],
-    <String>['😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩'],
-    <String>['😤', '😠', '😡', '🤬', '🤯', '😳', '🥺', '😨', '😰', '😥'],
+  final List<List<String>> emojiCategories = const [
+    ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇'],
+    ['😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜'],
+    ['🤪', '🤨', '🧐', '🤓', '😎', '🥸', '🤩', '🥳', '😏', '😒'],
+    ['😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩'],
+    ['😤', '😠', '😡', '🤬', '🤯', '😳', '🥺', '😨', '😰', '😥'],
   ];
 
   @override
@@ -25,7 +27,7 @@ class EmojiPicker extends StatelessWidget {
       height: 300,
       padding: const EdgeInsets.all(8),
       child: Column(
-        children: <>[
+        children: [
           // Recent Emojis
           const Text(
             'Recent',
@@ -34,16 +36,16 @@ class EmojiPicker extends StatelessWidget {
           const SizedBox(height: 8),
           _buildEmojiRow(recentEmojis),
           const Divider(),
-          
+
           // Categories
           Expanded(
             child: DefaultTabController(
               length: 5,
               child: Column(
-                children: <>[
+                children: [
                   const TabBar(
                     isScrollable: true,
-                    tabs: <>[
+                    tabs: [
                       Tab(text: '😊'),
                       Tab(text: '😍'),
                       Tab(text: '🤪'),
@@ -109,7 +111,8 @@ class EmojiPicker extends StatelessWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(ObjectFlagProperty<Function(String)>.has('onEmojiSelected', onEmojiSelected));
-    properties.add(IterableProperty<String>('recentEmojis', recentEmojis));
-    properties.add(IterableProperty<List<String>>('emojiCategories', emojiCategories));
+    // 🟢 IterableProperty সরিয়ে দেওয়া হয়েছে
+    properties.add(DiagnosticsProperty<List<String>>('recentEmojis', recentEmojis));
+    properties.add(DiagnosticsProperty<List<List<String>>>('emojiCategories', emojiCategories));
   }
 }

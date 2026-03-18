@@ -1,28 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/game_service.dart';
 import '../../core/services/payment_service.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../mixins/dialog_mixin.dart';
-import '../../widgets/common/custom_button.dart';
 
 class ThreePattiGame extends StatefulWidget {
-  const ThreePattiGame({super.key});
+  final String? gameId;
+
+  const ThreePattiGame({super.key, this.gameId});
 
   @override
   State<ThreePattiGame> createState() => _ThreePattiGameState();
 }
 
-class _ThreePattiGameState extends State<ThreePattiGame> 
+class _ThreePattiGameState extends State<ThreePattiGame>
     with LoadingMixin, ToastMixin, DialogMixin {
-  
+
   final GameService _gameService = ServiceLocator().get<GameService>();
   final PaymentService _paymentService = ServiceLocator().get<PaymentService>();
-  
+
   int _betAmount = 100;
-  List<int> _playerCards = <int>[];
-  List<int> _opponentCards = <int>[];
+  List<int> _playerCards = [];
+  List<int> _opponentCards = [];
   bool _gameStarted = false;
   bool _gameEnded = false;
   int _playerCoins = 10000;
@@ -53,16 +56,16 @@ class _ThreePattiGameState extends State<ThreePattiGame>
 
   List<int> _generateCards() {
     // Generate 3 random cards (0-51)
-    final cards = <int><int><dynamic>[];
+    final cards = <int>[];
     for (var i = 0; i < 3; i++) {
-      cards.add(cards.toSet().length); // Simplified - should be unique
+      cards.add(i); // Simplified - should be unique random cards
     }
     return cards;
   }
 
   Future<void> _playGame() async {
     await runWithLoading(() async {
-      final ThreePattiResult result = _gameService.playThreePatti(
+      final result = _gameService.playThreePatti(
         betAmount: _betAmount,
         playerCards: _playerCards,
         opponentCards: _opponentCards,
@@ -81,7 +84,6 @@ class _ThreePattiGameState extends State<ThreePattiGame>
         }
       });
 
-      // Show result dialog
       await showResultDialog(result);
     });
   }
@@ -90,7 +92,7 @@ class _ThreePattiGameState extends State<ThreePattiGame>
     showInfoDialog(
       context,
       title: result.won ? '🎉 You Won!' : '😢 You Lost',
-      message: result.won 
+      message: result.won
           ? 'You won ${result.winAmount} coins!\n\n${_getRankDescription(result.playerRank)}'
           : 'Better luck next time!\n\nYour hand: ${_getRankDescription(result.playerRank)}\nOpponent hand: ${_getRankDescription(result.opponentRank)}',
     );
@@ -108,8 +110,8 @@ class _ThreePattiGameState extends State<ThreePattiGame>
   }
 
   String _getCardSymbol(int card) {
-    final List<String> suits = <String>['♠️', '♥️', '♦️', '♣️'];
-    final List<String> ranks = <String>['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+    final suits = ['♠️', '♥️', '♦️', '♣️'];
+    final ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
     return '${ranks[card ~/ 4]}${suits[card % 4]}';
   }
 
@@ -119,29 +121,30 @@ class _ThreePattiGameState extends State<ThreePattiGame>
       appBar: AppBar(
         title: const Text('3 Patti'),
         backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
       ),
-      body: DecoratedBox(
+      body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: <>[Colors.green.shade900, Colors.green.shade700],
+            colors: [Colors.green.shade900, Colors.green.shade700],
           ),
         ),
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               // Coins Display
               Container(
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Colors.white.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <>[
+                  children: [
                     const Text(
                       'Your Coins:',
                       style: TextStyle(color: Colors.white, fontSize: 18),
@@ -158,13 +161,13 @@ class _ThreePattiGameState extends State<ThreePattiGame>
                 ),
               ),
 
-              if (!_gameStarted) ...<>[
+              if (!_gameStarted) ...[
                 // Bet Selection
                 Expanded(
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: <>[
+                      children: [
                         const Text(
                           'Select Bet Amount',
                           style: TextStyle(
@@ -176,40 +179,50 @@ class _ThreePattiGameState extends State<ThreePattiGame>
                         const SizedBox(height: 20),
                         Wrap(
                           spacing: 10,
-                          children: <int>[100, 500, 1000, 5000, 10000].map((int amount) {
+                          children: [100, 500, 1000, 5000, 10000].map((amount) {
                             return FilterChip(
                               label: Text('$amount'),
                               selected: _betAmount == amount,
-                              onSelected: (bool selected) {
+                              onSelected: (selected) {
                                 setState(() {
                                   _betAmount = amount;
                                 });
                               },
-                              backgroundColor: Colors.white.withValues(alpha: 0.1),
+                              backgroundColor: Colors.white.withOpacity(0.1),
                               selectedColor: Colors.green,
                               labelStyle: const TextStyle(color: Colors.white),
                             );
                           }).toList(),
                         ),
                         const SizedBox(height: 30),
-                        CustomButton(
-                          text: 'Start Game',
-                          onPressed: _startGame,
-                          color: Colors.green,
+                        SizedBox(
+                          width: 200,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _startGame,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text('Start Game'),
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ] else ...<>[
+              ] else ...[
                 // Game Area
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: <>[
+                    children: [
                       // Opponent Cards
                       Column(
-                        children: <>[
+                        children: [
                           const Text(
                             'Opponent',
                             style: TextStyle(
@@ -220,7 +233,7 @@ class _ThreePattiGameState extends State<ThreePattiGame>
                           const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: _opponentCards.map((int card) {
+                            children: _opponentCards.map((card) {
                               return Container(
                                 width: 80,
                                 height: 100,
@@ -233,19 +246,19 @@ class _ThreePattiGameState extends State<ThreePattiGame>
                                 child: Center(
                                   child: _gameEnded
                                       ? Text(
-                                          _getCardSymbol(card),
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            color: card % 4 == 1 || card % 4 == 2 
-                                                ? Colors.red 
-                                                : Colors.black,
-                                          ),
-                                        )
+                                    _getCardSymbol(card),
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      color: card % 4 == 1 || card % 4 == 2
+                                          ? Colors.red
+                                          : Colors.black,
+                                    ),
+                                  )
                                       : const Icon(
-                                          Icons.help,
-                                          color: Colors.white,
-                                          size: 40,
-                                        ),
+                                    Icons.help,
+                                    color: Colors.white,
+                                    size: 40,
+                                  ),
                                 ),
                               );
                             }).toList(),
@@ -265,10 +278,10 @@ class _ThreePattiGameState extends State<ThreePattiGame>
 
                       // Player Cards
                       Column(
-                        children: <>[
+                        children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: _playerCards.map((int card) {
+                            children: _playerCards.map((card) {
                               return Container(
                                 width: 80,
                                 height: 100,
@@ -283,8 +296,8 @@ class _ThreePattiGameState extends State<ThreePattiGame>
                                     _getCardSymbol(card),
                                     style: TextStyle(
                                       fontSize: 20,
-                                      color: card % 4 == 1 || card % 4 == 2 
-                                          ? Colors.red 
+                                      color: card % 4 == 1 || card % 4 == 2
+                                          ? Colors.red
                                           : Colors.black,
                                     ),
                                   ),
@@ -304,16 +317,36 @@ class _ThreePattiGameState extends State<ThreePattiGame>
                       ),
 
                       if (!_gameEnded)
-                        CustomButton(
-                          text: 'Play!',
-                          onPressed: _playGame,
-                          color: Colors.green,
+                        SizedBox(
+                          width: 200,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _playGame,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text('Play!'),
+                          ),
                         )
                       else
-                        CustomButton(
-                          text: 'Play Again',
-                          onPressed: _startGame,
-                          color: Colors.green,
+                        SizedBox(
+                          width: 200,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _startGame,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text('Play Again'),
+                          ),
                         ),
                     ],
                   ),

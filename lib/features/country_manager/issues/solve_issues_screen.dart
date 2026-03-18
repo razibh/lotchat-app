@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/gradient_background.dart';
 import '../../../core/widgets/neumorphic_button.dart';
 import '../../../core/widgets/neumorphic_text_field.dart';
-import '../models/country_manager_models.dart';
+import '../Models/country_manager_models.dart';
 
 class SolveIssuesScreen extends StatefulWidget {
+  final String managerId;
 
   const SolveIssuesScreen({required this.managerId, super.key});
-  final String managerId;
 
   @override
   State<SolveIssuesScreen> createState() => _SolveIssuesScreenState();
@@ -22,13 +23,13 @@ class SolveIssuesScreen extends StatefulWidget {
 
 class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
   bool _isLoading = true;
-  List<ManagerIssue> _issues = <>[];
-  List<ManagerIssue> _filteredIssues = <>[];
+  List<ManagerIssue> _issues = [];
+  List<ManagerIssue> _filteredIssues = [];
   String _selectedFilter = 'open';
   String _selectedPriority = 'all';
 
-  final List<String> _filters = <String>['open', 'inProgress', 'resolved', 'all'];
-  final List<String> _priorities = <String>['all', 'low', 'medium', 'high', 'critical'];
+  final List<String> _filters = ['open', 'inProgress', 'resolved', 'all'];
+  final List<String> _priorities = ['all', 'low', 'medium', 'high', 'critical'];
 
   @override
   void initState() {
@@ -48,7 +49,7 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
   }
 
   List<ManagerIssue> _generateSampleIssues(int count) {
-    return List.generate(count, (int index) {
+    return List.generate(count, (index) {
       return ManagerIssue(
         id: 'iss_${100 + index}',
         agencyId: 'ag_${100 + (index % 5)}',
@@ -57,34 +58,36 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
         reportedById: 'user_${100 + index}',
         title: 'Issue #${index + 1}',
         description: 'This is a sample issue description for testing purposes.',
-        priority: IssuePriority.values[index % 5],
+        priority: IssuePriority.values[index % 4],
         status: IssueStatus.values[index % 4],
         reportedDate: DateTime.now().subtract(Duration(hours: index * 2)),
-        attachments: <dynamic>[],
-        comments: <dynamic>[],
+        attachments: [],
+        comments: [],
       );
     });
   }
 
   void _filterIssues() {
     setState(() {
-      _filteredIssues = _issues.where((Object? issue) {
+      _filteredIssues = _issues.where((issue) {
         // Status filter
-        if (_selectedFilter != 'all' && issue.status.toString().split('.').last != _selectedFilter) {
-          return false;
+        if (_selectedFilter != 'all') {
+          final statusStr = issue.status.toString().split('.').last;
+          if (statusStr != _selectedFilter) return false;
         }
-        
+
         // Priority filter
-        if (_selectedPriority != 'all' && issue.priority.toString().split('.').last != _selectedPriority) {
-          return false;
+        if (_selectedPriority != 'all') {
+          final priorityStr = issue.priority.toString().split('.').last;
+          if (priorityStr != _selectedPriority) return false;
         }
-        
+
         return true;
       }).toList();
 
       // Sort by priority and date
-      _filteredIssues.sort((Object? a, Object? b) {
-        final int priorityCompare = b.priority.index.compareTo(a.priority.index);
+      _filteredIssues.sort((a, b) {
+        final priorityCompare = b.priority.index.compareTo(a.priority.index);
         if (priorityCompare != 0) return priorityCompare;
         return b.reportedDate.compareTo(a.reportedDate);
       });
@@ -97,7 +100,7 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildFilterBar(),
               Expanded(
@@ -113,10 +116,12 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
   }
 
   Widget _buildHeader() {
+    final openIssues = _issues.where((i) => i.status == IssueStatus.open).length;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -132,7 +137,7 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
           ),
           const Spacer(),
           Text(
-            'Open: ${_issues.where((Object? i) => i.status == IssueStatus.open).length}',
+            'Open: $openIssues',
             style: const TextStyle(color: Colors.red),
           ),
         ],
@@ -142,29 +147,29 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
 
   Widget _buildFilterBar() {
     return Column(
-      children: <>[
+      children: [
         Container(
           height: 40,
           margin: const EdgeInsets.symmetric(horizontal: 20),
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: _filters.length,
-            itemBuilder: (BuildContext context, int index) {
-              final String filter = _filters[index];
-              final bool isSelected = _selectedFilter == filter;
-              
+            itemBuilder: (context, index) {
+              final filter = _filters[index];
+              final isSelected = _selectedFilter == filter;
+
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: FilterChip(
                   label: Text(filter.toUpperCase()),
                   selected: isSelected,
-                  onSelected: (bool selected) {
+                  onSelected: (selected) {
                     setState(() {
                       _selectedFilter = filter;
                       _filterIssues();
                     });
                   },
-                  backgroundColor: Colors.white.withValues(alpha: 0.1),
+                  backgroundColor: Colors.white.withOpacity(0.1),
                   selectedColor: Colors.orange,
                   labelStyle: TextStyle(
                     color: isSelected ? Colors.white : Colors.white70,
@@ -182,30 +187,34 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: _priorities.length,
-            itemBuilder: (BuildContext context, int index) {
-              final String priority = _priorities[index];
-              final bool isSelected = _selectedPriority == priority;
-              MaterialColor color = Colors.grey;
-              
+            itemBuilder: (context, index) {
+              final priority = _priorities[index];
+              final isSelected = _selectedPriority == priority;
+
+              Color chipColor = Colors.grey;
               if (priority == 'high') {
-                color = Colors.red;
-              } else if (priority == 'medium') color = Colors.orange;
-              else if (priority == 'low') color = Colors.green;
-              else if (priority == 'critical') color = Colors.purple;
-              
+                chipColor = Colors.red;
+              } else if (priority == 'medium') {
+                chipColor = Colors.orange;
+              } else if (priority == 'low') {
+                chipColor = Colors.green;
+              } else if (priority == 'critical') {
+                chipColor = Colors.purple;
+              }
+
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: FilterChip(
                   label: Text(priority.toUpperCase()),
                   selected: isSelected,
-                  onSelected: (bool selected) {
+                  onSelected: (selected) {
                     setState(() {
                       _selectedPriority = priority;
                       _filterIssues();
                     });
                   },
-                  backgroundColor: Colors.white.withValues(alpha: 0.1),
-                  selectedColor: color,
+                  backgroundColor: Colors.white.withOpacity(0.1),
+                  selectedColor: chipColor,
                   labelStyle: TextStyle(
                     color: isSelected ? Colors.white : Colors.white70,
                     fontSize: 12,
@@ -224,12 +233,12 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
-            Icon(Icons.check_circle, size: 60, color: Colors.green.withValues(alpha: 0.3)),
+          children: [
+            Icon(Icons.check_circle, size: 60, color: Colors.green.withOpacity(0.3)),
             const SizedBox(height: 16),
             Text(
               'No issues found',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+              style: TextStyle(color: Colors.white.withOpacity(0.5)),
             ),
           ],
         ),
@@ -239,7 +248,7 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: _filteredIssues.length,
-      itemBuilder: (BuildContext context, int index) {
+      itemBuilder: (context, index) {
         final issue = _filteredIssues[index];
         return _buildIssueCard(issue);
       },
@@ -249,63 +258,71 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
   Widget _buildIssueCard(ManagerIssue issue) {
     Color priorityColor;
     String priorityText;
-    
+
     switch (issue.priority) {
       case IssuePriority.low:
         priorityColor = Colors.green;
         priorityText = 'LOW';
+        break;
       case IssuePriority.medium:
         priorityColor = Colors.orange;
         priorityText = 'MEDIUM';
+        break;
       case IssuePriority.high:
         priorityColor = Colors.red;
         priorityText = 'HIGH';
+        break;
       case IssuePriority.critical:
         priorityColor = Colors.purple;
         priorityText = 'CRITICAL';
+        break;
     }
 
     Color statusColor;
     String statusText;
-    
+
     switch (issue.status) {
       case IssueStatus.open:
         statusColor = Colors.red;
         statusText = 'OPEN';
+        break;
       case IssueStatus.inProgress:
         statusColor = Colors.orange;
         statusText = 'IN PROGRESS';
+        break;
       case IssueStatus.resolved:
         statusColor = Colors.green;
         statusText = 'RESOLVED';
+        break;
       case IssueStatus.closed:
         statusColor = Colors.grey;
         statusText = 'CLOSED';
+        break;
     }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: issue.priority == IssuePriority.critical
-              ? Colors.purple.withValues(alpha: 0.5)
+              ? Colors.purple.withOpacity(0.5)
               : issue.priority == IssuePriority.high
-                  ? Colors.red.withValues(alpha: 0.5)
-                  : Colors.transparent,
+              ? Colors.red.withOpacity(0.5)
+              : Colors.transparent,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           Row(
-            children: <>[
+            children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: priorityColor.withValues(alpha: 0.2),
+                  color: priorityColor.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -320,7 +337,7 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     Text(
                       issue.title,
                       style: const TextStyle(
@@ -337,11 +354,11 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: <>[
+                children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: priorityColor.withValues(alpha: 0.2),
+                      color: priorityColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -353,7 +370,7 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.2),
+                      color: statusColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -369,7 +386,7 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: Colors.white.withOpacity(0.05),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -379,7 +396,7 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
           ),
           const SizedBox(height: 12),
           Row(
-            children: <>[
+            children: [
               const Icon(Icons.person, color: Colors.white70, size: 14),
               const SizedBox(width: 4),
               Text(
@@ -395,15 +412,15 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
               ),
             ],
           ),
-          if (issue.status != IssueStatus.resolved && issue.status != IssueStatus.closed) ...<>[
+          if (issue.status != IssueStatus.resolved && issue.status != IssueStatus.closed) ...[
             const SizedBox(height: 12),
             Row(
-              children: <>[
+              children: [
                 Expanded(
                   child: _buildActionButton(
                     'Take Action',
                     Colors.orange,
-                    () => _showResolveDialog(issue),
+                        () => _showResolveDialog(issue),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -411,21 +428,21 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
                   child: _buildActionButton(
                     'Assign',
                     Colors.blue,
-                    () {},
+                        () {},
                   ),
                 ),
               ],
             ),
-          ] else if (issue.resolution != null) ...<>[
+          ] else if (issue.resolution != null) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
+                color: Colors.green.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
-                children: <>[
+                children: [
                   const Icon(Icons.check_circle, color: Colors.green, size: 16),
                   const SizedBox(width: 8),
                   Expanded(
@@ -449,9 +466,9 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
+          color: color.withOpacity(0.2),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.5)),
+          border: Border.all(color: color.withOpacity(0.5)),
         ),
         child: Center(
           child: Text(
@@ -473,7 +490,7 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
         title: const Text('Resolve Issue', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Text(
               issue.title,
               style: const TextStyle(color: Colors.white70),
@@ -486,7 +503,7 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
@@ -495,11 +512,32 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
             onPressed: () {
               Navigator.pop(context);
               setState(() {
-                issue.status = IssueStatus.resolved;
-                issue.resolution = resolutionController.text;
-                issue.resolvedDate = DateTime.now();
+                // নতুন issue তৈরি করে replace করুন (কারণ fields final)
+                final updatedIssue = ManagerIssue(
+                  id: issue.id,
+                  agencyId: issue.agencyId,
+                  agencyName: issue.agencyName,
+                  reportedBy: issue.reportedBy,
+                  reportedById: issue.reportedById,
+                  title: issue.title,
+                  description: issue.description,
+                  priority: issue.priority,
+                  status: IssueStatus.resolved,
+                  reportedDate: issue.reportedDate,
+                  resolvedDate: DateTime.now(),
+                  resolution: resolutionController.text,
+                  assignedTo: issue.assignedTo,
+                  attachments: issue.attachments,
+                  comments: issue.comments,
+                );
+
+                final index = _issues.indexWhere((i) => i.id == issue.id);
+                if (index != -1) {
+                  _issues[index] = updatedIssue;
+                }
+
+                _filterIssues();
               });
-              _filterIssues();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Issue resolved')),
               );
@@ -515,8 +553,8 @@ class _SolveIssuesScreenState extends State<SolveIssuesScreen> {
   }
 
   String _formatDate(DateTime date) {
-    final DateTime now = DateTime.now();
-    final Duration difference = now.difference(date);
+    final now = DateTime.now();
+    final difference = now.difference(date);
 
     if (difference.inHours < 1) {
       return '${difference.inMinutes} min ago';

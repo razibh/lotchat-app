@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/gradient_background.dart';
 import '../../../core/widgets/neumorphic_button.dart';
-import '../models/country_manager_models.dart';
-
+import '../Models/country_manager_models.dart';
 class MonitorHostsScreen extends StatefulWidget {
+  final String managerId;
 
   const MonitorHostsScreen({required this.managerId, super.key});
-  final String managerId;
 
   @override
   State<MonitorHostsScreen> createState() => _MonitorHostsScreenState();
@@ -21,14 +21,14 @@ class MonitorHostsScreen extends StatefulWidget {
 
 class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
   bool _isLoading = true;
-  List<HostPerformance> _hosts = <>[];
-  List<HostPerformance> _filteredHosts = <>[];
+  List<HostPerformance> _hosts = [];
+  List<HostPerformance> _filteredHosts = [];
   String _searchQuery = '';
   String _selectedFilter = 'all';
   String _sortBy = 'earnings';
 
-  final List<String> _filters = <String>['all', 'top', 'rising', 'new'];
-  final List<String> _sortOptions = <String>['earnings', 'followers', 'rating', 'rooms'];
+  final List<String> _filters = ['all', 'top', 'rising', 'new'];
+  final List<String> _sortOptions = ['earnings', 'followers', 'rating', 'rooms'];
 
   @override
   void initState() {
@@ -48,7 +48,7 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
   }
 
   List<HostPerformance> _generateSampleHosts(int count) {
-    return List.generate(count, (int index) {
+    return List.generate(count, (index) {
       return HostPerformance(
         hostId: 'host_${100 + index}',
         name: 'Host ${index + 1}',
@@ -63,7 +63,7 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
         totalHours: 100 + (index * 10),
         avgRating: 4.0 + (index % 10) / 10,
         giftsReceived: 500 + (index * 50),
-        recentEvents: <dynamic>[],
+        recentEvents: [],
       );
     });
   }
@@ -74,9 +74,9 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
       if (_selectedFilter == 'all') {
         _filteredHosts = List.from(_hosts);
       } else if (_selectedFilter == 'top') {
-        _filteredHosts = _hosts.where((Object? h) => h.monthlyEarnings > 20000).toList();
+        _filteredHosts = _hosts.where((h) => h.monthlyEarnings > 20000).toList();
       } else if (_selectedFilter == 'rising') {
-        _filteredHosts = _hosts.where((Object? h) => h.followersGrowth > 15).toList();
+        _filteredHosts = _hosts.where((h) => h.followersGrowth > 15).toList();
       } else if (_selectedFilter == 'new') {
         // For demo, just take first 10
         _filteredHosts = _hosts.take(10).toList();
@@ -84,21 +84,21 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
 
       // Apply search
       if (_searchQuery.isNotEmpty) {
-        _filteredHosts = _filteredHosts.where((Object? h) =>
-          h.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          h.username.toLowerCase().contains(_searchQuery.toLowerCase()),
+        _filteredHosts = _filteredHosts.where((h) =>
+        h.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            h.username.toLowerCase().contains(_searchQuery.toLowerCase()),
         ).toList();
       }
 
       // Apply sorting
       if (_sortBy == 'earnings') {
-        _filteredHosts.sort((Object? a, Object? b) => b.monthlyEarnings.compareTo(a.monthlyEarnings));
+        _filteredHosts.sort((a, b) => b.monthlyEarnings.compareTo(a.monthlyEarnings));
       } else if (_sortBy == 'followers') {
-        _filteredHosts.sort((Object? a, Object? b) => b.followers.compareTo(a.followers));
+        _filteredHosts.sort((a, b) => b.followers.compareTo(a.followers));
       } else if (_sortBy == 'rating') {
-        _filteredHosts.sort((Object? a, Object? b) => b.avgRating.compareTo(a.avgRating));
+        _filteredHosts.sort((a, b) => b.avgRating.compareTo(a.avgRating));
       } else if (_sortBy == 'rooms') {
-        _filteredHosts.sort((Object? a, Object? b) => b.totalRooms.compareTo(a.totalRooms));
+        _filteredHosts.sort((a, b) => b.totalRooms.compareTo(a.totalRooms));
       }
     });
   }
@@ -109,7 +109,7 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildSearchBar(),
               _buildFilterChips(),
@@ -130,7 +130,7 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -159,7 +159,7 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(30),
       ),
       child: TextField(
@@ -170,17 +170,17 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           hintText: 'Search hosts...',
-          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
           prefixIcon: const Icon(Icons.search, color: Colors.white70),
           border: InputBorder.none,
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear, color: Colors.white70),
-                  onPressed: () {
-                    _searchQuery = '';
-                    _filterAndSortHosts();
-                  },
-                )
+            icon: const Icon(Icons.clear, color: Colors.white70),
+            onPressed: () {
+              _searchQuery = '';
+              _filterAndSortHosts();
+            },
+          )
               : null,
         ),
       ),
@@ -194,10 +194,10 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: _filters.length,
-        itemBuilder: (BuildContext context, int index) {
-          final String filter = _filters[index];
+        itemBuilder: (context, index) {
+          final filter = _filters[index];
           final bool isSelected = _selectedFilter == filter;
-          
+
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
@@ -209,7 +209,7 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
                   _filterAndSortHosts();
                 });
               },
-              backgroundColor: Colors.white.withValues(alpha: 0.1),
+              backgroundColor: Colors.white.withOpacity(0.1),
               selectedColor: Colors.blue,
               labelStyle: TextStyle(
                 color: isSelected ? Colors.white : Colors.white70,
@@ -227,12 +227,12 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
         children: _sortOptions.map((String option) {
-          var isSelected = _sortBy == option;
+          final isSelected = _sortBy == option;
           return Expanded(
             child: GestureDetector(
               onTap: () {
@@ -269,12 +269,12 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
-            Icon(Icons.person_off, size: 60, color: Colors.white.withValues(alpha: 0.3)),
+          children: [
+            Icon(Icons.person_off, size: 60, color: Colors.white.withOpacity(0.3)),
             const SizedBox(height: 16),
             Text(
               'No hosts found',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+              style: TextStyle(color: Colors.white.withOpacity(0.5)),
             ),
           ],
         ),
@@ -284,7 +284,7 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: _filteredHosts.length,
-      itemBuilder: (BuildContext context, int index) {
+      itemBuilder: (context, index) {
         final host = _filteredHosts[index];
         return _buildHostCard(host, index);
       },
@@ -296,23 +296,23 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
         border: rank < 3
             ? Border.all(
-                color: rank == 0
-                    ? Colors.amber
-                    : rank == 1
-                        ? Colors.grey
-                        : Colors.brown,
-                width: 2,
-              )
+          color: rank == 0
+              ? Colors.amber
+              : rank == 1
+              ? Colors.grey
+              : Colors.brown,
+          width: 2,
+        )
             : null,
       ),
       child: Column(
-        children: <>[
+        children: [
           Row(
-            children: <>[
+            children: [
               if (rank < 3)
                 Container(
                   width: 24,
@@ -322,8 +322,8 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
                     color: rank == 0
                         ? Colors.amber
                         : rank == 1
-                            ? Colors.grey
-                            : Colors.brown,
+                        ? Colors.grey
+                        : Colors.brown,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -345,7 +345,7 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     Text(
                       host.name,
                       style: const TextStyle(
@@ -366,7 +366,7 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: <>[
+                children: [
                   Text(
                     '৳${host.monthlyEarnings}',
                     style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
@@ -374,11 +374,11 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.purple.withValues(alpha: 0.2),
+                      color: Colors.purple.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${host.avgRating} ⭐',
+                      '${host.avgRating.toStringAsFixed(1)} ⭐',
                       style: const TextStyle(color: Colors.purple, fontSize: 8),
                     ),
                   ),
@@ -389,7 +389,7 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <>[
+            children: [
               _buildHostStat(Icons.people, '${host.followers}', 'Followers'),
               _buildHostStat(Icons.trending_up, '${host.followersGrowth}%', 'Growth'),
               _buildHostStat(Icons.meeting_room, '${host.totalRooms}', 'Rooms'),
@@ -398,7 +398,7 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
           ),
           const SizedBox(height: 12),
           Row(
-            children: <>[
+            children: [
               Expanded(
                 child: _buildActionButton('View Profile', () {}),
               ),
@@ -415,7 +415,7 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
 
   Widget _buildHostStat(IconData icon, String value, String label) {
     return Column(
-      children: <>[
+      children: [
         Icon(icon, color: Colors.white70, size: 14),
         const SizedBox(height: 2),
         Text(
@@ -436,7 +436,7 @@ class _MonitorHostsScreenState extends State<MonitorHostsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
+          color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Center(

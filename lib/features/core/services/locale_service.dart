@@ -9,11 +9,11 @@ class LocaleService {
   static final LocaleService _instance = LocaleService._internal();
 
   final LoggerService _logger = ServiceLocator().get<LoggerService>();
-  
+
   static const String _localeKey = 'app_locale';
   Locale _currentLocale = const Locale('en');
-  
-  final List<Locale> _supportedLocales = const <>[
+
+  final List<Locale> _supportedLocales = const [
     Locale('en', 'US'), // English
     Locale('es', 'ES'), // Spanish
     Locale('fr', 'FR'), // French
@@ -83,10 +83,10 @@ class LocaleService {
     try {
       final String countryCode = _getCountryCode(languageCode);
       _currentLocale = Locale(languageCode, countryCode);
-      
+
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString(_localeKey, languageCode);
-      
+
       _logger.info('Locale changed to: $_currentLocale');
       return true;
     } catch (e) {
@@ -176,7 +176,7 @@ class LocaleService {
   // Get all languages
   List<Map<String, String>> getAllLanguages() {
     return _supportedLocales.map((Locale locale) {
-      return <String, >{
+      return {
         'code': locale.languageCode,
         'name': getLanguageName(locale.languageCode),
         'flag': getLanguageFlag(locale.languageCode),
@@ -216,5 +216,35 @@ class LocaleService {
       default:
         return 'English';
     }
+  }
+
+  // Get device locale (system locale)
+  Locale? getDeviceLocale() {
+    return WidgetsBinding.instance.platformDispatcher.locales.firstOrNull;
+  }
+
+  // Check if locale is supported
+  bool isSupported(Locale locale) {
+    return _supportedLocales.any((supported) =>
+    supported.languageCode == locale.languageCode
+    );
+  }
+
+  // Get fallback locale
+  Locale getFallbackLocale() {
+    return const Locale('en', 'US');
+  }
+
+  // Resolve locale (for localization delegate)
+  Locale? resolveLocale(List<Locale>? locales) {
+    if (locales == null || locales.isEmpty) return null;
+
+    for (final locale in locales) {
+      if (isSupported(locale)) {
+        return locale;
+      }
+    }
+
+    return getFallbackLocale();
   }
 }

@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 
 class AppGradientText extends StatelessWidget {
-
-  const AppGradientText({
-    required this.text, required this.style, required this.gradient, super.key,
-    this.textAlign = TextAlign.start,
-    this.maxLines,
-    this.overflow = TextOverflow.ellipsis,
-  });
   final String text;
   final TextStyle style;
   final Gradient gradient;
   final TextAlign textAlign;
   final int? maxLines;
   final TextOverflow overflow;
+
+  const AppGradientText({
+    required this.text,
+    required this.style,
+    required this.gradient,
+    this.textAlign = TextAlign.start,
+    this.maxLines,
+    this.overflow = TextOverflow.ellipsis,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -43,14 +47,9 @@ class AppGradientText extends StatelessWidget {
   }
 }
 
-class GradientTextWidget extends StatelessWidget {
+enum GradientType { linear, radial, sweep }
 
-  const GradientTextWidget({
-    required this.text, required this.style, required this.colors, super.key,
-    this.type = GradientType.linear,
-    this.textAlign = TextAlign.start,
-    this.maxLines,
-  });
+class GradientTextWidget extends StatelessWidget {
   final String text;
   final TextStyle style;
   final List<Color> colors;
@@ -58,10 +57,20 @@ class GradientTextWidget extends StatelessWidget {
   final TextAlign textAlign;
   final int? maxLines;
 
+  const GradientTextWidget({
+    required this.text,
+    required this.style,
+    required this.colors,
+    this.type = GradientType.linear,
+    this.textAlign = TextAlign.start,
+    this.maxLines,
+    super.key,
+  });
+
   @override
   Widget build(BuildContext context) {
     Gradient gradient;
-    
+
     switch (type) {
       case GradientType.linear:
         gradient = LinearGradient(
@@ -69,14 +78,17 @@ class GradientTextWidget extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         );
+        break;
       case GradientType.radial:
         gradient = RadialGradient(
           colors: colors,
         );
+        break;
       case GradientType.sweep:
         gradient = SweepGradient(
           colors: colors,
         );
+        break;
     }
 
     return ShaderMask(
@@ -105,18 +117,19 @@ class GradientTextWidget extends StatelessWidget {
   }
 }
 
-enum GradientType { linear, radial, sweep }
-
 class AnimatedGradientText extends StatefulWidget {
-
-  const AnimatedGradientText({
-    required this.text, required this.style, required this.colors, super.key,
-    this.duration = const Duration(seconds: 3),
-  });
   final String text;
   final TextStyle style;
   final List<Color> colors;
   final Duration duration;
+
+  const AnimatedGradientText({
+    required this.text,
+    required this.style,
+    required this.colors,
+    this.duration = const Duration(seconds: 3),
+    super.key,
+  });
 
   @override
   State<AnimatedGradientText> createState() => _AnimatedGradientTextState();
@@ -131,7 +144,7 @@ class AnimatedGradientText extends StatefulWidget {
   }
 }
 
-class _AnimatedGradientTextState extends State<AnimatedGradientText> 
+class _AnimatedGradientTextState extends State<AnimatedGradientText>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _animation;
@@ -143,14 +156,14 @@ class _AnimatedGradientTextState extends State<AnimatedGradientText>
       vsync: this,
       duration: widget.duration,
     )..repeat(reverse: true);
-    
+
     _animation = Tween<Offset>(
       begin: const Offset(-1, -1),
       end: const Offset(1, 1),
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeInOut,
-    ),);
+    ));
   }
 
   @override

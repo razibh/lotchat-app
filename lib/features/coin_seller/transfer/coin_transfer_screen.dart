@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/gradient_background.dart';
 import '../../../core/widgets/neumorphic_button.dart';
 import '../../../core/widgets/neumorphic_text_field.dart';
 
 class CoinTransferScreen extends StatefulWidget {
+  final String sellerId;
 
   const CoinTransferScreen({required this.sellerId, super.key});
-  final String sellerId;
 
   @override
   State<CoinTransferScreen> createState() => _CoinTransferScreenState();
@@ -22,19 +23,21 @@ class CoinTransferScreen extends StatefulWidget {
 class _CoinTransferScreenState extends State<CoinTransferScreen> {
   final TextEditingController _userIdController = TextEditingController();
   final TextEditingController _coinsController = TextEditingController();
-  
+
   final double _discountRate = 15; // 15% discount
-  final int _officialPricePerCoin = 1; // 1 coin = 1 taka
+  final double _officialPricePerCoin = 1.0; // 1 coin = 1 taka (double করা হলো)
   bool _isLoading = false;
   String _selectedPaymentMethod = 'Cash';
 
   int get _coins => int.tryParse(_coinsController.text) ?? 0;
+
+  // double return করার জন্য calculation ঠিক করা হলো
   double get _originalPrice => _coins * _officialPricePerCoin;
   double get _discountAmount => _originalPrice * _discountRate / 100;
   double get _finalPrice => _originalPrice - _discountAmount;
   double get _profit => _finalPrice * 0.2; // 20% profit margin
 
-  final List<String> _paymentMethods = <String>['Cash', 'bKash', 'Nagad', 'Bank Transfer'];
+  final List<String> _paymentMethods = ['Cash', 'bKash', 'Nagad', 'Bank Transfer'];
 
   Future<void> _transferCoins() async {
     if (_userIdController.text.isEmpty) {
@@ -71,7 +74,7 @@ class _CoinTransferScreenState extends State<CoinTransferScreen> {
         title: const Icon(Icons.check_circle, color: Colors.green, size: 60),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             const Text(
               'Transfer Successful!',
               style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
@@ -89,7 +92,7 @@ class _CoinTransferScreenState extends State<CoinTransferScreen> {
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
@@ -108,13 +111,13 @@ class _CoinTransferScreenState extends State<CoinTransferScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Column(
-                    children: <>[
+                    children: [
                       _buildSellerInfo(),
                       const SizedBox(height: 20),
                       _buildTransferForm(),
@@ -139,7 +142,7 @@ class _CoinTransferScreenState extends State<CoinTransferScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -162,12 +165,12 @@ class _CoinTransferScreenState extends State<CoinTransferScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.1),
+        color: Colors.orange.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+        border: Border.all(color: Colors.orange.withOpacity(0.3)),
       ),
       child: Row(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: const BoxDecoration(
@@ -180,7 +183,7 @@ class _CoinTransferScreenState extends State<CoinTransferScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 const Text(
                   'Fast Coin BD',
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -195,7 +198,7 @@ class _CoinTransferScreenState extends State<CoinTransferScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.2),
+              color: Colors.green.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Text(
@@ -212,12 +215,12 @@ class _CoinTransferScreenState extends State<CoinTransferScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           const Text(
             'Transfer Details',
             style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -249,11 +252,11 @@ class _CoinTransferScreenState extends State<CoinTransferScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        children: <>[
+        children: [
           _buildPriceRow('Original Price', '৳${_originalPrice.toStringAsFixed(2)}'),
           _buildPriceRow('Discount ($_discountRate%)', '-৳${_discountAmount.toStringAsFixed(2)}', color: Colors.green),
           const Divider(color: Colors.white24, height: 24),
@@ -269,7 +272,7 @@ class _CoinTransferScreenState extends State<CoinTransferScreen> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           Text(
             label,
             style: TextStyle(
@@ -294,12 +297,12 @@ class _CoinTransferScreenState extends State<CoinTransferScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           const Text(
             'Payment Method',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -316,7 +319,7 @@ class _CoinTransferScreenState extends State<CoinTransferScreen> {
                     _selectedPaymentMethod = method;
                   });
                 },
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
+                backgroundColor: Colors.white.withOpacity(0.1),
                 selectedColor: Colors.orange,
                 labelStyle: TextStyle(
                   color: _selectedPaymentMethod == method ? Colors.white : Colors.white70,
@@ -339,13 +342,13 @@ class _CoinTransferScreenState extends State<CoinTransferScreen> {
           child: _isLoading
               ? const CircularProgressIndicator(color: Colors.white)
               : const Text(
-                  'TRANSFER COINS',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+            'TRANSFER COINS',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );

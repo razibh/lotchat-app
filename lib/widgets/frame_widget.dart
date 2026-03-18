@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 import 'package:flutter_svg/flutter_svg.dart';
 
 class FrameWidget extends StatelessWidget {
-
-  const FrameWidget({
-    required this.framePath, required this.child, super.key,
-    this.size = 120,
-    this.isAnimated = false,
-  });
   final String framePath;
   final Widget child;
   final double size;
   final bool isAnimated;
+
+  const FrameWidget({
+    super.key,
+    required this.framePath,
+    required this.child,
+    this.size = 120,
+    this.isAnimated = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,37 +26,37 @@ class FrameWidget extends StatelessWidget {
         image: framePath.endsWith('.svg')
             ? null
             : DecorationImage(
-                image: AssetImage(framePath),
-                fit: BoxFit.contain,
-              ),
+          image: AssetImage(framePath),
+          fit: BoxFit.contain,
+        ),
       ),
       child: isAnimated
           ? _buildAnimatedFrame()
           : Stack(
-              alignment: Alignment.center,
-              children: <>[
-                if (framePath.endsWith('.svg'))
-                  SvgPicture.asset(
-                    framePath,
-                    width: size,
-                    height: size,
-                  ),
-                ClipOval(
-                  child: SizedBox(
-                    width: size * 0.85,
-                    height: size * 0.85,
-                    child: child,
-                  ),
-                ),
-              ],
+        alignment: Alignment.center,
+        children: [
+          if (framePath.endsWith('.svg'))
+            SvgPicture.asset(
+              framePath,
+              width: size,
+              height: size,
             ),
+          ClipOval(
+            child: SizedBox(
+              width: size * 0.85,
+              height: size * 0.85,
+              child: child,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildAnimatedFrame() {
     return Stack(
       alignment: Alignment.center,
-      children: <>[
+      children: [
         // Animated frame background
         Container(
           width: size,
@@ -61,18 +64,18 @@ class FrameWidget extends StatelessWidget {
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: <>[Colors.purple, Colors.pink],
+              colors: [Colors.purple, Colors.pink],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
         ),
-        
-        // Rotating border
-        TweenAnimationBuilder(
-          tween: Tween(begin: 0, end: 2 * 3.14159),
+
+        // Rotating border - Type parameter fix
+        TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0, end: 2 * 3.14159),
           duration: const Duration(seconds: 10),
-          builder: (BuildContext context, angle, Widget? child) {
+          builder: (BuildContext context, double angle, Widget? child) {
             return Transform.rotate(
               angle: angle,
               child: Container(
@@ -89,18 +92,18 @@ class FrameWidget extends StatelessWidget {
             );
           },
         ),
-        
-        // Sparkle effects
+
+        // Sparkle effects - Type parameter fix
         ...List.generate(8, (int index) {
           final double sparkleSize = size * 0.05;
           return Positioned(
             top: (index < 4 ? 0.1 : 0.9) * size,
             left: (index % 4) * size * 0.25 + size * 0.1,
-            child: TweenAnimationBuilder(
-              tween: Tween(begin: 0.5, end: 1),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.5, end: 1),
               duration: Duration(milliseconds: 500 + (index * 200)),
               curve: Curves.easeInOut,
-              builder: (BuildContext context, value, Widget? child) {
+              builder: (BuildContext context, double value, Widget? child) {
                 return Opacity(
                   opacity: value,
                   child: Container(
@@ -116,7 +119,7 @@ class FrameWidget extends StatelessWidget {
             ),
           );
         }),
-        
+
         // Center avatar
         ClipOval(
           child: SizedBox(

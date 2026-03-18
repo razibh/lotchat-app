@@ -4,12 +4,14 @@ import '../../core/models/user_models.dart';
 import '../../core/services/navigation_service.dart';
 
 class RoleBasedDrawer extends StatelessWidget {
-
-  const RoleBasedDrawer({
-    required this.user, required this.onLogout, super.key,
-  });
   final User? user;
   final VoidCallback onLogout;
+
+  const RoleBasedDrawer({
+    Key? key,
+    required this.user,
+    required this.onLogout,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +19,7 @@ class RoleBasedDrawer extends StatelessWidget {
       backgroundColor: AppColors.surfaceDark,
       width: MediaQuery.of(context).size.width * 0.8,
       child: Column(
-        children: <>[
+        children: [
           _buildHeader(),
           Expanded(
             child: ListView(
@@ -38,7 +40,7 @@ class RoleBasedDrawer extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <>[
+          colors: [
             AppColors.accentPurple,
             AppColors.accentBlue,
           ],
@@ -52,10 +54,10 @@ class RoleBasedDrawer extends StatelessWidget {
         bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <>[
+          children: [
             // Avatar with badge
             Stack(
-              children: <>[
+              children: [
                 CircleAvatar(
                   radius: 40,
                   backgroundColor: Colors.white,
@@ -64,13 +66,13 @@ class RoleBasedDrawer extends StatelessWidget {
                       : null,
                   child: user?.avatar == null
                       ? Text(
-                          user?.initials ?? 'U',
-                          style: const TextStyle(
-                            color: AppColors.accentPurple,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
+                    user?.initials ?? 'U',
+                    style: const TextStyle(
+                      color: AppColors.accentPurple,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
                       : null,
                 ),
                 if (user?.badge != null && user!.badge!.hasBadge)
@@ -111,16 +113,16 @@ class RoleBasedDrawer extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             // User role badge
-            if (user != null) ...<>[
+            if (user != null) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: <>[
+                  children: [
                     Icon(
                       _getRoleIcon(user!.role),
                       color: Colors.white,
@@ -163,7 +165,7 @@ class RoleBasedDrawer extends StatelessWidget {
   }
 
   List<Widget> _getGuestItems(BuildContext context) {
-    return <>[
+    return [
       _buildSectionHeader('Main Menu'),
       _buildDrawerItem(
         icon: Icons.home,
@@ -230,10 +232,10 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Privacy Policy',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/webview', arguments: <String, String>{
+          NavigationService.navigateTo('/webview', arguments: {
             'title': 'Privacy Policy',
             'url': 'https://gamelive.com/privacy',
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -241,17 +243,17 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Terms of Service',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/webview', arguments: <String, String>{
+          NavigationService.navigateTo('/webview', arguments: {
             'title': 'Terms of Service',
             'url': 'https://gamelive.com/terms',
-          },);
+          });
         },
       ),
     ];
   }
 
   List<Widget> _getUserItems(BuildContext context) {
-    return <>[
+    return [
       _buildSectionHeader('Main Menu'),
       _buildDrawerItem(
         icon: Icons.home,
@@ -354,10 +356,10 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Help Center',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/webview', arguments: <String, String>{
+          NavigationService.navigateTo('/webview', arguments: {
             'title': 'Help Center',
             'url': 'https://gamelive.com/help',
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -380,7 +382,7 @@ class RoleBasedDrawer extends StatelessWidget {
   }
 
   List<Widget> _getAdminItems(BuildContext context) {
-    return <>[
+    return [
       _buildSectionHeader('Admin Dashboard'),
       _buildDrawerItem(
         icon: Icons.dashboard,
@@ -431,7 +433,7 @@ class RoleBasedDrawer extends StatelessWidget {
           Navigator.pop(context);
           NavigationService.navigateTo('/admin/reports');
         },
-        trailing: _buildBadge('12'),
+        trailing: _buildBadge('12', color: Colors.red),
       ),
       const Divider(color: Colors.white24),
       _buildSectionHeader('Management'),
@@ -471,16 +473,16 @@ class RoleBasedDrawer extends StatelessWidget {
   }
 
   List<Widget> _getCountryManagerItems(BuildContext context) {
-    return <>[
+    return [
       _buildSectionHeader('Country Manager'),
       _buildDrawerItem(
         icon: Icons.dashboard,
         title: 'Dashboard',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/country-manager/dashboard', arguments: <String, String?>{
+          NavigationService.navigateTo('/country-manager/dashboard', arguments: {
             'managerId': user?.id,
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -488,11 +490,11 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Manage Agencies',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/country-manager/agencies', arguments: <String, String?>{
+          NavigationService.navigateTo('/country-manager/agencies', arguments: {
             'managerId': user?.id,
             'countryId': user?.countryId,
             'countryName': _getCountryName(user?.countryId),
-          },);
+          });
         },
         trailing: _buildBadge('8'),
       ),
@@ -501,9 +503,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Recruit Agency',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/country-manager/recruit', arguments: <String, String?>{
+          NavigationService.navigateTo('/country-manager/recruit', arguments: {
             'managerId': user?.id,
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -511,9 +513,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Monitor Hosts',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/country-manager/hosts', arguments: <String, String?>{
+          NavigationService.navigateTo('/country-manager/hosts', arguments: {
             'managerId': user?.id,
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -521,20 +523,20 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Issues',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/country-manager/issues', arguments: <String, String?>{
+          NavigationService.navigateTo('/country-manager/issues', arguments: {
             'managerId': user?.id,
-          },);
+          });
         },
-        trailing: _buildBadge('3'),
+        trailing: _buildBadge('3', color: Colors.red),
       ),
       _buildDrawerItem(
         icon: Icons.analytics,
         title: 'Reports',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/country-manager/reports', arguments: <String, String?>{
+          NavigationService.navigateTo('/country-manager/reports', arguments: {
             'managerId': user?.id,
-          },);
+          });
         },
       ),
       const Divider(color: Colors.white24),
@@ -543,9 +545,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Commission Settings',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/country-manager/commission', arguments: <String, String?>{
+          NavigationService.navigateTo('/country-manager/commission', arguments: {
             'managerId': user?.id,
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -560,16 +562,16 @@ class RoleBasedDrawer extends StatelessWidget {
   }
 
   List<Widget> _getAgencyItems(BuildContext context) {
-    return <>[
+    return [
       _buildSectionHeader('Agency Dashboard'),
       _buildDrawerItem(
         icon: Icons.dashboard,
         title: 'Dashboard',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/agency/dashboard', arguments: <String, dynamic>{
+          NavigationService.navigateTo('/agency/dashboard', arguments: {
             'agencyId': user?.metadata?['agencyId'],
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -577,9 +579,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Manage Hosts',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/agency/hosts', arguments: <String, dynamic>{
+          NavigationService.navigateTo('/agency/hosts', arguments: {
             'agencyId': user?.metadata?['agencyId'],
-          },);
+          });
         },
         trailing: _buildBadge('4'),
       ),
@@ -588,9 +590,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Recruit Host',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/agency/recruit-host', arguments: <String, dynamic>{
+          NavigationService.navigateTo('/agency/recruit-host', arguments: {
             'agencyId': user?.metadata?['agencyId'],
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -598,9 +600,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Earnings',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/agency/earnings', arguments: <String, dynamic>{
+          NavigationService.navigateTo('/agency/earnings', arguments: {
             'agencyId': user?.metadata?['agencyId'],
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -608,9 +610,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Commission',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/agency/commission', arguments: <String, dynamic>{
+          NavigationService.navigateTo('/agency/commission', arguments: {
             'agencyId': user?.metadata?['agencyId'],
-          },);
+          });
         },
       ),
       const Divider(color: Colors.white24),
@@ -619,9 +621,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Analytics',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/agency/analytics', arguments: <String, dynamic>{
+          NavigationService.navigateTo('/agency/analytics', arguments: {
             'agencyId': user?.metadata?['agencyId'],
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -636,16 +638,16 @@ class RoleBasedDrawer extends StatelessWidget {
   }
 
   List<Widget> _getCoinSellerItems(BuildContext context) {
-    return <>[
+    return [
       _buildSectionHeader('Seller Dashboard'),
       _buildDrawerItem(
         icon: Icons.dashboard,
         title: 'Dashboard',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/seller/dashboard', arguments: <String, dynamic>{
+          NavigationService.navigateTo('/seller/dashboard', arguments: {
             'sellerId': user?.metadata?['sellerId'],
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -653,9 +655,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Inventory',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/seller/inventory', arguments: <String, dynamic>{
+          NavigationService.navigateTo('/seller/inventory', arguments: {
             'sellerId': user?.metadata?['sellerId'],
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -663,9 +665,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Transfer Coins',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/seller/transfer', arguments: <String, dynamic>{
+          NavigationService.navigateTo('/seller/transfer', arguments: {
             'sellerId': user?.metadata?['sellerId'],
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -673,9 +675,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Packages',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/seller/packages', arguments: <String, dynamic>{
+          NavigationService.navigateTo('/seller/packages', arguments: {
             'sellerId': user?.metadata?['sellerId'],
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -683,9 +685,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Earnings',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/seller/earnings', arguments: <String, dynamic>{
+          NavigationService.navigateTo('/seller/earnings', arguments: {
             'sellerId': user?.metadata?['sellerId'],
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -693,9 +695,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Customers',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/seller/customers', arguments: <String, dynamic>{
+          NavigationService.navigateTo('/seller/customers', arguments: {
             'sellerId': user?.metadata?['sellerId'],
-          },);
+          });
         },
       ),
       const Divider(color: Colors.white24),
@@ -704,9 +706,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Sales Analytics',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/seller/analytics', arguments: <String, dynamic>{
+          NavigationService.navigateTo('/seller/analytics', arguments: {
             'sellerId': user?.metadata?['sellerId'],
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -721,16 +723,16 @@ class RoleBasedDrawer extends StatelessWidget {
   }
 
   List<Widget> _getHostItems(BuildContext context) {
-    return <>[
+    return [
       _buildSectionHeader('Host Dashboard'),
       _buildDrawerItem(
         icon: Icons.dashboard,
         title: 'Dashboard',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/host/dashboard', arguments: <String, String?>{
+          NavigationService.navigateTo('/host/dashboard', arguments: {
             'hostId': user?.id,
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -738,9 +740,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Go Live',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/host/go-live', arguments: <String, String?>{
+          NavigationService.navigateTo('/host/go-live', arguments: {
             'hostId': user?.id,
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -748,9 +750,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Earnings',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/host/earnings', arguments: <String, String?>{
+          NavigationService.navigateTo('/host/earnings', arguments: {
             'hostId': user?.id,
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -758,9 +760,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Analytics',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/host/analytics', arguments: <String, String?>{
+          NavigationService.navigateTo('/host/analytics', arguments: {
             'hostId': user?.id,
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -768,9 +770,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Followers',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/host/followers', arguments: <String, String?>{
+          NavigationService.navigateTo('/host/followers', arguments: {
             'hostId': user?.id,
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -778,9 +780,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Schedule',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/host/schedule', arguments: <String, String?>{
+          NavigationService.navigateTo('/host/schedule', arguments: {
             'hostId': user?.id,
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -788,9 +790,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Gifts',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/host/gifts', arguments: <String, String?>{
+          NavigationService.navigateTo('/host/gifts', arguments: {
             'hostId': user?.id,
-          },);
+          });
         },
       ),
       const Divider(color: Colors.white24),
@@ -799,9 +801,9 @@ class RoleBasedDrawer extends StatelessWidget {
         title: 'Achievements',
         onTap: () {
           Navigator.pop(context);
-          NavigationService.navigateTo('/host/achievements', arguments: <String, String?>{
+          NavigationService.navigateTo('/host/achievements', arguments: {
             'hostId': user?.id,
-          },);
+          });
         },
       ),
       _buildDrawerItem(
@@ -870,9 +872,9 @@ class RoleBasedDrawer extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
-        children: <>[
+        children: [
           const Divider(color: Colors.white24),
-          if (user != null) ...<>[
+          if (user != null) ...[
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text(
@@ -886,7 +888,7 @@ class RoleBasedDrawer extends StatelessWidget {
           Text(
             'Version 1.0.0',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.3),
+              color: Colors.white.withOpacity(0.3),
               fontSize: 10,
             ),
           ),
@@ -981,7 +983,7 @@ class RoleBasedDrawer extends StatelessWidget {
           'Are you sure you want to logout?',
           style: TextStyle(color: Colors.white70),
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
@@ -1021,7 +1023,7 @@ class RoleBasedDrawer extends StatelessWidget {
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             ListTile(
               leading: const Icon(Icons.email, color: Colors.blue),
               title: const Text(
@@ -1069,7 +1071,7 @@ class RoleBasedDrawer extends StatelessWidget {
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),
@@ -1090,12 +1092,12 @@ class RoleBasedDrawer extends StatelessWidget {
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.accentPurple.withValues(alpha: 0.2),
+                color: AppColors.accentPurple.withOpacity(0.2),
               ),
               child: const Icon(
                 Icons.sports_esports,
@@ -1125,7 +1127,7 @@ class RoleBasedDrawer extends StatelessWidget {
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),
@@ -1133,12 +1135,5 @@ class RoleBasedDrawer extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<User?>('user', user));
-    properties.add(ObjectFlagProperty<VoidCallback>.has('onLogout', onLogout));
   }
 }

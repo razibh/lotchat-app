@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 import '../models/chat_model.dart';
 
 class MessageForwardDialog extends StatelessWidget {
-
   const MessageForwardDialog({
-    required this.chats, required this.onForward, super.key,
+    super.key,
+    required this.chats,
+    required this.onForward,
   });
+
   final List<ChatModel> chats;
   final Function(ChatModel) onForward;
 
@@ -27,16 +30,20 @@ class MessageForwardDialog extends StatelessWidget {
                     : null,
                 child: chat.groupAvatar == null
                     ? Text(
-                        chat.type == 'private'
-                            ? chat.participants.first[0].toUpperCase()
-                            : 'G',
-                      )
+                  chat.type == 'private'
+                      ? (chat.participants.isNotEmpty
+                      ? chat.participants.first[0].toUpperCase()
+                      : '?')
+                      : 'G',
+                )
                     : null,
               ),
               title: Text(
                 chat.type == 'private'
+                    ? (chat.participants.isNotEmpty
                     ? chat.participants.first
-                    : chat.groupName ?? 'Group',
+                    : 'User')
+                    : (chat.groupName ?? 'Group'),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -46,7 +53,7 @@ class MessageForwardDialog extends StatelessWidget {
           },
         ),
       ),
-      actions: <>[
+      actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
@@ -58,7 +65,8 @@ class MessageForwardDialog extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<ChatModel>('chats', chats));
+
+    properties.add(DiagnosticsProperty<List<ChatModel>>('chats', chats));
     properties.add(ObjectFlagProperty<Function(ChatModel)>.has('onForward', onForward));
   }
 }

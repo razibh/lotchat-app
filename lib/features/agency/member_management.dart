@@ -1,24 +1,52 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/services/agency_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/models/agency_model.dart';
-import '../../core/models/user_model.dart';
+import '../../core/models/user_models.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../mixins/dialog_mixin.dart';
 import '../../widgets/common/custom_button.dart';
-import '../../widgets/common/search_bar.dart';
+import '../../widgets/common/custom_search_bar.dart';
 import '../../widgets/common/empty_state_widget.dart';
 import '../profile/profile_screen.dart';
 
+// AgencyMember class
+class AgencyMember {
+  final String userId;
+  final String username;
+  final String? displayName;
+  final String? avatar;
+  final AgencyRole role;
+  final int earnings;
+  final int monthlyEarnings;
+  final int weeklyEarnings;
+  final bool isOnline;
+  final DateTime joinedAt;
+
+  AgencyMember({
+    required this.userId,
+    required this.username,
+    this.displayName,
+    this.avatar,
+    required this.role,
+    required this.earnings,
+    required this.monthlyEarnings,
+    required this.weeklyEarnings,
+    required this.isOnline,
+    required this.joinedAt,
+  });
+}
+
 class MemberManagement extends StatefulWidget {
+  final String agencyId;
 
   const MemberManagement({
-    required this.agencyId, super.key,
+    required this.agencyId,
+    super.key,
   });
-  final String agencyId;
 
   @override
   State<MemberManagement> createState() => _MemberManagementState();
@@ -30,20 +58,20 @@ class MemberManagement extends StatefulWidget {
   }
 }
 
-class _MemberManagementState extends State<MemberManagement> 
+class _MemberManagementState extends State<MemberManagement>
     with LoadingMixin, ToastMixin, DialogMixin {
-  
+
   final AgencyService _agencyService = ServiceLocator().get<AgencyService>();
   final NotificationService _notificationService = ServiceLocator().get<NotificationService>();
-  
-  List<AgencyMember> _members = <>[];
-  List<AgencyMember> _filteredMembers = <>[];
+
+  List<AgencyMember> _members = [];
+  List<AgencyMember> _filteredMembers = [];
   AgencyModel? _agency;
   String _searchQuery = '';
   String _selectedRole = 'All';
   bool _isLoading = true;
 
-  final List<String> _roles = <String>['All', 'Leader', 'Co-Leader', 'Elder', 'Member'];
+  final List<String> _roles = ['All', 'Leader', 'Co-Leader', 'Elder', 'Member'];
 
   @override
   void initState() {
@@ -54,11 +82,30 @@ class _MemberManagementState extends State<MemberManagement>
   Future<void> _loadAgencyData() async {
     await runWithLoading(() async {
       try {
-        _agency = await _agencyService.getAgency(widget.agencyId);
-        if (_agency != null) {
-          _members = _agency!.members;
-          _applyFilter();
-        }
+        // Mock data for testing
+        await Future.delayed(const Duration(seconds: 1));
+
+        _agency = AgencyModel(
+          id: widget.agencyId,
+          name: 'Elite Talent Agency',
+          ownerId: 'user_123',
+          ownerName: 'Karim Rahman',
+          memberIds: ['user_1', 'user_2', 'user_3', 'user_4', 'user_5'],
+          memberEarnings: {
+            'user_1': 125000,
+            'user_2': 98000,
+            'user_3': 156000,
+            'user_4': 210000,
+            'user_5': 85000,
+          },
+          totalEarnings: 674000,
+          commissionRate: 0.1,
+          createdAt: DateTime.now().subtract(const Duration(days: 90)),
+          status: AgencyStatus.active,
+        );
+
+        _members = _generateMockMembers();
+        _applyFilter();
       } catch (e) {
         showError('Failed to load members: $e');
       } finally {
@@ -69,21 +116,87 @@ class _MemberManagementState extends State<MemberManagement>
     });
   }
 
+  List<AgencyMember> _generateMockMembers() {
+    return [
+      AgencyMember(
+        userId: 'user_1',
+        username: 'sarah_rahman',
+        displayName: 'Sarah Rahman',
+        avatar: null,
+        role: AgencyRole.leader,
+        earnings: 125000,
+        monthlyEarnings: 28500,
+        weeklyEarnings: 7200,
+        isOnline: true,
+        joinedAt: DateTime.now().subtract(const Duration(days: 90)),
+      ),
+      AgencyMember(
+        userId: 'user_2',
+        username: 'karim_ahmed',
+        displayName: 'Karim Ahmed',
+        avatar: null,
+        role: AgencyRole.coLeader,
+        earnings: 98000,
+        monthlyEarnings: 22400,
+        weeklyEarnings: 5600,
+        isOnline: true,
+        joinedAt: DateTime.now().subtract(const Duration(days: 80)),
+      ),
+      AgencyMember(
+        userId: 'user_3',
+        username: 'rina_begum',
+        displayName: 'Rina Begum',
+        avatar: null,
+        role: AgencyRole.elder,
+        earnings: 156000,
+        monthlyEarnings: 32400,
+        weeklyEarnings: 8100,
+        isOnline: false,
+        joinedAt: DateTime.now().subtract(const Duration(days: 70)),
+      ),
+      AgencyMember(
+        userId: 'user_4',
+        username: 'shahid_khan',
+        displayName: 'Shahid Khan',
+        avatar: null,
+        role: AgencyRole.member,
+        earnings: 210000,
+        monthlyEarnings: 45200,
+        weeklyEarnings: 11300,
+        isOnline: true,
+        joinedAt: DateTime.now().subtract(const Duration(days: 60)),
+      ),
+      AgencyMember(
+        userId: 'user_5',
+        username: 'farhana_akter',
+        displayName: 'Farhana Akter',
+        avatar: null,
+        role: AgencyRole.member,
+        earnings: 85000,
+        monthlyEarnings: 18500,
+        weeklyEarnings: 4600,
+        isOnline: false,
+        joinedAt: DateTime.now().subtract(const Duration(days: 50)),
+      ),
+    ];
+  }
+
   void _applyFilter() {
     var filtered = List<AgencyMember>.from(_members);
 
     // Apply search
     if (_searchQuery.isNotEmpty) {
-      filtered = filtered.where((Object? m) =>
-        m.username.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-        (m.displayName?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false),
+      filtered = filtered.where((m) =>
+      m.username.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (m.displayName?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false)
       ).toList();
     }
 
     // Apply role filter
     if (_selectedRole != 'All') {
-      filtered = filtered.where((Object? m) => 
-        m.role.toString().split('.').last == _selectedRole,
+      String roleValue = _selectedRole.toLowerCase().replaceAll('-', '');
+      filtered = filtered.where((m) =>
+      m.role.toString().split('.').last.toLowerCase() == roleValue
       ).toList();
     }
 
@@ -105,14 +218,14 @@ class _MemberManagementState extends State<MemberManagement>
           await _agencyService.addMember(widget.agencyId, userId);
           showSuccess('Member added successfully');
           _loadAgencyData();
-          
+
           // Send notification to new member
           await _notificationService.sendNotification(
             userId: userId,
             type: 'agency',
             title: 'Added to Agency',
             body: 'You have been added to ${_agency!.name} agency',
-            data: <String, >{'agencyId': widget.agencyId},
+            data: {'agencyId': widget.agencyId},
           );
         } catch (e) {
           showError('Failed to add member: $e');
@@ -184,7 +297,7 @@ class _MemberManagementState extends State<MemberManagement>
         padding: const EdgeInsets.all(16),
         height: MediaQuery.of(context).size.height * 0.7,
         child: Column(
-          children: <>[
+          children: [
             const Text(
               'Earnings History',
               style: TextStyle(
@@ -199,7 +312,7 @@ class _MemberManagementState extends State<MemberManagement>
                   widget.agencyId,
                   member.userId,
                 ),
-                builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+                builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
@@ -208,7 +321,7 @@ class _MemberManagementState extends State<MemberManagement>
                     return Center(child: Text('Error: ${snapshot.error}'));
                   }
 
-                  final List<dynamic> earnings = snapshot.data ?? <dynamic>[];
+                  final earnings = snapshot.data ?? [];
 
                   if (earnings.isEmpty) {
                     return const EmptyStateWidget(
@@ -220,7 +333,7 @@ class _MemberManagementState extends State<MemberManagement>
 
                   return ListView.builder(
                     itemCount: earnings.length,
-                    itemBuilder: (BuildContext context, int index) {
+                    itemBuilder: (context, index) {
                       final earning = earnings[index];
                       return Card(
                         margin: const EdgeInsets.only(bottom: 8),
@@ -262,9 +375,18 @@ class _MemberManagementState extends State<MemberManagement>
     );
   }
 
-  String _formatDate(DateTime date) {
-    final DateTime now = DateTime.now();
-    final Duration difference = now.difference(date);
+  String _formatDate(dynamic date) {
+    if (date == null) return 'Unknown';
+
+    DateTime dateTime;
+    if (date is DateTime) {
+      dateTime = date;
+    } else {
+      return 'Unknown';
+    }
+
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
 
     if (difference.inDays > 0) {
       return '${difference.inDays}d ago';
@@ -294,7 +416,7 @@ class _MemberManagementState extends State<MemberManagement>
       appBar: AppBar(
         title: const Text('Member Management'),
         backgroundColor: Colors.blue,
-        actions: <>[
+        actions: [
           IconButton(
             icon: const Icon(Icons.person_add),
             onPressed: _addMember,
@@ -303,12 +425,12 @@ class _MemberManagementState extends State<MemberManagement>
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Column(
-            children: <>[
+            children: [
               Padding(
                 padding: const EdgeInsets.all(8),
-                child: SearchBar(
+                child: CustomSearchBar(  // ← CustomSearchBar ব্যবহার করুন
                   hintText: 'Search members...',
-                  onChanged: (String value) {
+                  onChanged: (value) {
                     setState(() {
                       _searchQuery = value;
                       _applyFilter();
@@ -321,19 +443,19 @@ class _MemberManagementState extends State<MemberManagement>
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  children: _roles.map((String role) {
+                  children: _roles.map((role) {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: FilterChip(
                         label: Text(role),
                         selected: _selectedRole == role,
-                        onSelected: (bool selected) {
+                        onSelected: (selected) {
                           setState(() {
                             _selectedRole = role;
                             _applyFilter();
                           });
                         },
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        backgroundColor: Colors.white.withOpacity(0.2),
                         selectedColor: Colors.white,
                         labelStyle: TextStyle(
                           color: _selectedRole == role ? Colors.blue : Colors.white,
@@ -350,199 +472,196 @@ class _MemberManagementState extends State<MemberManagement>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _filteredMembers.isEmpty
-              ? EmptyStateWidget(
-                  title: 'No Members Found',
-                  message: _searchQuery.isNotEmpty
-                      ? 'No members match your search'
-                      : 'Add members to your agency',
-                  icon: _searchQuery.isNotEmpty
-                      ? Icons.search_off
-                      : Icons.people_outline,
-                  buttonText: _searchQuery.isEmpty ? 'Add Member' : null,
-                  onButtonPressed: _searchQuery.isEmpty ? _addMember : null,
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _filteredMembers.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final member = _filteredMembers[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ExpansionTile(
-                        leading: Stack(
-                          children: <>[
-                            CircleAvatar(
-                              backgroundImage: member.avatar != null
-                                  ? NetworkImage(member.avatar!)
-                                  : null,
-                              child: member.avatar == null
-                                  ? Text(member.username[0].toUpperCase())
-                                  : null,
-                            ),
-                            if (member.isOnline)
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.green,
-                                    shape: BoxShape.circle,
-                                    border: Border.fromBorderSide(
-                                      BorderSide(color: Colors.white, width: 2),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
+          ? EmptyStateWidget(
+        title: 'No Members Found',
+        message: _searchQuery.isNotEmpty
+            ? 'No members match your search'
+            : 'Add members to your agency',
+        icon: _searchQuery.isNotEmpty
+            ? Icons.search_off
+            : Icons.people_outline,
+        buttonText: _searchQuery.isEmpty ? 'Add Member' : null,
+        onButtonPressed: _searchQuery.isEmpty ? _addMember : null,
+      )
+          : ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _filteredMembers.length,
+        itemBuilder: (context, index) {
+          final member = _filteredMembers[index];
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ExpansionTile(
+              leading: Stack(
+                children: [
+                  CircleAvatar(
+                    backgroundImage: member.avatar != null
+                        ? NetworkImage(member.avatar!)
+                        : null,
+                    child: member.avatar == null
+                        ? Text(member.username[0].toUpperCase())
+                        : null,
+                  ),
+                  if (member.isOnline)
+                    const Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: CircleAvatar(
+                        radius: 6,
+                        backgroundColor: Colors.green,
+                      ),
+                    ),
+                ],
+              ),
+              title: Text(
+                member.displayName ?? member.username,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('@${member.username}'),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getRoleColor(member.role).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      member.role.toString().split('.').last,
+                      style: TextStyle(
+                        color: _getRoleColor(member.role),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${member.earnings} coins',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'profile',
+                        child: Text('View Profile'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'earnings',
+                        child: Text('View Earnings'),
+                      ),
+                      if (member.role != AgencyRole.leader) ...[
+                        const PopupMenuItem(
+                          value: 'role',
+                          child: Text('Change Role'),
                         ),
-                        title: Text(
-                          member.displayName ?? member.username,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
+                        const PopupMenuItem(
+                          value: 'remove',
+                          child: Text(
+                            'Remove Member',
+                            style: TextStyle(color: Colors.red),
                           ),
                         ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <>[
-                            Text('@${member.username}'),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _getRoleColor(member.role).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                member.role.toString().split('.').last,
-                                style: TextStyle(
-                                  color: _getRoleColor(member.role),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                      ],
+                    ],
+                    onSelected: (value) async {
+                      switch (value) {
+                        case 'profile':
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProfileScreen(
+                                userId: member.userId,
                               ),
                             ),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <>[
-                            Text(
-                              '${member.earnings} coins',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green,
-                              ),
+                          );
+                          break;
+                        case 'earnings':
+                          await _viewEarnings(member);
+                          break;
+                        case 'role':
+                          await _changeRole(member);
+                          break;
+                        case 'remove':
+                          await _removeMember(member);
+                          break;
+                      }
+                    },
+                  ),
+                ],
+              ),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      // Stats Grid
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              'Total Earnings',
+                              '${member.earnings}',
+                              Icons.attach_money,
+                              Colors.green,
                             ),
-                            const SizedBox(width: 8),
-                            PopupMenuButton(
-                              icon: const Icon(Icons.more_vert),
-                              itemBuilder: (BuildContext context) => <>[
-                                const PopupMenuItem(
-                                  value: 'profile',
-                                  child: Text('View Profile'),
-                                ),
-                                const PopupMenuItem(
-                                  value: 'earnings',
-                                  child: Text('View Earnings'),
-                                ),
-                                if (member.role != AgencyRole.leader) ...<>[
-                                  const PopupMenuItem(
-                                    value: 'role',
-                                    child: Text('Change Role'),
-                                  ),
-                                  const PopupMenuItem(
-                                    value: 'remove',
-                                    child: Text(
-                                      'Remove Member',
-                                      style: TextStyle(color: Colors.red),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                              onSelected: (Object? value) async {
-                                switch (value) {
-                                  case 'profile':
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (BuildContext context) => ProfileScreen(
-                                          userId: member.userId,
-                                        ),
-                                      ),
-                                    );
-                                  case 'earnings':
-                                    await _viewEarnings(member);
-                                  case 'role':
-                                    await _changeRole(member);
-                                  case 'remove':
-                                    await _removeMember(member);
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                        children: <>[
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              children: <>[
-                                // Stats Grid
-                                Row(
-                                  children: <>[
-                                    Expanded(
-                                      child: _buildStatCard(
-                                        'Total Earnings',
-                                        '${member.earnings}',
-                                        Icons.attach_money,
-                                        Colors.green,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: _buildStatCard(
-                                        'This Month',
-                                        '${member.monthlyEarnings}',
-                                        Icons.calendar_today,
-                                        Colors.blue,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: <>[
-                                    Expanded(
-                                      child: _buildStatCard(
-                                        'This Week',
-                                        '${member.weeklyEarnings}',
-                                        Icons.trending_up,
-                                        Colors.orange,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: _buildStatCard(
-                                        'Joined',
-                                        _formatDate(member.joinedAt),
-                                        Icons.access_time,
-                                        Colors.purple,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildStatCard(
+                              'This Month',
+                              '${member.monthlyEarnings}',
+                              Icons.calendar_today,
+                              Colors.blue,
                             ),
                           ),
                         ],
                       ),
-                    );
-                  },
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              'This Week',
+                              '${member.weeklyEarnings}',
+                              Icons.trending_up,
+                              Colors.orange,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildStatCard(
+                              'Joined',
+                              _formatDate(member.joinedAt),
+                              Icons.access_time,
+                              Colors.purple,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
+              ],
+            ),
+          );
+        },
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addMember,
         backgroundColor: Colors.blue,
@@ -555,11 +674,11 @@ class _MemberManagementState extends State<MemberManagement>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
-        children: <>[
+        children: [
           Icon(icon, color: color, size: 20),
           const SizedBox(height: 4),
           Text(

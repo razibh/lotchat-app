@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:math' as math;
+
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/gradient_background.dart';
 import '../../core/widgets/neumorphic_button.dart';
-import 'dart:math' as math;
 
 class CarromGame extends StatefulWidget {
-
-  const CarromGame({
-    required this.gameId, super.key,
-    this.gameData,
-  });
   final String gameId;
   final Map<String, dynamic>? gameData;
+
+  const CarromGame({
+    required this.gameId,
+    this.gameData,
+    super.key,
+  });
 
   @override
   State<CarromGame> createState() => _CarromGameState();
@@ -27,7 +30,7 @@ class CarromGame extends StatefulWidget {
 class _CarromGameState extends State<CarromGame> with TickerProviderStateMixin {
   late AnimationController _strikerController;
   late Animation<double> _strikerAnimation;
-  
+
   bool isPlayerTurn = true;
   double strikerPosition = 0;
   int playerScore = 0;
@@ -40,7 +43,7 @@ class _CarromGameState extends State<CarromGame> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    
+
     _strikerAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _strikerController, curve: Curves.easeOut),
     );
@@ -54,14 +57,14 @@ class _CarromGameState extends State<CarromGame> with TickerProviderStateMixin {
 
   void _shootStriker() {
     if (!isPlayerTurn) return;
-    
+
     _strikerController.forward().then((_) {
       setState(() {
         isPlayerTurn = false;
         playerScore += math.Random().nextInt(3); // Simulate score
       });
       _strikerController.reset();
-      
+
       // Simulate opponent turn
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
@@ -80,11 +83,11 @@ class _CarromGameState extends State<CarromGame> with TickerProviderStateMixin {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               Expanded(
                 child: Stack(
-                  children: <>[
+                  children: [
                     _buildGameBoard(),
                     _buildStriker(),
                   ],
@@ -104,7 +107,7 @@ class _CarromGameState extends State<CarromGame> with TickerProviderStateMixin {
       padding: const EdgeInsets.all(16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -112,9 +115,9 @@ class _CarromGameState extends State<CarromGame> with TickerProviderStateMixin {
           Text(
             'Carrom',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.white),
@@ -134,9 +137,9 @@ class _CarromGameState extends State<CarromGame> with TickerProviderStateMixin {
           color: AppColors.backgroundDark,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.brown.shade800, width: 4),
-          boxShadow: <>[
+          boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.5),
+              color: Colors.black.withOpacity(0.5),
               blurRadius: 10,
               spreadRadius: 2,
             ),
@@ -152,7 +155,7 @@ class _CarromGameState extends State<CarromGame> with TickerProviderStateMixin {
   Widget _buildStriker() {
     return AnimatedBuilder(
       animation: _strikerAnimation,
-      builder: (BuildContext context, Widget? child) {
+      builder: (context, child) {
         return Positioned(
           left: 150 - 15,
           bottom: 20 + (50 * _strikerAnimation.value),
@@ -162,9 +165,9 @@ class _CarromGameState extends State<CarromGame> with TickerProviderStateMixin {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white,
-              boxShadow: <>[
+              boxShadow: [
                 BoxShadow(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: Colors.white.withOpacity(0.5),
                   blurRadius: 10,
                   spreadRadius: 2,
                 ),
@@ -181,12 +184,12 @@ class _CarromGameState extends State<CarromGame> with TickerProviderStateMixin {
       padding: const EdgeInsets.all(20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <>[
+        children: [
           _buildScoreCard('You', playerScore),
           Container(
             width: 2,
             height: 40,
-            color: Colors.white.withValues(alpha: 0.3),
+            color: Colors.white.withOpacity(0.3),
           ),
           _buildScoreCard('Opponent', opponentScore),
         ],
@@ -196,7 +199,7 @@ class _CarromGameState extends State<CarromGame> with TickerProviderStateMixin {
 
   Widget _buildScoreCard(String label, int score) {
     return Column(
-      children: <>[
+      children: [
         Text(
           label,
           style: const TextStyle(color: Colors.white70, fontSize: 14),
@@ -219,7 +222,7 @@ class _CarromGameState extends State<CarromGame> with TickerProviderStateMixin {
       padding: const EdgeInsets.all(20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <>[
+        children: [
           NeumorphicButton(
             onPressed: isPlayerTurn ? _shootStriker : null,
             child: const Icon(Icons.sports_handball, color: Colors.white),
@@ -246,7 +249,7 @@ class _CarromGameState extends State<CarromGame> with TickerProviderStateMixin {
 class CarromBoardPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()
+    final paint = Paint()
       ..color = Colors.brown.shade600
       ..style = PaintingStyle.fill;
 
@@ -254,7 +257,7 @@ class CarromBoardPainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
 
     // Draw circles
-    paint.color = Colors.white.withValues(alpha: 0.1);
+    paint.color = Colors.white.withOpacity(0.1);
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 2;
 

@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/gradient_background.dart';
 
 class MutualFriendsScreen extends StatefulWidget {
-
-  const MutualFriendsScreen({
-    required this.userId, required this.userName, super.key,
-    this.userAvatar,
-  });
   final String userId;
   final String userName;
   final String? userAvatar;
+
+  const MutualFriendsScreen({
+    required this.userId,
+    required this.userName,
+    this.userAvatar,
+    super.key,
+  });
 
   @override
   State<MutualFriendsScreen> createState() => _MutualFriendsScreenState();
@@ -26,7 +30,7 @@ class MutualFriendsScreen extends StatefulWidget {
 
 class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
   bool _isLoading = true;
-  List<MutualFriend> _mutualFriends = <MutualFriend>[];
+  List<MutualFriend> _mutualFriends = [];
   String _searchQuery = '';
 
   @override
@@ -36,69 +40,67 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
   }
 
   Future<void> _loadMutualFriends() async {
-    // Simulate loading data
     setState(() {
       _isLoading = true;
     });
 
     await Future.delayed(const Duration(seconds: 1));
 
-    // Sample mutual friends data
     setState(() {
-      _mutualFriends = <MutualFriend>[
+      _mutualFriends = [
         MutualFriend(
           id: '1',
           name: 'Razib Hossain',
-          mutualGames: <String>['Chess', 'Carrom', 'Trivia'],
+          mutualGames: ['Chess', 'Carrom', 'Trivia'],
           lastActive: DateTime.now().subtract(const Duration(minutes: 30)),
           isOnline: true,
         ),
         MutualFriend(
           id: '2',
           name: 'Waresh Khan',
-          mutualGames: <String>['Pictionary', 'Truth or Dare'],
+          mutualGames: ['Pictionary', 'Truth or Dare'],
           lastActive: DateTime.now().subtract(const Duration(hours: 2)),
           isOnline: false,
         ),
         MutualFriend(
           id: '3',
           name: 'Dr Rokib',
-          mutualGames: <String>['Chess', 'Werewolf'],
+          mutualGames: ['Chess', 'Werewolf'],
           lastActive: DateTime.now().subtract(const Duration(hours: 5)),
           isOnline: false,
         ),
         MutualFriend(
           id: '4',
           name: 'Rasel Hossain',
-          mutualGames: <String>['Carrom', 'Trivia', 'Pictionary'],
+          mutualGames: ['Carrom', 'Trivia', 'Pictionary'],
           lastActive: DateTime.now().subtract(const Duration(minutes: 15)),
           isOnline: true,
         ),
         MutualFriend(
           id: '5',
           name: 'Siyam Hossain',
-          mutualGames: <String>['Chess', 'Werewolf', 'Truth or Dare'],
+          mutualGames: ['Chess', 'Werewolf', 'Truth or Dare'],
           lastActive: DateTime.now().subtract(const Duration(days: 1)),
           isOnline: false,
         ),
         MutualFriend(
           id: '6',
           name: 'Tasnim Tanha',
-          mutualGames: <String>['Trivia', 'Pictionary'],
+          mutualGames: ['Trivia', 'Pictionary'],
           lastActive: DateTime.now().subtract(const Duration(hours: 3)),
           isOnline: false,
         ),
         MutualFriend(
           id: '7',
           name: 'Dola',
-          mutualGames: <String>['Chess', 'Carrom'],
+          mutualGames: ['Chess', 'Carrom'],
           lastActive: DateTime.now().subtract(const Duration(minutes: 5)),
           isOnline: true,
         ),
         MutualFriend(
           id: '8',
           name: 'Ismail Hossain',
-          mutualGames: <String>['Werewolf', 'Truth or Dare', 'Trivia'],
+          mutualGames: ['Werewolf', 'Truth or Dare', 'Trivia'],
           lastActive: DateTime.now().subtract(const Duration(hours: 1)),
           isOnline: false,
         ),
@@ -109,8 +111,8 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
 
   List<MutualFriend> get _filteredFriends {
     if (_searchQuery.isEmpty) return _mutualFriends;
-    return _mutualFriends.where((MutualFriend friend) =>
-      friend.name.toLowerCase().contains(_searchQuery.toLowerCase()),
+    return _mutualFriends.where((friend) =>
+        friend.name.toLowerCase().contains(_searchQuery.toLowerCase()),
     ).toList();
   }
 
@@ -120,7 +122,7 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildSearchBar(),
               _buildStats(),
@@ -140,7 +142,7 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -149,7 +151,7 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   'Mutual Friends',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -169,18 +171,18 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
           ),
           CircleAvatar(
             radius: 20,
-            backgroundColor: AppColors.accentPurple.withValues(alpha: 0.3),
+            backgroundColor: AppColors.accentPurple.withOpacity(0.3),
             backgroundImage: widget.userAvatar != null
                 ? NetworkImage(widget.userAvatar!)
                 : null,
             child: widget.userAvatar == null
                 ? Text(
-                    widget.userName[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )
+              widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : '?',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            )
                 : null,
           ),
         ],
@@ -193,11 +195,11 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(30),
       ),
       child: TextField(
-        onChanged: (String value) {
+        onChanged: (value) {
           setState(() {
             _searchQuery = value;
           });
@@ -205,18 +207,18 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           hintText: 'Search mutual friends...',
-          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
           prefixIcon: const Icon(Icons.search, color: Colors.white70),
           border: InputBorder.none,
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear, color: Colors.white70),
-                  onPressed: () {
-                    setState(() {
-                      _searchQuery = '';
-                    });
-                  },
-                )
+            icon: const Icon(Icons.clear, color: Colors.white70),
+            onPressed: () {
+              setState(() {
+                _searchQuery = '';
+              });
+            },
+          )
               : null,
         ),
       ),
@@ -229,19 +231,19 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <>[
-            AppColors.accentPurple.withValues(alpha: 0.3),
-            AppColors.accentBlue.withValues(alpha: 0.3),
+          colors: [
+            AppColors.accentPurple.withOpacity(0.3),
+            AppColors.accentBlue.withOpacity(0.3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: <>[
+        children: [
           _buildStatItem(
             'Total',
             '${_mutualFriends.length}',
@@ -249,7 +251,7 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
           ),
           _buildStatItem(
             'Online',
-            '${_mutualFriends.where((MutualFriend f) => f.isOnline).length}',
+            '${_mutualFriends.where((f) => f.isOnline).length}',
             Icons.circle,
             Colors.green,
           ),
@@ -265,11 +267,11 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
 
   Widget _buildStatItem(String label, String value, IconData icon, [Color? color]) {
     return Column(
-      children: <>[
+      children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: (color ?? Colors.white).withValues(alpha: 0.2),
+            color: (color ?? Colors.white).withOpacity(0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -299,8 +301,8 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
   }
 
   int _getUniqueGamesCount() {
-    final Set<String> games = <String>{};
-    for (MutualFriend friend in _mutualFriends) {
+    final games = <String>{};
+    for (var friend in _mutualFriends) {
       games.addAll(friend.mutualGames);
     }
     return games.length;
@@ -310,7 +312,7 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: <>[
+        children: [
           const CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.accentPurple),
           ),
@@ -318,7 +320,7 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
           Text(
             'Finding mutual friends...',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
+              color: Colors.white.withOpacity(0.7),
               fontSize: 16,
             ),
           ),
@@ -328,17 +330,17 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
   }
 
   Widget _buildFriendsList() {
-    final List<MutualFriend> filteredFriends = _filteredFriends;
+    final filteredFriends = _filteredFriends;
 
     if (filteredFriends.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
+          children: [
             Icon(
               Icons.people_outline,
               size: 80,
-              color: Colors.white.withValues(alpha: 0.3),
+              color: Colors.white.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
             Text(
@@ -346,7 +348,7 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
                   ? 'No mutual friends found'
                   : 'No matches for "$_searchQuery"',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
+                color: Colors.white.withOpacity(0.5),
                 fontSize: 16,
               ),
             ),
@@ -358,8 +360,8 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       itemCount: filteredFriends.length,
-      itemBuilder: (BuildContext context, int index) {
-        final MutualFriend friend = filteredFriends[index];
+      itemBuilder: (context, index) {
+        final friend = filteredFriends[index];
         return _buildFriendTile(friend);
       },
     );
@@ -370,48 +372,40 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: friend.isOnline ? Colors.green.withValues(alpha: 0.3) : Colors.transparent,
+          color: friend.isOnline ? Colors.green.withOpacity(0.3) : Colors.transparent,
         ),
       ),
       child: Row(
-        children: <>[
+        children: [
           Stack(
-            children: <>[
+            children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: _getAvatarColor(friend.id).withValues(alpha: 0.3),
+                backgroundColor: _getAvatarColor(friend.id).withOpacity(0.3),
                 backgroundImage: friend.avatar != null
                     ? NetworkImage(friend.avatar!)
                     : null,
                 child: friend.avatar == null
                     ? Text(
-                        friend.name[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
+                  friend.name.isNotEmpty ? friend.name[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
                     : null,
               ),
               if (friend.isOnline)
-                Positioned(
+                const Positioned(
                   bottom: 2,
                   right: 2,
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.backgroundDark,
-                        width: 2,
-                      ),
-                    ),
+                  child: CircleAvatar(
+                    radius: 6,
+                    backgroundColor: Colors.green,
                   ),
                 ),
             ],
@@ -420,9 +414,9 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Row(
-                  children: <>[
+                  children: [
                     Expanded(
                       child: Text(
                         friend.name,
@@ -436,7 +430,7 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
                     Text(
                       _getLastActiveText(friend.lastActive),
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: Colors.white.withOpacity(0.5),
                         fontSize: 12,
                       ),
                     ),
@@ -446,7 +440,7 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
                 Text(
                   '${friend.mutualGames.length} mutual games',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: Colors.white.withOpacity(0.7),
                     fontSize: 12,
                   ),
                 ),
@@ -466,14 +460,14 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
     return Wrap(
       spacing: 4,
       runSpacing: 4,
-      children: games.take(3).map((String game) {
+      children: games.take(3).map((game) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: _getGameColor(game).withValues(alpha: 0.2),
+            color: _getGameColor(game).withOpacity(0.2),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: _getGameColor(game).withValues(alpha: 0.5),
+              color: _getGameColor(game).withOpacity(0.5),
             ),
           ),
           child: Text(
@@ -492,16 +486,15 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
   Widget _buildActionButtons(MutualFriend friend) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: <>[
-        DecoratedBox(
+      children: [
+        Container(
           decoration: BoxDecoration(
-            color: AppColors.accentPurple.withValues(alpha: 0.2),
+            color: AppColors.accentPurple.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
           child: IconButton(
             icon: const Icon(Icons.message, color: Colors.white, size: 20),
             onPressed: () {
-              // Navigate to chat
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Chat with ${friend.name}')),
               );
@@ -509,15 +502,14 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
           ),
         ),
         const SizedBox(width: 4),
-        DecoratedBox(
+        Container(
           decoration: BoxDecoration(
-            color: AppColors.accentBlue.withValues(alpha: 0.2),
+            color: AppColors.accentBlue.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
           child: IconButton(
             icon: const Icon(Icons.person_add, color: Colors.white, size: 20),
             onPressed: () {
-              // Add friend
               setState(() {
                 friend.isFriend = true;
               });
@@ -532,7 +524,7 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
   }
 
   Color _getAvatarColor(String id) {
-    final colors = <>[
+    final colors = [
       Colors.red,
       Colors.blue,
       Colors.green,
@@ -541,7 +533,7 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
       Colors.pink,
       Colors.teal,
     ];
-    final int index = id.hashCode % colors.length;
+    final index = id.hashCode % colors.length;
     return colors[index];
   }
 
@@ -565,8 +557,8 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
   }
 
   String _getLastActiveText(DateTime lastActive) {
-    final DateTime now = DateTime.now();
-    final Duration difference = now.difference(lastActive);
+    final now = DateTime.now();
+    final difference = now.difference(lastActive);
 
     if (difference.inMinutes < 1) {
       return 'Just now';
@@ -585,13 +577,6 @@ class _MutualFriendsScreenState extends State<MutualFriendsScreen> {
 }
 
 class MutualFriend {
-
-  MutualFriend({
-    required this.id,
-    required this.name,
-    required this.mutualGames, required this.lastActive, required this.isOnline, this.avatar,
-    this.isFriend = false,
-  });
   final String id;
   final String name;
   final String? avatar;
@@ -599,17 +584,30 @@ class MutualFriend {
   final DateTime lastActive;
   final bool isOnline;
   bool isFriend;
+
+  MutualFriend({
+    required this.id,
+    required this.name,
+    required this.mutualGames,
+    required this.lastActive,
+    required this.isOnline,
+    this.avatar,
+    this.isFriend = false,
+  });
 }
 
 // Extension screen for mutual friends in a specific game
 class GameMutualFriendsScreen extends StatelessWidget {
-
-  const GameMutualFriendsScreen({
-    required this.gameName, required this.userId, required this.userName, super.key,
-  });
   final String gameName;
   final String userId;
   final String userName;
+
+  const GameMutualFriendsScreen({
+    required this.gameName,
+    required this.userId,
+    required this.userName,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -617,11 +615,11 @@ class GameMutualFriendsScreen extends StatelessWidget {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
-                  children: <>[
+                  children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
                       onPressed: () => Navigator.pop(context),
@@ -629,7 +627,7 @@ class GameMutualFriendsScreen extends StatelessWidget {
                     const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <>[
+                      children: [
                         Text(
                           '$gameName Friends',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(

@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/gradient_background.dart';
 import '../../core/widgets/neumorphic_button.dart';
 
 class TriviaGame extends StatefulWidget {
-
-  const TriviaGame({
-    required this.gameId, super.key,
-    this.gameData,
-  });
   final String gameId;
   final Map<String, dynamic>? gameData;
+
+  const TriviaGame({
+    required this.gameId,
+    this.gameData,
+    super.key,
+  });
 
   @override
   State<TriviaGame> createState() => _TriviaGameState();
@@ -26,37 +29,37 @@ class TriviaGame extends StatefulWidget {
 class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _progressAnimation;
-  
+
   int currentQuestionIndex = 0;
   int score = 0;
   int timeLeft = 15;
   bool isAnswered = false;
   int? selectedAnswer;
 
-  final List<TriviaQuestion> questions = <TriviaQuestion>[
+  final List<TriviaQuestion> questions = [
     TriviaQuestion(
       question: 'What is the capital of France?',
-      options: <String>['London', 'Berlin', 'Paris', 'Madrid'],
+      options: ['London', 'Berlin', 'Paris', 'Madrid'],
       correctAnswer: 2,
     ),
     TriviaQuestion(
       question: 'Which planet is known as the Red Planet?',
-      options: <String>['Venus', 'Mars', 'Jupiter', 'Saturn'],
+      options: ['Venus', 'Mars', 'Jupiter', 'Saturn'],
       correctAnswer: 1,
     ),
     TriviaQuestion(
       question: 'Who painted the Mona Lisa?',
-      options: <String>['Van Gogh', 'Picasso', 'Da Vinci', 'Rembrandt'],
+      options: ['Van Gogh', 'Picasso', 'Da Vinci', 'Rembrandt'],
       correctAnswer: 2,
     ),
     TriviaQuestion(
       question: 'What is the largest ocean on Earth?',
-      options: <String>['Atlantic', 'Indian', 'Arctic', 'Pacific'],
+      options: ['Atlantic', 'Indian', 'Arctic', 'Pacific'],
       correctAnswer: 3,
     ),
     TriviaQuestion(
       question: 'In which year did World War II end?',
-      options: <String>['1943', '1944', '1945', '1946'],
+      options: ['1943', '1944', '1945', '1946'],
       correctAnswer: 2,
     ),
   ];
@@ -68,13 +71,13 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
       vsync: this,
       duration: const Duration(seconds: 15),
     );
-    
+
     _progressAnimation = Tween<double>(begin: 1, end: 0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.linear),
     );
-    
+
     _animationController.forward();
-    _animationController.addStatusListener((AnimationStatus status) {
+    _animationController.addStatusListener((status) {
       if (status == AnimationStatus.completed && !isAnswered) {
         _nextQuestion();
       }
@@ -89,7 +92,7 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
 
   void _selectAnswer(int index) {
     if (isAnswered) return;
-    
+
     setState(() {
       isAnswered = true;
       selectedAnswer = index;
@@ -97,9 +100,9 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
         score += 10;
       }
     });
-    
+
     _animationController.stop();
-    
+
     Future.delayed(const Duration(seconds: 2), _nextQuestion);
   }
 
@@ -127,19 +130,19 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
         title: const Text('Game Over!', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Text(
               'Your Score: $score',
               style: const TextStyle(color: Colors.white, fontSize: 24),
             ),
             const SizedBox(height: 10),
             Text(
-              'Correct Answers: $score/10',
+              'Correct Answers: $score/50',
               style: const TextStyle(color: Colors.white70),
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
@@ -171,13 +174,13 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    final TriviaQuestion question = questions[currentQuestionIndex];
-    
+    final question = questions[currentQuestionIndex];
+
     return Scaffold(
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildProgressBar(),
               _buildScoreAndTimer(),
@@ -197,7 +200,7 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
       padding: const EdgeInsets.all(16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -205,9 +208,9 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
           Text(
             'Trivia',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.white),
@@ -222,7 +225,7 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
-        children: <>[
+        children: [
           Text(
             '${currentQuestionIndex + 1}/${questions.length}',
             style: const TextStyle(color: Colors.white70),
@@ -233,7 +236,7 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
               borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(
                 value: (currentQuestionIndex + 1) / questions.length,
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
+                backgroundColor: Colors.white.withOpacity(0.1),
                 valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accentPurple),
                 minHeight: 8,
               ),
@@ -249,15 +252,15 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
       padding: const EdgeInsets.all(20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
+              color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
-              children: <>[
+              children: [
                 const Icon(Icons.star, color: Colors.yellow, size: 20),
                 const SizedBox(width: 8),
                 Text(
@@ -269,17 +272,17 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
           ),
           AnimatedBuilder(
             animation: _progressAnimation,
-            builder: (BuildContext context, Widget? child) {
+            builder: (context, child) {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: _progressAnimation.value < 0.3
-                      ? Colors.red.withValues(alpha: 0.3)
-                      : Colors.white.withValues(alpha: 0.1),
+                      ? Colors.red.withOpacity(0.3)
+                      : Colors.white.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
-                  children: <>[
+                  children: [
                     Icon(
                       Icons.timer,
                       color: _progressAnimation.value < 0.3
@@ -312,9 +315,9 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Center(
         child: Text(
@@ -334,7 +337,7 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
-        children: List.generate(4, (int index) {
+        children: List.generate(4, (index) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: _buildOptionButton(index, question),
@@ -345,16 +348,16 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
   }
 
   Widget _buildOptionButton(int index, TriviaQuestion question) {
-    final var isCorrect = isAnswered && index == question.correctAnswer;
-    final var isWrong = isAnswered && selectedAnswer == index && index != question.correctAnswer;
-    
-    Color backgroundColor = Colors.white.withValues(alpha: 0.1);
+    final isCorrect = isAnswered && index == question.correctAnswer;
+    final isWrong = isAnswered && selectedAnswer == index && index != question.correctAnswer;
+
+    Color backgroundColor = Colors.white.withOpacity(0.1);
     if (isCorrect) {
-      backgroundColor = Colors.green.withValues(alpha: 0.3);
+      backgroundColor = Colors.green.withOpacity(0.3);
     } else if (isWrong) {
-      backgroundColor = Colors.red.withValues(alpha: 0.3);
+      backgroundColor = Colors.red.withOpacity(0.3);
     }
-    
+
     return NeumorphicButton(
       onPressed: isAnswered ? null : () => _selectAnswer(index),
       child: Container(
@@ -365,7 +368,7 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
-          children: <>[
+          children: [
             const SizedBox(width: 20),
             Container(
               width: 30,
@@ -373,8 +376,8 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isAnswered
-                    ? (isCorrect || isWrong ? Colors.white : Colors.white.withValues(alpha: 0.3))
-                    : Colors.white.withValues(alpha: 0.3),
+                    ? (isCorrect || isWrong ? Colors.white : Colors.white.withOpacity(0.3))
+                    : Colors.white.withOpacity(0.3),
               ),
               child: Center(
                 child: Text(
@@ -422,13 +425,13 @@ class _TriviaGameState extends State<TriviaGame> with SingleTickerProviderStateM
 }
 
 class TriviaQuestion {
+  final String question;
+  final List<String> options;
+  final int correctAnswer;
 
   TriviaQuestion({
     required this.question,
     required this.options,
     required this.correctAnswer,
   });
-  final String question;
-  final List<String> options;
-  final int correctAnswer;
 }

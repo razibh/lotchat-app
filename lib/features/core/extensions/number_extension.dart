@@ -1,3 +1,5 @@
+import 'dart:math';
+import 'dart:math' as math;
 import 'package:intl/intl.dart';
 
 extension IntExtension on int {
@@ -93,8 +95,8 @@ extension IntExtension on int {
       throw ArgumentError('Roman numerals only defined for 1-3999');
     }
 
-    final List<int> values = <int>[1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
-    final List<String> symbols = <String>['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
+    const values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
+    const symbols = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
 
     int remaining = this;
     String result = '';
@@ -120,9 +122,9 @@ extension IntExtension on int {
   String get toWords {
     if (this == 0) return 'zero';
 
-    final List<String> units = <String>['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-    final List<String> teens = <String>['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
-    final List<String> tens = <String>['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+    const units = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+    const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+    const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
 
     if (this < 10) return units[this];
     if (this < 20) return teens[this - 10];
@@ -172,10 +174,16 @@ extension IntExtension on int {
   }
 
   // Sum of digits
-  int get digitSum => digits.reduce((int a, int b) => a + b);
+  int get digitSum {
+    if (digits.isEmpty) return 0;
+    return digits.reduce((a, b) => a + b);
+  }
 
   // Product of digits
-  int get digitProduct => digits.reduce((int a, int b) => a * b);
+  int get digitProduct {
+    if (digits.isEmpty) return 0;
+    return digits.reduce((a, b) => a * b);
+  }
 
   // Reverse number
   int get reversed => int.parse(toString().split('').reversed.join());
@@ -213,19 +221,19 @@ extension DoubleExtension on double {
 
   // Round to decimal places
   double roundTo(int places) {
-    final double mod = pow(10, places);
+    final double mod = pow(10, places).toDouble();
     return (this * mod).roundToDouble() / mod;
   }
 
   // Ceil to decimal places
   double ceilTo(int places) {
-    final double mod = pow(10, places);
+    final double mod = pow(10, places).toDouble();
     return (this * mod).ceilToDouble() / mod;
   }
 
   // Floor to decimal places
   double floorTo(int places) {
-    final double mod = pow(10, places);
+    final double mod = pow(10, places).toDouble();
     return (this * mod).floorToDouble() / mod;
   }
 
@@ -239,7 +247,7 @@ extension DoubleExtension on double {
   // Convert to fraction
   String toFraction([int maxDenominator = 1000]) {
     final double tolerance = 1.0 / (2 * maxDenominator);
-    
+
     int numerator = 1;
     int denominator = 1;
     int bestNumerator = 1;
@@ -299,9 +307,9 @@ extension DoubleExtension on double {
   // Get absolute value
   double get abs => this < 0 ? -this : this;
 
-  // Get square root
-  double get sqrt => sqrt(this);
+  // Get square root - সরাসরি sqrt() ব্যবহার (math. ছাড়া)
+  double get sqrt => math.sqrt(this);
 
-  // Get power
-  double pow(double exponent) => math.pow(this, exponent).toDouble();
+  // Get power - সরাসরি pow() ব্যবহার (math. ছাড়া)
+  double power(double exponent) => pow(this, exponent).toDouble();
 }

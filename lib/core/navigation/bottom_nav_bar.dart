@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_provider.dart';
-import '../../../core/constants/asset_constants.dart';
-import '../../../core/services/notification_service.dart';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
+import 'navigation_service.dart';
+import 'route_constants.dart';
 
 class BottomNavBar extends StatefulWidget {
-
   const BottomNavBar({
-    required this.currentIndex, required this.onTap, super.key,
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
   });
+
   final int currentIndex;
   final Function(int) onTap;
 
@@ -24,26 +25,12 @@ class BottomNavBar extends StatefulWidget {
 }
 
 class _BottomNavBarState extends State<BottomNavBar> {
-  int _notificationCount = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadNotificationCount();
-  }
-
-  Future<void> _loadNotificationCount() async {
-    final count = await NotificationService().getUnreadCount();
-    setState(() {
-      _notificationCount = count;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        boxShadow: <>[
+        color: Colors.white,
+        boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
@@ -58,79 +45,23 @@ class _BottomNavBarState extends State<BottomNavBar> {
         selectedItemColor: Theme.of(context).primaryColor,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
-        items: <>[
-          const BottomNavigationBarItem(
+        items: const [
+          BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          const BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: Icon(Icons.explore_outlined),
             activeIcon: Icon(Icons.explore),
             label: 'Discover',
           ),
           BottomNavigationBarItem(
-            icon: Stack(
-              children: <>[
-                const Icon(Icons.chat_outlined),
-                if (_notificationCount > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 12,
-                        minHeight: 12,
-                      ),
-                      child: Text(
-                        _notificationCount > 9 ? '9+' : '$_notificationCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 8,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            activeIcon: Stack(
-              children: <>[
-                const Icon(Icons.chat),
-                if (_notificationCount > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 12,
-                        minHeight: 12,
-                      ),
-                      child: Text(
-                        _notificationCount > 9 ? '9+' : '$_notificationCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 8,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            icon: Icon(Icons.chat_outlined),
+            activeIcon: Icon(Icons.chat),
             label: 'Chat',
           ),
-          const BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
             label: 'Profile',
@@ -143,10 +74,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
 
 // Animated Bottom Navigation Bar
 class AnimatedBottomNavBar extends StatefulWidget {
-
   const AnimatedBottomNavBar({
-    required this.currentIndex, required this.onTap, super.key,
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
   });
+
   final int currentIndex;
   final Function(int) onTap;
 
@@ -161,7 +94,7 @@ class AnimatedBottomNavBar extends StatefulWidget {
   }
 }
 
-class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar> 
+class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late List<Animation<double>> _animations;
@@ -178,8 +111,7 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
       return Tween<double>(begin: 0, end: 1).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: Interval(index * 0.1, 0.5 + index * 0.1,
-              curve: Curves.elasticOut,),
+          curve: Interval(index * 0.1, 0.5 + index * 0.1, curve: Curves.elasticOut),
         ),
       );
     });
@@ -201,7 +133,7 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(30),
-        boxShadow: <>[
+        boxShadow: [
           BoxShadow(
             color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
             blurRadius: 20,
@@ -238,19 +170,24 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
     IconData icon;
     String label;
 
+    // 🟢 Fixed: switch statement with proper breaks
     switch (index) {
       case 0:
         icon = isSelected ? Icons.home : Icons.home_outlined;
         label = 'Home';
+        break;
       case 1:
         icon = isSelected ? Icons.explore : Icons.explore_outlined;
         label = 'Discover';
+        break;
       case 2:
         icon = isSelected ? Icons.chat : Icons.chat_outlined;
         label = 'Chat';
+        break;
       case 3:
         icon = isSelected ? Icons.person : Icons.person_outlined;
         label = 'Profile';
+        break;
       default:
         icon = Icons.error;
         label = '';
@@ -261,17 +198,17 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected 
+          color: isSelected
               ? Theme.of(context).primaryColor.withValues(alpha: 0.2)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Icon(
               icon,
-              color: isSelected 
+              color: isSelected
                   ? Theme.of(context).primaryColor
                   : Colors.grey,
               size: 24,
@@ -281,7 +218,7 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
               label,
               style: TextStyle(
                 fontSize: 10,
-                color: isSelected 
+                color: isSelected
                     ? Theme.of(context).primaryColor
                     : Colors.grey,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

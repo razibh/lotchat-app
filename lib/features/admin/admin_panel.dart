@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/models/user_model.dart';
+import '../../core/models/user_models.dart';
 import '../../core/models/gift_model.dart';
 import '../../core/services/admin_service.dart';
 import '../../core/services/agency_service.dart';
+
+enum UserTier { normal, vip, svip, premium }  // ← Enum যোগ করা হয়েছে
 
 class AdminPanel extends StatefulWidget {
   const AdminPanel({super.key});
@@ -16,13 +18,13 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
   late TabController _tabController;
   final AdminService _adminService = AdminService();
   final AgencyService _agencyService = AgencyService();
-  
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,7 +33,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
-          tabs: const <>[
+          tabs: const [
             Tab(text: 'Dashboard'),
             Tab(text: 'Users'),
             Tab(text: 'Agencies'),
@@ -43,7 +45,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       ),
       body: TabBarView(
         controller: _tabController,
-        children: <>[
+        children: [
           _buildDashboard(),
           _buildUserManagement(),
           _buildAgencyManagement(),
@@ -54,13 +56,13 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       ),
     );
   }
-  
+
   Widget _buildDashboard() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           const Text(
             'Overview',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
@@ -73,7 +75,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
             childAspectRatio: 1.5,
-            children: <>[
+            children: [
               _buildStatCard('Total Users', '1.2M', Icons.people, Colors.blue),
               _buildStatCard('Active Now', '45K', Icons.online_prediction, Colors.green),
               _buildStatCard('Total Revenue', r'$2.5M', Icons.attach_money, Colors.orange),
@@ -90,7 +92,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: 5,
-            itemBuilder: (BuildContext context, int index) {
+            itemBuilder: (context, index) {
               return ListTile(
                 leading: const CircleAvatar(
                   child: Icon(Icons.person),
@@ -105,7 +107,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       ),
     );
   }
-  
+
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Card(
       elevation: 4,
@@ -113,7 +115,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <>[
+          children: [
             Icon(icon, color: color, size: 30),
             const SizedBox(height: 8),
             Text(
@@ -126,14 +128,14 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       ),
     );
   }
-  
+
   Widget _buildUserManagement() {
     return Column(
-      children: <>[
+      children: [
         Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
-            children: <>[
+            children: [
               Expanded(
                 child: TextField(
                   decoration: InputDecoration(
@@ -156,7 +158,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
         Expanded(
           child: ListView.builder(
             itemCount: 20,
-            itemBuilder: (BuildContext context, int index) {
+            itemBuilder: (context, index) {
               return ListTile(
                 leading: CircleAvatar(
                   child: Text('U${index + 1}'),
@@ -165,7 +167,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                 subtitle: Text('ID: ${1000 + index} • Coins: 5000'),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: <>[
+                  children: [
                     IconButton(
                       icon: const Icon(Icons.edit, color: Colors.blue),
                       onPressed: () => _showEditUserDialog(index),
@@ -187,15 +189,15 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       ],
     );
   }
-  
+
   Widget _buildAgencyManagement() {
     return Column(
-      children: <>[
+      children: [
         Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <>[
+            children: [
               const Text(
                 'Agencies',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -210,7 +212,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
         Expanded(
           child: ListView.builder(
             itemCount: 5,
-            itemBuilder: (BuildContext context, int index) {
+            itemBuilder: (context, index) {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ExpansionTile(
@@ -219,14 +221,14 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                   ),
                   title: Text('Agency ${index + 1}'),
                   subtitle: Text('Members: ${(index + 1) * 10} • Revenue: \$${(index + 1) * 1000}'),
-                  children: <>[
+                  children: [
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
-                        children: <>[
+                        children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: <>[
+                            children: [
                               _buildAgencyAction('Add User', Icons.person_add, () {}),
                               _buildAgencyAction('Remove User', Icons.person_remove, () {}),
                               _buildAgencyAction('View Earnings', Icons.trending_up, () {}),
@@ -241,12 +243,12 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
                               itemCount: 5,
-                              itemBuilder: (BuildContext context, int i) {
+                              itemBuilder: (context, i) {
                                 return Container(
                                   width: 80,
                                   margin: const EdgeInsets.only(right: 8),
                                   child: Column(
-                                    children: <>[
+                                    children: [
                                       CircleAvatar(
                                         radius: 25,
                                         child: Text('U${i + 1}'),
@@ -271,12 +273,12 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       ],
     );
   }
-  
+
   Widget _buildAgencyAction(String label, IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -291,15 +293,15 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       ),
     );
   }
-  
+
   Widget _buildSellerManagement() {
     return Column(
-      children: <>[
+      children: [
         Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <>[
+            children: [
               const Text(
                 'Coin Sellers',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -314,7 +316,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
         Expanded(
           child: ListView.builder(
             itemCount: 3,
-            itemBuilder: (BuildContext context, int index) {
+            itemBuilder: (context, index) {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
@@ -325,7 +327,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                   subtitle: Text('Coins Sold: ${(index + 1) * 5000} • Commission: ${(index + 1) * 5}%'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: <>[
+                    children: [
                       IconButton(
                         icon: const Icon(Icons.monetization_on, color: Colors.green),
                         onPressed: () => _showSellerCoinDialog(index),
@@ -344,15 +346,15 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       ],
     );
   }
-  
+
   Widget _buildGiftManagement() {
     return Column(
-      children: <>[
+      children: [
         Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <>[
+            children: [
               const Text(
                 'Gift Management',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -368,9 +370,9 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
           child: DefaultTabController(
             length: 4,
             child: Column(
-              children: <>[
+              children: [
                 const TabBar(
-                  tabs: <>[
+                  tabs: [
                     Tab(text: 'All Gifts'),
                     Tab(text: 'VIP'),
                     Tab(text: 'SVIP'),
@@ -379,7 +381,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                 ),
                 Expanded(
                   child: TabBarView(
-                    children: <>[
+                    children: [
                       _buildGiftList('all'),
                       _buildGiftList('vip'),
                       _buildGiftList('svip'),
@@ -394,10 +396,10 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       ],
     );
   }
-  
+
   Widget _buildGiftList(String type) {
-    final List<GiftModel> gifts = GiftModel.getGifts();
-    
+    final gifts = GiftModel.getGifts();
+
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -407,12 +409,12 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
         mainAxisSpacing: 12,
       ),
       itemCount: 6,
-      itemBuilder: (BuildContext context, int index) {
+      itemBuilder: (context, index) {
         return Card(
           child: Column(
-            children: <>[
+            children: [
               Expanded(
-                child: DecoratedBox(
+                child: Container(
                   decoration: BoxDecoration(
                     color: Colors.grey[200],
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
@@ -423,12 +425,12 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
               Padding(
                 padding: const EdgeInsets.all(8),
                 child: Column(
-                  children: <>[
+                  children: [
                     Text('Gift ${index + 1}'),
                     const Text('100 coins', style: TextStyle(fontSize: 12)),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: <>[
+                      children: [
                         IconButton(
                           icon: const Icon(Icons.edit, size: 16),
                           onPressed: () {},
@@ -452,17 +454,17 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       },
     );
   }
-  
+
   Widget _buildReports() {
     return ListView(
       padding: const EdgeInsets.all(16),
-      children: <>[
+      children: [
         const Text(
           'User Reports',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        ...List.generate(5, (int index) {
+        ...List.generate(5, (index) {
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
             child: ExpansionTile(
@@ -471,18 +473,18 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
               ),
               title: Text('Report #${index + 1}'),
               subtitle: Text('User ${index + 1} reported by User ${index + 2}'),
-              children: <>[
+              children: [
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <>[
+                    children: [
                       const Text('Reason: Inappropriate behavior'),
                       const Text('Evidence: Screen recording available'),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
-                        children: <>[
+                        children: [
                           ElevatedButton(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
@@ -510,7 +512,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       ],
     );
   }
-  
+
   void _showAddUserDialog() {
     showDialog(
       context: context,
@@ -519,7 +521,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
           title: const Text('Add User'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            children: <>[
+            children: [
               const TextField(
                 decoration: InputDecoration(labelText: 'Username'),
               ),
@@ -529,10 +531,10 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
               const TextField(
                 decoration: InputDecoration(labelText: 'Phone'),
               ),
-              DropdownButtonFormField(
-                initialValue: 'user',
-                items: <String>['user', 'seller', 'agency', 'admin'].map((String role) {
-                  return DropdownMenuItem(
+              DropdownButtonFormField<String>(
+                value: 'user',
+                items: ['user', 'seller', 'agency', 'admin'].map((String role) {
+                  return DropdownMenuItem<String>(
                     value: role,
                     child: Text(role.toUpperCase()),
                   );
@@ -542,7 +544,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
               ),
             ],
           ),
-          actions: <>[
+          actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
@@ -559,7 +561,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       },
     );
   }
-  
+
   void _showAddCoinsDialog(int userId) {
     showDialog(
       context: context,
@@ -568,7 +570,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
           title: const Text('Add Coins'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            children: <>[
+            children: [
               Text('User ID: $userId'),
               const TextField(
                 keyboardType: TextInputType.number,
@@ -578,10 +580,10 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                 ),
               ),
               const SizedBox(height: 16),
-              Text('1$ = 10000 coins'),
+              const Text('1\$ = 10000 coins'),
             ],
           ),
-          actions: <>[
+          actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
@@ -598,7 +600,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       },
     );
   }
-  
+
   void _showAddAgencyDialog() {
     showDialog(
       context: context,
@@ -607,7 +609,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
           title: const Text('Add Agency'),
           content: const Column(
             mainAxisSize: MainAxisSize.min,
-            children: <>[
+            children: [
               TextField(
                 decoration: InputDecoration(labelText: 'Agency Name'),
               ),
@@ -620,7 +622,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
               ),
             ],
           ),
-          actions: <>[
+          actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
@@ -637,7 +639,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       },
     );
   }
-  
+
   void _showAddSellerDialog() {
     showDialog(
       context: context,
@@ -646,7 +648,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
           title: const Text('Add Coin Seller'),
           content: const Column(
             mainAxisSize: MainAxisSize.min,
-            children: <>[
+            children: [
               TextField(
                 decoration: InputDecoration(labelText: 'Seller Name'),
               ),
@@ -665,7 +667,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
               ),
             ],
           ),
-          actions: <>[
+          actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
@@ -682,122 +684,152 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       },
     );
   }
-  
+
   void _showAddGiftDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add New Gift'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <>[
-                const TextField(
-                  decoration: InputDecoration(labelText: 'Gift Name'),
+        String? selectedCategory = 'Cute';
+        bool isVip = false;
+        bool isSvip = false;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Add New Gift'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const TextField(
+                      decoration: InputDecoration(labelText: 'Gift Name'),
+                    ),
+                    const TextField(
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(labelText: 'Price (coins)'),
+                    ),
+                    DropdownButtonFormField<String>(
+                      value: selectedCategory,
+                      items: ['Cute', 'Luxury', 'VIP', 'SVIP', 'Special'].map((String cat) {
+                        return DropdownMenuItem<String>(
+                          value: cat,
+                          child: Text(cat),
+                        );
+                      }).toList(),
+                      onChanged: (String? value) {
+                        setState(() {
+                          selectedCategory = value;
+                        });
+                      },
+                      decoration: const InputDecoration(labelText: 'Category'),
+                    ),
+                    const TextField(
+                      decoration: InputDecoration(labelText: 'Animation File'),
+                    ),
+                    const TextField(
+                      decoration: InputDecoration(labelText: 'Sound File'),
+                    ),
+                    SwitchListTile(
+                      title: const Text('VIP Gift'),
+                      value: isVip,
+                      onChanged: (bool value) {
+                        setState(() {
+                          isVip = value;
+                        });
+                      },
+                    ),
+                    SwitchListTile(
+                      title: const Text('SVIP Gift'),
+                      value: isSvip,
+                      onChanged: (bool value) {
+                        setState(() {
+                          isSvip = value;
+                        });
+                      },
+                    ),
+                  ],
                 ),
-                const TextField(
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: 'Price (coins)'),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
                 ),
-                DropdownButtonFormField(
-                  initialValue: 'Cute',
-                  items: <String>['Cute', 'Luxury', 'VIP', 'SVIP', 'Special'].map((String cat) {
-                    return DropdownMenuItem(
-                      value: cat,
-                      child: Text(cat),
-                    );
-                  }).toList(),
-                  onChanged: (String? value) {},
-                  decoration: const InputDecoration(labelText: 'Category'),
-                ),
-                const TextField(
-                  decoration: InputDecoration(labelText: 'Animation File'),
-                ),
-                const TextField(
-                  decoration: InputDecoration(labelText: 'Sound File'),
-                ),
-                SwitchListTile(
-                  title: const Text('VIP Gift'),
-                  value: false,
-                  onChanged: (bool value) {},
-                ),
-                SwitchListTile(
-                  title: const Text('SVIP Gift'),
-                  value: false,
-                  onChanged: (bool value) {},
+                ElevatedButton(
+                  onPressed: () {
+                    // Add gift logic
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Add Gift'),
                 ),
               ],
-            ),
-          ),
-          actions: <>[
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Add gift logic
-                Navigator.pop(context);
-              },
-              child: const Text('Add Gift'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
   }
-  
+
   void _showEditUserDialog(int userId) {
+    UserTier? selectedTier = UserTier.normal;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit User'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <>[
-              const TextField(
-                decoration: InputDecoration(labelText: 'Username'),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Edit User'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const TextField(
+                    decoration: InputDecoration(labelText: 'Username'),
+                  ),
+                  const TextField(
+                    decoration: InputDecoration(labelText: 'Bio'),
+                  ),
+                  const TextField(
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(labelText: 'Coins'),
+                  ),
+                  DropdownButtonFormField<UserTier>(
+                    value: selectedTier,
+                    items: UserTier.values.map((UserTier tier) {
+                      return DropdownMenuItem<UserTier>(
+                        value: tier,
+                        child: Text(tier.toString().split('.').last),
+                      );
+                    }).toList(),
+                    onChanged: (UserTier? value) {
+                      setState(() {
+                        selectedTier = value;
+                      });
+                    },
+                    decoration: const InputDecoration(labelText: 'Tier'),
+                  ),
+                ],
               ),
-              const TextField(
-                decoration: InputDecoration(labelText: 'Bio'),
-              ),
-              const TextField(
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'Coins'),
-              ),
-              DropdownButtonFormField(
-                initialValue: UserTier.normal,
-                items: UserTier.values.map((UserTier tier) {
-                  return DropdownMenuItem(
-                    value: tier,
-                    child: Text(tier.toString().split('.').last),
-                  );
-                }).toList(),
-                onChanged: (UserTier? value) {},
-                decoration: const InputDecoration(labelText: 'Tier'),
-              ),
-            ],
-          ),
-          actions: <>[
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Edit user logic
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // Edit user logic
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
-  
+
   void _showSellerCoinDialog(int sellerId) {
     showDialog(
       context: context,
@@ -806,7 +838,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
           title: const Text('Add Coins to Seller'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            children: <>[
+            children: [
               Text('Seller ID: $sellerId'),
               const TextField(
                 keyboardType: TextInputType.number,
@@ -822,7 +854,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
               ),
             ],
           ),
-          actions: <>[
+          actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
@@ -839,7 +871,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       },
     );
   }
-  
+
   void _banUser(int userId) {
     showDialog(
       context: context,
@@ -847,7 +879,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
         return AlertDialog(
           title: const Text('Ban User'),
           content: Text('Are you sure you want to ban User #$userId?'),
-          actions: <>[
+          actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),

@@ -34,7 +34,7 @@ mixin AnalyticsMixin {
   Future<void> trackShare(String contentType, String itemId) {
     return _analytics.logShare(
       contentType: contentType,
-      itemId: itemId,
+      itemId: itemId, method: '',
     );
   }
 

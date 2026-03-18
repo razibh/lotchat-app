@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/gradient_background.dart';
 import '../../../core/widgets/neumorphic_button.dart';
 import '../../../core/widgets/neumorphic_text_field.dart';
-import '../models/country_manager_models.dart';
-
+import '../Models/country_manager_models.dart';
 class RecruitAgencyScreen extends StatefulWidget {
+  final String managerId;
 
   const RecruitAgencyScreen({required this.managerId, super.key});
-  final String managerId;
 
   @override
   State<RecruitAgencyScreen> createState() => _RecruitAgencyScreenState();
@@ -22,8 +22,8 @@ class RecruitAgencyScreen extends StatefulWidget {
 
 class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
   bool _isLoading = true;
-  List<AgencyRecruitmentRequest> _requests = <>[];
-  List<AgencyRecruitmentRequest> _filteredRequests = <>[];
+  List<AgencyRecruitmentRequest> _requests = [];
+  List<AgencyRecruitmentRequest> _filteredRequests = [];
   String _selectedTab = 'pending';
 
   @override
@@ -44,7 +44,7 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
   }
 
   List<AgencyRecruitmentRequest> _generateSampleRequests() {
-    return <>[
+    return [
       AgencyRecruitmentRequest(
         id: 'req_001',
         agencyName: 'Elite Talent Hub',
@@ -96,13 +96,13 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
   void _filterRequests() {
     setState(() {
       if (_selectedTab == 'pending') {
-        _filteredRequests = _requests.where((Object? r) => r.status == AgencyRequestStatus.pending).toList();
+        _filteredRequests = _requests.where((r) => r.status == AgencyRequestStatus.pending).toList();
       } else if (_selectedTab == 'approved') {
-        _filteredRequests = _requests.where((Object? r) => r.status == AgencyRequestStatus.approved).toList();
+        _filteredRequests = _requests.where((r) => r.status == AgencyRequestStatus.approved).toList();
       } else if (_selectedTab == 'rejected') {
-        _filteredRequests = _requests.where((Object? r) => r.status == AgencyRequestStatus.rejected).toList();
+        _filteredRequests = _requests.where((r) => r.status == AgencyRequestStatus.rejected).toList();
       } else {
-        _filteredRequests = _requests;
+        _filteredRequests = List.from(_requests);
       }
     });
   }
@@ -113,7 +113,7 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildTabBar(),
               Expanded(
@@ -133,7 +133,7 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -157,11 +157,11 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
-        children: <>[
+        children: [
           _buildTab('Pending', 'pending'),
           _buildTab('Approved', 'approved'),
           _buildTab('Rejected', 'rejected'),
@@ -172,7 +172,7 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
   }
 
   Widget _buildTab(String label, String value) {
-    final var isSelected = _selectedTab == value;
+    final isSelected = _selectedTab == value;
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -206,12 +206,12 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
-            Icon(Icons.business_center, size: 60, color: Colors.white.withValues(alpha: 0.3)),
+          children: [
+            Icon(Icons.business_center, size: 60, color: Colors.white.withOpacity(0.3)),
             const SizedBox(height: 16),
             Text(
               'No requests found',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+              style: TextStyle(color: Colors.white.withOpacity(0.5)),
             ),
           ],
         ),
@@ -221,7 +221,7 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: _filteredRequests.length,
-      itemBuilder: (BuildContext context, int index) {
+      itemBuilder: (context, index) {
         final request = _filteredRequests[index];
         return _buildRequestCard(request);
       },
@@ -233,25 +233,25 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: request.status == AgencyRequestStatus.pending
-              ? Colors.orange.withValues(alpha: 0.5)
+              ? Colors.orange.withOpacity(0.5)
               : request.status == AgencyRequestStatus.approved
-                  ? Colors.green.withValues(alpha: 0.5)
-                  : Colors.red.withValues(alpha: 0.5),
+              ? Colors.green.withOpacity(0.5)
+              : Colors.red.withOpacity(0.5),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           Row(
-            children: <>[
+            children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.purple.withValues(alpha: 0.2),
+                  color: Colors.purple.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.business, color: Colors.purple),
@@ -260,7 +260,7 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     Text(
                       request.agencyName,
                       style: const TextStyle(
@@ -280,10 +280,10 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: request.status == AgencyRequestStatus.pending
-                      ? Colors.orange.withValues(alpha: 0.2)
+                      ? Colors.orange.withOpacity(0.2)
                       : request.status == AgencyRequestStatus.approved
-                          ? Colors.green.withValues(alpha: 0.2)
-                          : Colors.red.withValues(alpha: 0.2),
+                      ? Colors.green.withOpacity(0.2)
+                      : Colors.red.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -292,8 +292,8 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
                     color: request.status == AgencyRequestStatus.pending
                         ? Colors.orange
                         : request.status == AgencyRequestStatus.approved
-                            ? Colors.green
-                            : Colors.red,
+                        ? Colors.green
+                        : Colors.red,
                     fontSize: 10,
                   ),
                 ),
@@ -309,12 +309,12 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: Colors.white.withOpacity(0.05),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 const Text(
                   'Business Plan:',
                   style: TextStyle(color: Colors.white70, fontSize: 12),
@@ -329,7 +329,7 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
           ),
           const SizedBox(height: 12),
           Row(
-            children: <>[
+            children: [
               Expanded(
                 child: _buildStatItem(
                   'Proposed Hosts',
@@ -353,15 +353,15 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
               ),
             ],
           ),
-          if (request.status == AgencyRequestStatus.pending) ...<>[
+          if (request.status == AgencyRequestStatus.pending) ...[
             const SizedBox(height: 12),
             Row(
-              children: <>[
+              children: [
                 Expanded(
                   child: _buildActionButton(
                     'Approve',
                     Colors.green,
-                    () => _showApproveDialog(request),
+                        () => _showApproveDialog(request),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -369,7 +369,7 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
                   child: _buildActionButton(
                     'Reject',
                     Colors.red,
-                    () => _showRejectDialog(request),
+                        () => _showRejectDialog(request),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -377,21 +377,21 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
                   child: _buildActionButton(
                     'Contact',
                     Colors.blue,
-                    () {},
+                        () {},
                   ),
                 ),
               ],
             ),
-          ] else if (request.status == AgencyRequestStatus.approved) ...<>[
+          ] else if (request.status == AgencyRequestStatus.approved) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
+                color: Colors.green.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
-                children: <>[
+                children: [
                   const Icon(Icons.check_circle, color: Colors.green, size: 16),
                   const SizedBox(width: 8),
                   Expanded(
@@ -413,7 +413,7 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
-        children: <>[
+        children: [
           Icon(icon, color: Colors.white70, size: 14),
           const SizedBox(width: 8),
           Expanded(
@@ -429,7 +429,7 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
 
   Widget _buildStatItem(String label, String value, IconData icon) {
     return Column(
-      children: <>[
+      children: [
         Icon(icon, color: Colors.white70, size: 16),
         const SizedBox(height: 2),
         Text(
@@ -450,9 +450,9 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
+          color: color.withOpacity(0.2),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.5)),
+          border: Border.all(color: color.withOpacity(0.5)),
         ),
         child: Center(
           child: Text(
@@ -474,7 +474,7 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
           child: const Center(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: <>[
+              children: [
                 Icon(Icons.add, color: Colors.white),
                 SizedBox(width: 8),
                 Text(
@@ -491,6 +491,7 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
 
   void _showApproveDialog(AgencyRecruitmentRequest request) {
     final TextEditingController commissionController = TextEditingController(text: '10');
+    final TextEditingController remarksController = TextEditingController();
 
     showDialog(
       context: context,
@@ -499,7 +500,7 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
         title: const Text('Approve Agency', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Text(
               'Approve ${request.agencyName}?',
               style: const TextStyle(color: Colors.white70),
@@ -513,13 +514,13 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
             ),
             const SizedBox(height: 12),
             NeumorphicTextField(
-              controller: TextEditingController(),
+              controller: remarksController,
               hintText: 'Remarks (optional)',
               maxLines: 3,
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
@@ -528,10 +529,29 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
             onPressed: () {
               Navigator.pop(context);
               setState(() {
-                request.status = AgencyRequestStatus.approved;
-                request.reviewedBy = 'cm_001';
-                request.reviewedDate = DateTime.now();
-                request.remarks = 'Approved with ${commissionController.text}% commission';
+                // Create updated request
+                final updatedRequest = AgencyRecruitmentRequest(
+                  id: request.id,
+                  agencyName: request.agencyName,
+                  ownerName: request.ownerName,
+                  email: request.email,
+                  phone: request.phone,
+                  address: request.address,
+                  licenseNumber: request.licenseNumber,
+                  businessPlan: request.businessPlan,
+                  proposedHosts: request.proposedHosts,
+                  expectedInvestment: request.expectedInvestment,
+                  requestDate: request.requestDate,
+                  status: AgencyRequestStatus.approved,
+                  reviewedBy: 'cm_001',
+                  reviewedDate: DateTime.now(),
+                  remarks: 'Approved with ${commissionController.text}% commission',
+                );
+
+                final index = _requests.indexWhere((r) => r.id == request.id);
+                if (index != -1) {
+                  _requests[index] = updatedRequest;
+                }
               });
               _filterRequests();
               ScaffoldMessenger.of(context).showSnackBar(
@@ -549,6 +569,8 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
   }
 
   void _showRejectDialog(AgencyRecruitmentRequest request) {
+    final TextEditingController reasonController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -556,20 +578,20 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
         title: const Text('Reject Agency', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Text(
               'Reject ${request.agencyName}?',
               style: const TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 12),
             NeumorphicTextField(
-              controller: TextEditingController(),
+              controller: reasonController,
               hintText: 'Reason for rejection',
               maxLines: 3,
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
@@ -578,9 +600,29 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
             onPressed: () {
               Navigator.pop(context);
               setState(() {
-                request.status = AgencyRequestStatus.rejected;
-                request.reviewedBy = 'cm_001';
-                request.reviewedDate = DateTime.now();
+                // Create updated request
+                final updatedRequest = AgencyRecruitmentRequest(
+                  id: request.id,
+                  agencyName: request.agencyName,
+                  ownerName: request.ownerName,
+                  email: request.email,
+                  phone: request.phone,
+                  address: request.address,
+                  licenseNumber: request.licenseNumber,
+                  businessPlan: request.businessPlan,
+                  proposedHosts: request.proposedHosts,
+                  expectedInvestment: request.expectedInvestment,
+                  requestDate: request.requestDate,
+                  status: AgencyRequestStatus.rejected,
+                  reviewedBy: 'cm_001',
+                  reviewedDate: DateTime.now(),
+                  remarks: reasonController.text,
+                );
+
+                final index = _requests.indexWhere((r) => r.id == request.id);
+                if (index != -1) {
+                  _requests[index] = updatedRequest;
+                }
               });
               _filterRequests();
               ScaffoldMessenger.of(context).showSnackBar(
@@ -598,6 +640,11 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
   }
 
   void _showNewRequestDialog() {
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController ownerController = TextEditingController();
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController phoneController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (BuildContext context) => Dialog(
@@ -607,34 +654,34 @@ class _RecruitAgencyScreenState extends State<RecruitAgencyScreen> {
           padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: <>[
+            children: [
               const Text(
                 'Add New Recruitment Request',
                 style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               NeumorphicTextField(
-                controller: TextEditingController(),
+                controller: nameController,
                 hintText: 'Agency Name',
               ),
               const SizedBox(height: 12),
               NeumorphicTextField(
-                controller: TextEditingController(),
+                controller: ownerController,
                 hintText: 'Owner Name',
               ),
               const SizedBox(height: 12),
               NeumorphicTextField(
-                controller: TextEditingController(),
+                controller: emailController,
                 hintText: 'Email',
               ),
               const SizedBox(height: 12),
               NeumorphicTextField(
-                controller: TextEditingController(),
+                controller: phoneController,
                 hintText: 'Phone',
               ),
               const SizedBox(height: 16),
               Row(
-                children: <>[
+                children: [
                   Expanded(
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),

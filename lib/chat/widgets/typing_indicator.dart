@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 
 class TypingIndicator extends StatelessWidget {
-
   const TypingIndicator({
-    required this.typingUsers, super.key,
+    super.key,
+    required this.typingUsers,
   });
+
   final List<String> typingUsers;
 
   @override
@@ -23,7 +25,7 @@ class TypingIndicator extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
-        children: <>[
+        children: [
           _buildTypingAnimation(),
           const SizedBox(width: 8),
           Text(
@@ -46,18 +48,15 @@ class TypingIndicator extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(3, (int index) {
-          return Container(
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
             width: 6,
             height: 6,
             margin: const EdgeInsets.symmetric(horizontal: 2),
             decoration: const BoxDecoration(
               color: Colors.grey,
               shape: BoxShape.circle,
-            ),
-            child: AnimatedOpacity(
-              opacity: 0.5,
-              duration: const Duration(milliseconds: 500),
-              child: Container(),
             ),
           );
         }),
@@ -68,6 +67,7 @@ class TypingIndicator extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<String>('typingUsers', typingUsers));
+    // 🟢 IterableProperty সরিয়ে DiagnosticsProperty ব্যবহার করুন
+    properties.add(DiagnosticsProperty<List<String>>('typingUsers', typingUsers));
   }
 }

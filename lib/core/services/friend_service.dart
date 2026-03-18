@@ -1,37 +1,50 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../models/friend_model.dart';
-import '../models/user_model.dart';
+import 'package:flutter/foundation.dart';
+import '../models/frame_model.dart';
+import '../models/user_models.dart' as app; // 🟢 alias ব্যবহার
 import '../di/service_locator.dart';
 import 'notification_service.dart';
 
 class FriendService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final NotificationService _notificationService = ServiceLocator().get<NotificationService>();
+  late final NotificationService _notificationService;
+
+  FriendService() {
+    _initializeServices();
+  }
+
+  void _initializeServices() {
+    try {
+      _notificationService = ServiceLocator.instance.get<NotificationService>();
+    } catch (e) {
+      debugPrint('Error initializing services: $e');
+    }
+  }
 
   // Get friends list
-  Stream<List<UserModel>> getFriends(String userId) {
+  Stream<List<app.User>> getFriends(String userId) {
     return _firestore
         .collection('users')
         .doc(userId)
         .collection('friends')
         .snapshots()
         .asyncMap((QuerySnapshot<Map<String, dynamic>> snapshot) async {
-          final List<UserModel> friends = <UserModel>[];
-          for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
-            final Map<String, dynamic> friendData = doc.data();
-            final UserModel? friendUser = await _getUser(friendData['friendId']);
-            if (friendUser != null) {
-              friends.add(friendUser);
-            }
-          }
-          return friends;
-        });
+      final List<app.User> friends = [];
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
+        final Map<String, dynamic> friendData = doc.data();
+        final app.User? friendUser = await _getUser(friendData['friendId']);
+        if (friendUser != null) {
+          friends.add(friendUser);
+        }
+      }
+      return friends;
+    });
   }
 
   // Get friend by id
-  Future<UserModel?> getFriend(String userId, String friendId) async {
+  Future<app.User?> getFriend(String userId, String friendId) async {
     try {
       final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore
           .collection('users')
@@ -39,34 +52,37 @@ class FriendService {
           .collection('friends')
           .doc(friendId)
           .get();
-      
+
       if (doc.exists) {
         return await _getUser(doc.data()!['friendId']);
       }
       return null;
     } catch (e) {
-      print('Error getting friend: $e');
+      debugPrint('Error getting friend: $e');
       return null;
     }
   }
 
   // Get user
-  Future<UserModel?> _getUser(String userId) async {
+  Future<app.User?> _getUser(String userId) async {
     try {
       final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore.collection('users').doc(userId).get();
       if (doc.exists) {
-        return UserModel.fromJson(doc.data()!);
+        final data = doc.data()!;
+        data['id'] = doc.id;
+        return app.User.fromJson(data);
       }
       return null;
     } catch (e) {
+      debugPrint('Error getting user: $e');
       return null;
     }
   }
 
   // Get online friends
-  Stream<List<UserModel>> getOnlineFriends(String userId) {
-    return getFriends(userId).map((List<UserModel> friends) {
-      return friends.where((UserModel f) => f.isOnline).toList();
+  Stream<List<app.User>> getOnlineFriends(String userId) {
+    return getFriends(userId).map((List<app.User> friends) {
+      return friends.where((app.User f) => f.isOnline).toList();
     });
   }
 
@@ -79,22 +95,22 @@ class FriendService {
         .orderBy('sentAt', descending: true)
         .snapshots()
         .asyncMap((QuerySnapshot<Map<String, dynamic>> snapshot) async {
-          final requests = <FriendRequestModel>[];
-          for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
-            final Map<String, dynamic> data = doc.data();
-            data['id'] = doc.id;
-            
-            // Get sender info
-            final UserModel? sender = await _getUser(data['senderId']);
-            if (sender != null) {
-              data['senderName'] = sender.username;
-              data['senderAvatar'] = sender.photoURL;
-            }
-            
-            requests.add(FriendRequestModel.fromJson(data));
-          }
-          return requests;
-        });
+      final requests = <FriendRequestModel>[];
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
+        final Map<String, dynamic> data = doc.data();
+        data['id'] = doc.id;
+
+        // Get sender info
+        final app.User? sender = await _getUser(data['senderId']);
+        if (sender != null) {
+          data['senderName'] = sender.username;
+          data['senderAvatar'] = sender.avatar;
+        }
+
+        requests.add(FriendRequestModel.fromJson(data));
+      }
+      return requests;
+    });
   }
 
   // Get sent requests
@@ -106,22 +122,22 @@ class FriendService {
         .orderBy('sentAt', descending: true)
         .snapshots()
         .asyncMap((QuerySnapshot<Map<String, dynamic>> snapshot) async {
-          final requests = <FriendRequestModel>[];
-          for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
-            final Map<String, dynamic> data = doc.data();
-            data['id'] = doc.id;
-            
-            // Get receiver info
-            final UserModel? receiver = await _getUser(data['receiverId']);
-            if (receiver != null) {
-              data['receiverName'] = receiver.username;
-              data['receiverAvatar'] = receiver.photoURL;
-            }
-            
-            requests.add(FriendRequestModel.fromJson(data));
-          }
-          return requests;
-        });
+      final requests = <FriendRequestModel>[];
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
+        final Map<String, dynamic> data = doc.data();
+        data['id'] = doc.id;
+
+        // Get receiver info
+        final app.User? receiver = await _getUser(data['receiverId']);
+        if (receiver != null) {
+          data['receiverName'] = receiver.username;
+          data['receiverAvatar'] = receiver.avatar;
+        }
+
+        requests.add(FriendRequestModel.fromJson(data));
+      }
+      return requests;
+    });
   }
 
   // Send friend request
@@ -137,7 +153,7 @@ class FriendService {
           .collection('friends')
           .doc(receiverId)
           .get();
-      
+
       if (friendDoc.exists) return false;
 
       // Check if request already exists
@@ -151,7 +167,7 @@ class FriendService {
       if (existingRequest.docs.isNotEmpty) return false;
 
       // Create request
-      await _firestore.collection('friend_requests').add(<String, >{
+      await _firestore.collection('friend_requests').add({
         'senderId': user.uid,
         'senderName': user.displayName ?? 'User',
         'receiverId': receiverId,
@@ -161,17 +177,17 @@ class FriendService {
       });
 
       // Send notification
-      await _notificationService.sendNotification(
+      await _notificationService?.sendNotification(
         userId: receiverId,
         type: 'friend_request',
         title: 'Friend Request',
         body: '${user.displayName ?? 'User'} sent you a friend request',
-        data: <String, >{'senderId': user.uid},
+        data: {'senderId': user.uid},
       );
 
       return true;
     } catch (e) {
-      print('Error sending friend request: $e');
+      debugPrint('Error sending friend request: $e');
       return false;
     }
   }
@@ -185,7 +201,7 @@ class FriendService {
       return await _firestore.runTransaction((Transaction transaction) async {
         // Update request status
         final DocumentReference<Map<String, dynamic>> requestRef = _firestore.collection('friend_requests').doc(requestId);
-        transaction.update(requestRef, <String, >{
+        transaction.update(requestRef, {
           'status': 'accepted',
           'respondedAt': FieldValue.serverTimestamp(),
         });
@@ -196,8 +212,8 @@ class FriendService {
             .doc(user.uid)
             .collection('friends')
             .doc(senderId);
-        
-        transaction.set(userFriendsRef, <String, >{
+
+        transaction.set(userFriendsRef, {
           'friendId': senderId,
           'addedAt': FieldValue.serverTimestamp(),
         });
@@ -208,25 +224,25 @@ class FriendService {
             .doc(senderId)
             .collection('friends')
             .doc(user.uid);
-        
-        transaction.set(senderFriendsRef, <String, >{
+
+        transaction.set(senderFriendsRef, {
           'friendId': user.uid,
           'addedAt': FieldValue.serverTimestamp(),
         });
 
         // Send notification
-        await _notificationService.sendNotification(
+        await _notificationService?.sendNotification(
           userId: senderId,
           type: 'friend_accept',
           title: 'Friend Request Accepted',
           body: '${user.displayName ?? 'User'} accepted your friend request',
-          data: <String, >{'userId': user.uid},
+          data: {'userId': user.uid},
         );
 
         return true;
       });
     } catch (e) {
-      print('Error accepting friend request: $e');
+      debugPrint('Error accepting friend request: $e');
       return false;
     }
   }
@@ -237,13 +253,13 @@ class FriendService {
       await _firestore
           .collection('friend_requests')
           .doc(requestId)
-          .update(<String, >{
-            'status': 'rejected',
-            'respondedAt': FieldValue.serverTimestamp(),
-          });
+          .update({
+        'status': 'rejected',
+        'respondedAt': FieldValue.serverTimestamp(),
+      });
       return true;
     } catch (e) {
-      print('Error rejecting friend request: $e');
+      debugPrint('Error rejecting friend request: $e');
       return false;
     }
   }
@@ -254,7 +270,7 @@ class FriendService {
       await _firestore.collection('friend_requests').doc(requestId).delete();
       return true;
     } catch (e) {
-      print('Error canceling friend request: $e');
+      debugPrint('Error canceling friend request: $e');
       return false;
     }
   }
@@ -272,7 +288,7 @@ class FriendService {
             .doc(user.uid)
             .collection('friends')
             .doc(friendId);
-        
+
         transaction.delete(userFriendRef);
 
         // Remove from friend's friends
@@ -281,13 +297,13 @@ class FriendService {
             .doc(friendId)
             .collection('friends')
             .doc(user.uid);
-        
+
         transaction.delete(friendFriendRef);
 
         return true;
       });
     } catch (e) {
-      print('Error removing friend: $e');
+      debugPrint('Error removing friend: $e');
       return false;
     }
   }
@@ -305,7 +321,7 @@ class FriendService {
             .doc(user.uid)
             .collection('friends')
             .doc(userId);
-        
+
         transaction.delete(friendRef);
 
         // Add to blocked list
@@ -314,8 +330,8 @@ class FriendService {
             .doc(user.uid)
             .collection('blocked')
             .doc(userId);
-        
-        transaction.set(blockedRef, <String, >{
+
+        transaction.set(blockedRef, {
           'blockedId': userId,
           'blockedAt': FieldValue.serverTimestamp(),
         });
@@ -323,7 +339,7 @@ class FriendService {
         return true;
       });
     } catch (e) {
-      print('Error blocking user: $e');
+      debugPrint('Error blocking user: $e');
       return false;
     }
   }
@@ -342,13 +358,13 @@ class FriendService {
           .delete();
       return true;
     } catch (e) {
-      print('Error unblocking user: $e');
+      debugPrint('Error unblocking user: $e');
       return false;
     }
   }
 
   // Get blocked users
-  Stream<List<UserModel>> getBlockedUsers() {
+  Stream<List<app.User>> getBlockedUsers() {
     final User? user = _auth.currentUser;
     if (user == null) throw Exception('User not logged in');
 
@@ -358,20 +374,22 @@ class FriendService {
         .collection('blocked')
         .snapshots()
         .asyncMap((QuerySnapshot<Map<String, dynamic>> snapshot) async {
-          final List<UserModel> blocked = <UserModel>[];
-          for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
-            final Map<String, dynamic> data = doc.data();
-            final DocumentSnapshot<Map<String, dynamic>> userDoc = await _firestore
-                .collection('users')
-                .doc(data['blockedId'])
-                .get();
-            
-            if (userDoc.exists) {
-              blocked.add(UserModel.fromJson(userDoc.data()!));
-            }
-          }
-          return blocked;
-        });
+      final List<app.User> blocked = [];
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
+        final Map<String, dynamic> data = doc.data();
+        final DocumentSnapshot<Map<String, dynamic>> userDoc = await _firestore
+            .collection('users')
+            .doc(data['blockedId'])
+            .get();
+
+        if (userDoc.exists) {
+          final userData = userDoc.data()!;
+          userData['id'] = userDoc.id;
+          blocked.add(app.User.fromJson(userData));
+        }
+      }
+      return blocked;
+    });
   }
 
   // Get friend suggestions
@@ -386,7 +404,7 @@ class FriendService {
           .doc(user.uid)
           .collection('friends')
           .get();
-      
+
       final Set<String> friendIds = friendsSnapshot.docs
           .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => doc.data()['friendId'] as String)
           .toSet();
@@ -397,14 +415,14 @@ class FriendService {
           .doc(user.uid)
           .collection('blocked')
           .get();
-      
+
       final Set<String> blockedIds = blockedSnapshot.docs
           .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => doc.data()['blockedId'] as String)
           .toSet();
 
       // Get users with mutual friends
       final suggestions = <FriendSuggestion>[];
-      final Set<String> seenIds = <String>{user.uid, ...friendIds, ...blockedIds};
+      final Set<String> seenIds = {user.uid, ...friendIds, ...blockedIds};
 
       for (final String friendId in friendIds) {
         final QuerySnapshot<Map<String, dynamic>> friendFriends = await _firestore
@@ -417,35 +435,35 @@ class FriendService {
           final String potentialId = doc.data()['friendId'] as String;
           if (!seenIds.contains(potentialId)) {
             seenIds.add(potentialId);
-            
+
             final DocumentSnapshot<Map<String, dynamic>> userDoc = await _firestore.collection('users').doc(potentialId).get();
             if (userDoc.exists) {
               final Map<String, dynamic>? data = userDoc.data();
               final int mutualCount = await _getMutualFriendsCount(user.uid, potentialId);
               final List<String> commonInterests = await _getCommonInterests(user.uid, potentialId);
-              
+
               // Calculate score
-              final var score = mutualCount * 10 + commonInterests.length * 5;
-              
+              final score = mutualCount * 10 + commonInterests.length * 5;
+
               suggestions.add(FriendSuggestion(
                 userId: potentialId,
-                name: data['username'] ?? 'Unknown',
-                avatar: data['photoURL'],
+                name: data?['username'] ?? 'Unknown',
+                avatar: data?['photoURL'],
                 mutualFriends: mutualCount,
                 commonInterests: commonInterests,
                 score: score,
-              ),);
+              ));
             }
           }
         }
       }
 
       // Sort by score
-      suggestions.sort((Object? a, Object? b) => b.score.compareTo(a.score));
+      suggestions.sort((a, b) => b.score.compareTo(a.score));
       return suggestions.take(limit).toList();
     } catch (e) {
-      print('Error getting suggestions: $e');
-      return <>[];
+      debugPrint('Error getting suggestions: $e');
+      return [];
     }
   }
 
@@ -457,16 +475,16 @@ class FriendService {
           .doc(userId1)
           .collection('friends')
           .get();
-      
+
       final QuerySnapshot<Map<String, dynamic>> friends2 = await _firestore
           .collection('users')
           .doc(userId2)
           .collection('friends')
           .get();
 
-      final Set<dynamic> set1 = friends1.docs.map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => doc.data()['friendId']).toSet();
-      final Set<dynamic> set2 = friends2.docs.map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => doc.data()['friendId']).toSet();
-      
+      final Set<String> set1 = friends1.docs.map((doc) => doc.data()['friendId'] as String).toSet();
+      final Set<String> set2 = friends2.docs.map((doc) => doc.data()['friendId'] as String).toSet();
+
       return set1.intersection(set2).length;
     } catch (e) {
       return 0;
@@ -476,16 +494,16 @@ class FriendService {
   // Get common interests
   Future<List<String>> _getCommonInterests(String userId1, String userId2) async {
     try {
-      final UserModel? user1 = await _getUser(userId1);
-      final UserModel? user2 = await _getUser(userId2);
-      
-      if (user1 == null || user2 == null) return <String>[];
-      
+      final app.User? user1 = await _getUser(userId1);
+      final app.User? user2 = await _getUser(userId2);
+
+      if (user1 == null || user2 == null) return [];
+
       return user1.interests
           .where((String i) => user2.interests.contains(i))
           .toList();
     } catch (e) {
-      return <String>[];
+      return [];
     }
   }
 
@@ -498,7 +516,7 @@ class FriendService {
           .collection('friends')
           .doc(userId2)
           .get();
-      
+
       return doc.exists;
     } catch (e) {
       return false;
@@ -598,7 +616,7 @@ class FriendService {
     // Count friends this week/month
     final DateTime oneWeekAgo = DateTime.now().subtract(const Duration(days: 7));
     final DateTime oneMonthAgo = DateTime.now().subtract(const Duration(days: 30));
-    
+
     var friendsThisWeek = 0;
     var friendsThisMonth = 0;
 
@@ -614,9 +632,116 @@ class FriendService {
       pendingRequests: pendingRequests.docs.length,
       sentRequests: sentRequests.docs.length,
       blockedUsers: blocked.docs.length,
-      mutualFriends: 0, // Calculate if needed
+      mutualFriends: 0,
       friendsThisWeek: friendsThisWeek,
       friendsThisMonth: friendsThisMonth,
     );
   }
+}
+
+// ==================== MODEL CLASSES ====================
+
+class FriendRequestModel {
+  final String id;
+  final String senderId;
+  final String senderName;
+  final String? senderAvatar;
+  final String receiverId;
+  final String? receiverName;
+  final String? receiverAvatar;
+  final String? message;
+  final String status;
+  final DateTime sentAt;
+  final DateTime? respondedAt;
+
+  FriendRequestModel({
+    required this.id,
+    required this.senderId,
+    required this.senderName,
+    this.senderAvatar,
+    required this.receiverId,
+    this.receiverName,
+    this.receiverAvatar,
+    this.message,
+    required this.status,
+    required this.sentAt,
+    this.respondedAt,
+  });
+
+  factory FriendRequestModel.fromJson(Map<String, dynamic> json) {
+    return FriendRequestModel(
+      id: json['id'] ?? '',
+      senderId: json['senderId'] ?? '',
+      senderName: json['senderName'] ?? '',
+      senderAvatar: json['senderAvatar'],
+      receiverId: json['receiverId'] ?? '',
+      receiverName: json['receiverName'],
+      receiverAvatar: json['receiverAvatar'],
+      message: json['message'],
+      status: json['status'] ?? 'pending',
+      sentAt: json['sentAt'] != null
+          ? (json['sentAt'] as Timestamp).toDate()
+          : DateTime.now(),
+      respondedAt: json['respondedAt'] != null
+          ? (json['respondedAt'] as Timestamp).toDate()
+          : null,
+    );
+  }
+
+  // ✅ toJson() method add koro
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'senderId': senderId,
+      'senderName': senderName,
+      'senderAvatar': senderAvatar,
+      'receiverId': receiverId,
+      'receiverName': receiverName,
+      'receiverAvatar': receiverAvatar,
+      'message': message,
+      'status': status,
+      'sentAt': sentAt.toIso8601String(),
+      'respondedAt': respondedAt?.toIso8601String(),
+    };
+  }
+}
+
+class FriendSuggestion {
+  final String userId;
+  final String name;
+  final String? avatar;
+  final int mutualFriends;
+  final List<String> commonInterests;
+  final int score;
+
+  FriendSuggestion({
+    required this.userId,
+    required this.name,
+    this.avatar,
+    required this.mutualFriends,
+    required this.commonInterests,
+    required this.score,
+  });
+}
+
+class FriendStats {
+  final int totalFriends;
+  final int onlineFriends;
+  final int pendingRequests;
+  final int sentRequests;
+  final int blockedUsers;
+  final int mutualFriends;
+  final int friendsThisWeek;
+  final int friendsThisMonth;
+
+  FriendStats({
+    required this.totalFriends,
+    required this.onlineFriends,
+    required this.pendingRequests,
+    required this.sentRequests,
+    required this.blockedUsers,
+    required this.mutualFriends,
+    required this.friendsThisWeek,
+    required this.friendsThisMonth,
+  });
 }

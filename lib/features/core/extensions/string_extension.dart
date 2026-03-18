@@ -27,7 +27,7 @@ extension StringExtension on String {
     if (isEmpty) return this;
     return replaceAllMapped(
       RegExp('(?<=[a-z])[A-Z]|(?<=[A-Z])[A-Z](?=[a-z])'),
-      (Match match) => '_${match.group(0)!.toLowerCase()}',
+          (Match match) => '_${match.group(0)!.toLowerCase()}',
     ).toLowerCase();
   }
 
@@ -140,6 +140,7 @@ extension StringExtension on String {
   String get initials {
     if (isEmpty) return '';
     final List<String> words = trim().split(RegExp(r'\s+'));
+    if (words.isEmpty) return '';
     if (words.length == 1) {
       return words[0].substring(0, 1).toUpperCase();
     }
@@ -191,8 +192,9 @@ extension StringExtension on String {
     if (isEmpty) return other.length;
     if (other.isEmpty) return length;
 
-    final List<List<int>> matrix = List<List<int>>.generate(length + 1,
-        (int i) => List.generate(other.length + 1, (int j) => 0),);
+    final matrix = List.generate(length + 1,
+            (int i) => List.generate(other.length + 1, (int j) => 0, growable: false),
+        growable: false);
 
     for (int i = 0; i <= length; i++) {
       matrix[i][0] = i;
@@ -204,7 +206,7 @@ extension StringExtension on String {
     for (int i = 1; i <= length; i++) {
       for (int j = 1; j <= other.length; j++) {
         final int cost = this[i - 1] == other[j - 1] ? 0 : 1;
-        matrix[i][j] = <int>[
+        matrix[i][j] = [
           matrix[i - 1][j] + 1,
           matrix[i][j - 1] + 1,
           matrix[i - 1][j - 1] + cost,
@@ -219,7 +221,7 @@ extension StringExtension on String {
   double similarityRatio(String other) {
     final int distance = levenshteinDistance(other);
     final int maxLength = length > other.length ? length : other.length;
-    if (maxLength == 0) return 1;
+    if (maxLength == 0) return 1.0;
     return 1.0 - distance / maxLength;
   }
 
@@ -240,10 +242,14 @@ extension StringExtension on String {
 
   // To title case with exceptions
   String toTitleCase({List<String>? exceptions}) {
-    final List<String> wordExceptions = exceptions ?? <String>['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'by', 'with'];
+    final List<String> wordExceptions = exceptions ?? ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'by', 'with'];
+    final words = split(' ');
 
-    return split(' ').mapIndexed((int index, String word) {
-      if (index == 0 || index == split(' ').length - 1 || !wordExceptions.contains(word.toLowerCase())) {
+    return words.asMap().entries.map((entry) {
+      final int index = entry.key;
+      final String word = entry.value;
+
+      if (index == 0 || index == words.length - 1 || !wordExceptions.contains(word.toLowerCase())) {
         return word.capitalize;
       }
       return word.toLowerCase();
@@ -263,9 +269,15 @@ extension StringExtension on String {
 
   // Get plural form (simple)
   String get plural {
-    if (endsWith('y') && !endsWith(RegExp('[aeiou]y'))) {
-      return '${substring(0, length - 1)}ies';
+    // Check if ends with 'y' and not preceded by a vowel
+    if (endsWith('y') && length > 1) {
+      final secondLastChar = this[length - 2];
+      // Check if second last character is not a vowel (a, e, i, o, u)
+      if (!'aeiou'.contains(secondLastChar.toLowerCase())) {
+        return '${substring(0, length - 1)}ies';
+      }
     }
+    // Check for s, sh, ch, x, z endings
     if (endsWith('s') || endsWith('sh') || endsWith('ch') || endsWith('x') || endsWith('z')) {
       return '${this}es';
     }
@@ -274,16 +286,19 @@ extension StringExtension on String {
 
   // Get singular form (simple)
   String get singular {
+    // Handle -ies ending (e.g., cities -> city)
     if (endsWith('ies') && length > 3) {
       return '${substring(0, length - 3)}y';
     }
+    // Handle -es ending for words ending in s, sh, ch, x, z
     if (endsWith('es') && length > 2) {
-      if (substring(length - 4, length - 2) == 'sh' ||
-          substring(length - 4, length - 2) == 'ch') {
-        return substring(0, length - 2);
+      final base = substring(0, length - 2);
+      if (base.endsWith('s') || base.endsWith('sh') || base.endsWith('ch') || base.endsWith('x') || base.endsWith('z')) {
+        return base;
       }
     }
-    if (endsWith('s') && length > 1) {
+    // Handle -s ending
+    if (endsWith('s') && length > 1 && !endsWith('ss')) {
       return substring(0, length - 1);
     }
     return this;

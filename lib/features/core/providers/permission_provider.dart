@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:permission_handler/permission_handler.dart' as ph;
 import '../../../core/services/logger_service.dart';
 import '../../../core/di/service_locator.dart';
+import '../../../core/services/navigation_service.dart';
 
 enum PermissionType {
   camera,
@@ -18,17 +19,22 @@ enum PermissionType {
 
 class PermissionProvider extends ChangeNotifier {
   final LoggerService _logger = ServiceLocator().get<LoggerService>();
-  
-  final Map<PermissionType, PermissionStatus> _permissionStatus = <PermissionType, >{};
+
+  final Map<PermissionType, ph.PermissionStatus> _permissionStatus = {};
   bool _isLoading = false;
 
-  Map<PermissionType, PermissionStatus> get permissionStatus => _permissionStatus;
+  Map<PermissionType, ph.PermissionStatus> get permissionStatus => _permissionStatus;
   bool get isLoading => _isLoading;
+
+  // Get current context from NavigationService (static access)
+  BuildContext? _getContext() {
+    return NavigationService.navigatorKey.currentContext;
+  }
 
   // Check single permission
   Future<bool> checkPermission(PermissionType type) async {
-    final Permission permission = _getPermission(type);
-    final PermissionStatus status = await permission.status;
+    final ph.Permission permission = _getPermission(type);
+    final ph.PermissionStatus status = await permission.status;
     _updateStatus(type, status);
     return status.isGranted;
   }
@@ -39,11 +45,11 @@ class PermissionProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final Permission permission = _getPermission(type);
-      final PermissionStatus status = await permission.request();
+      final ph.Permission permission = _getPermission(type);
+      final ph.PermissionStatus status = await permission.request();
       _updateStatus(type, status);
-      
-      _logger.info('Permission $type requested, status: $status');
+
+      _logger.info('Permission $type requested, status: ${status.toString()}');
       return status.isGranted;
     } catch (e) {
       _logger.error('Failed to request permission $type', error: e);
@@ -60,23 +66,23 @@ class PermissionProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final List<Permission> permissions = types.map(_getPermission).toList();
-      final Map<Permission, PermissionStatus> statuses = await permissions.request();
-      
-      final Map<PermissionType, bool> result = <PermissionType, bool>{};
+      final List<ph.Permission> permissions = types.map(_getPermission).toList();
+      final Map<ph.Permission, ph.PermissionStatus> statuses = await permissions.request();
+
+      final result = <PermissionType, bool>{};
       for (var i = 0; i < types.length; i++) {
         final PermissionType type = types[i];
-        final PermissionStatus? status = statuses[permissions[i]];
+        final ph.PermissionStatus? status = statuses[permissions[i]];
         if (status != null) {
           _updateStatus(type, status);
           result[type] = status.isGranted;
         }
       }
-      
+
       return result;
     } catch (e) {
       _logger.error('Failed to request permissions', error: e);
-      return <PermissionType, bool>{};
+      return {};
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -85,21 +91,22 @@ class PermissionProvider extends ChangeNotifier {
 
   // Open app settings
   Future<void> openAppSettings() async {
-    await openAppSettings();
+    await ph.openAppSettings();
   }
 
   // Show permission dialog
   Future<void> showPermissionDialog(
-    BuildContext context,
-    PermissionType type,
-    {String? title, String? message,}
-  ) async {
+      BuildContext context,
+      PermissionType type, {
+        String? title,
+        String? message,
+      }) async {
     final bool? result = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
         title: Text(title ?? 'Permission Required'),
         content: Text(message ?? 'This feature requires ${type.toString().split('.').last} permission.'),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
@@ -117,10 +124,40 @@ class PermissionProvider extends ChangeNotifier {
     }
   }
 
+  // Show settings dialog (for permanently denied)
+  Future<void> showSettingsDialog(
+      BuildContext context,
+      PermissionType type, {
+        String? title,
+        String? message,
+      }) async {
+    final bool? result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text(title ?? 'Permission Required'),
+        content: Text(message ?? 'This permission is permanently denied. Please enable it in settings.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+
+    if (result ?? false) {
+      await openAppSettings();
+    }
+  }
+
   // Check if all permissions are granted
   bool areAllGranted(List<PermissionType> types) {
     for (PermissionType type in types) {
-      final PermissionStatus? status = _permissionStatus[type];
+      final ph.PermissionStatus? status = _permissionStatus[type];
       if (status == null || !status.isGranted) {
         return false;
       }
@@ -128,41 +165,74 @@ class PermissionProvider extends ChangeNotifier {
     return true;
   }
 
+  // Check if any permission is permanently denied
+  Future<bool> isPermanentlyDenied(PermissionType type) async {
+    final ph.Permission permission = _getPermission(type);
+    final ph.PermissionStatus status = await permission.status;
+    return status.isPermanentlyDenied;
+  }
+
   // Get permission by type
-  Permission _getPermission(PermissionType type) {
+  ph.Permission _getPermission(PermissionType type) {
     switch (type) {
       case PermissionType.camera:
-        return Permission.camera;
+        return ph.Permission.camera;
       case PermissionType.microphone:
-        return Permission.microphone;
+        return ph.Permission.microphone;
       case PermissionType.storage:
-        return Permission.storage;
+        return ph.Permission.storage;
       case PermissionType.location:
-        return Permission.location;
+        return ph.Permission.location;
       case PermissionType.contacts:
-        return Permission.contacts;
+        return ph.Permission.contacts;
       case PermissionType.notifications:
-        return Permission.notification;
+        return ph.Permission.notification;
       case PermissionType.photos:
-        if (Theme.of(_getContext()).platform == TargetPlatform.iOS) {
-          return Permission.photos;
+      // For iOS, use photos permission, for Android use storage
+        final context = _getContext();
+        if (context != null && Theme.of(context).platform == TargetPlatform.iOS) {
+          return ph.Permission.photos;
         }
-        return Permission.storage;
+        return ph.Permission.storage;
       case PermissionType.calendar:
-        return Permission.calendar;
+        return ph.Permission.calendar;
       case PermissionType.reminders:
-        return Permission.reminders;
+        return ph.Permission.reminders;
       case PermissionType.bluetooth:
-        return Permission.bluetooth;
+        return ph.Permission.bluetooth;
     }
   }
 
-  void _updateStatus(PermissionType type, PermissionStatus status) {
+  void _updateStatus(PermissionType type, ph.PermissionStatus status) {
     _permissionStatus[type] = status;
+    notifyListeners();
   }
 
-  BuildContext? _getContext() {
-    // This would need navigation service
-    return null;
+  // Get permission status text
+  String getStatusText(PermissionType type) {
+    final status = _permissionStatus[type];
+    if (status == null) return 'Unknown';
+    if (status.isGranted) return 'Granted';
+    if (status.isPermanentlyDenied) return 'Permanently Denied';
+    if (status.isDenied) return 'Denied';
+    if (status.isRestricted) return 'Restricted';
+    if (status.isLimited) return 'Limited';
+    return 'Unknown';
+  }
+
+  // Get permission status color
+  Color getStatusColor(PermissionType type) {
+    final status = _permissionStatus[type];
+    if (status == null) return Colors.grey;
+    if (status.isGranted) return Colors.green;
+    if (status.isPermanentlyDenied) return Colors.red;
+    if (status.isDenied) return Colors.orange;
+    return Colors.grey;
+  }
+
+  // Reset all permissions
+  void reset() {
+    _permissionStatus.clear();
+    notifyListeners();
   }
 }

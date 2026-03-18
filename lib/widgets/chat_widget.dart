@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import '../core/utils/date_formatter.dart';
+import 'package:flutter/foundation.dart';
+import '../core/utils/date_formatters.dart';
 
 enum MessageType { text, image, gift, system }
 
 class ChatWidget extends StatefulWidget {
-
-  const ChatWidget({
-    required this.roomId, super.key,
-    this.currentUserId,
-  });
   final String roomId;
   final String? currentUserId;
+
+  const ChatWidget({
+    super.key,
+    required this.roomId,
+    this.currentUserId,
+  });
 
   @override
   State<ChatWidget> createState() => _ChatWidgetState();
@@ -25,8 +27,10 @@ class ChatWidget extends StatefulWidget {
 
 class _ChatWidgetState extends State<ChatWidget> {
   final ScrollController _scrollController = ScrollController();
-  final List<ChatMessage> _messages = <ChatMessage>[];
-  final bool _isLoading = false;
+  final TextEditingController _messageController = TextEditingController();
+  final List<ChatMessage> _messages = [];
+  bool _isLoading = false;
+  bool _isSending = false;
 
   @override
   void initState() {
@@ -37,16 +41,22 @@ class _ChatWidgetState extends State<ChatWidget> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _messageController.dispose();
     super.dispose();
   }
 
   void _loadMessages() {
+    setState(() {
+      _isLoading = true;
+    });
+
     // Mock messages
-    _messages.addAll(<ChatMessage>[
+    _messages.addAll([
       ChatMessage(
         id: '1',
         userId: 'user1',
         username: 'Alice',
+        userAvatar: null,
         message: 'Hello everyone! Welcome to the room!',
         type: MessageType.text,
         timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
@@ -55,6 +65,7 @@ class _ChatWidgetState extends State<ChatWidget> {
         id: '2',
         userId: 'user2',
         username: 'Bob',
+        userAvatar: null,
         message: 'Hi Alice! Thanks for having us.',
         type: MessageType.text,
         timestamp: DateTime.now().subtract(const Duration(minutes: 4)),
@@ -63,6 +74,7 @@ class _ChatWidgetState extends State<ChatWidget> {
         id: '3',
         userId: 'user3',
         username: 'Charlie',
+        userAvatar: null,
         message: 'This is great!',
         type: MessageType.text,
         timestamp: DateTime.now().subtract(const Duration(minutes: 3)),
@@ -71,16 +83,21 @@ class _ChatWidgetState extends State<ChatWidget> {
         id: '4',
         userId: 'user1',
         username: 'Alice',
+        userAvatar: null,
         message: 'Check out this gift!',
         type: MessageType.gift,
         timestamp: DateTime.now().subtract(const Duration(minutes: 2)),
-        giftData: <String, dynamic>{
+        giftData: {
           'name': 'Rose',
           'icon': Icons.local_florist,
           'color': Colors.red,
         },
       ),
     ]);
+
+    setState(() {
+      _isLoading = false;
+    });
 
     _scrollToBottom();
   }
@@ -97,6 +114,36 @@ class _ChatWidgetState extends State<ChatWidget> {
     });
   }
 
+  void _sendMessage() {
+    if (_messageController.text.trim().isEmpty || _isSending) return;
+
+    final message = _messageController.text.trim();
+    _messageController.clear();
+
+    setState(() {
+      _isSending = true;
+    });
+
+    // Simulate sending
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _messages.add(ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            userId: widget.currentUserId ?? 'local',
+            username: 'You',
+            userAvatar: null,
+            message: message,
+            type: MessageType.text,
+            timestamp: DateTime.now(),
+          ));
+          _isSending = false;
+        });
+        _scrollToBottom();
+      }
+    });
+  }
+
   void addMessage(ChatMessage message) {
     setState(() {
       _messages.add(message);
@@ -106,22 +153,22 @@ class _ChatWidgetState extends State<ChatWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
-        children: <>[
+        children: [
           // Chat Header
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
+              color: Colors.white.withOpacity(0.1),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: const Row(
-              children: <>[
+              children: [
                 Icon(Icons.chat, color: Colors.white70, size: 16),
                 SizedBox(width: 8),
                 Text(
@@ -139,21 +186,54 @@ class _ChatWidgetState extends State<ChatWidget> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
+                : _messages.isEmpty
+                ? _buildEmptyState()
                 : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _messages.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      final ChatMessage message = _messages[index];
-                      final bool isMe = message.userId == widget.currentUserId;
+              controller: _scrollController,
+              padding: const EdgeInsets.all(12),
+              itemCount: _messages.length,
+              itemBuilder: (BuildContext context, int index) {
+                final ChatMessage message = _messages[index];
+                final bool isMe = message.userId == widget.currentUserId;
 
-                      return _buildMessageBubble(message, isMe);
-                    },
-                  ),
+                return _buildMessageBubble(message, isMe);
+              },
+            ),
           ),
 
           // Input Area
           _buildInputArea(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            size: 48,
+            color: Colors.white.withOpacity(0.3),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No messages yet',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Be the first to say hello!',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.3),
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
@@ -165,8 +245,8 @@ class _ChatWidgetState extends State<ChatWidget> {
       child: Row(
         mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
-          if (!isMe) ...<>[
+        children: [
+          if (!isMe) ...[
             CircleAvatar(
               radius: 16,
               backgroundImage: message.userAvatar != null
@@ -190,7 +270,7 @@ class _ChatWidgetState extends State<ChatWidget> {
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <>[
+                children: [
                   if (!isMe)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
@@ -224,7 +304,7 @@ class _ChatWidgetState extends State<ChatWidget> {
               ),
             ),
           ),
-          if (isMe) ...<>[
+          if (isMe) ...[
             const SizedBox(width: 8),
             CircleAvatar(
               radius: 16,
@@ -252,19 +332,26 @@ class _ChatWidgetState extends State<ChatWidget> {
   }
 
   Widget _buildGiftMessage(ChatMessage message) {
-    final Map<String, dynamic> giftData = message.giftData!;
-    
+    final Map<String, dynamic> giftData = message.giftData ?? {};
+    final Color giftColor = giftData['color'] is Color
+        ? giftData['color'] as Color
+        : Colors.purple;
+    final IconData giftIcon = giftData['icon'] is IconData
+        ? giftData['icon'] as IconData
+        : Icons.card_giftcard;
+    final String giftName = giftData['name']?.toString() ?? 'Gift';
+
     return Row(
-      children: <>[
+      children: [
         Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: giftData['color'].withOpacity(0.2),
+            color: giftColor.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(
-            giftData['icon'],
-            color: giftData['color'],
+            giftIcon,
+            color: giftColor,
             size: 16,
           ),
         ),
@@ -272,9 +359,9 @@ class _ChatWidgetState extends State<ChatWidget> {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: <>[
+            children: [
               Text(
-                'Sent a gift: ${giftData['name']}',
+                'Sent a gift: $giftName',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                 ),
@@ -294,29 +381,42 @@ class _ChatWidgetState extends State<ChatWidget> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
       ),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.emoji_emotions, color: Colors.white70),
-            onPressed: () {},
+            onPressed: () {
+              // Show emoji picker
+            },
           ),
-          const Expanded(
+          Expanded(
             child: TextField(
-              style: TextStyle(color: Colors.white),
+              controller: _messageController,
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Type a message...',
-                hintStyle: TextStyle(color: Colors.white54),
+                hintStyle: const TextStyle(color: Colors.white54),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
               ),
+              onSubmitted: (_) => _sendMessage(),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.send, color: Colors.blue),
-            onPressed: () {},
+            icon: _isSending
+                ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+                : const Icon(Icons.send, color: Colors.blue),
+            onPressed: _isSending ? null : _sendMessage,
           ),
         ],
       ),
@@ -325,14 +425,6 @@ class _ChatWidgetState extends State<ChatWidget> {
 }
 
 class ChatMessage {
-
-  ChatMessage({
-    required this.id,
-    required this.userId,
-    required this.username,
-    required this.message, required this.type, required this.timestamp, this.userAvatar,
-    this.giftData,
-  });
   final String id;
   final String userId;
   final String username;
@@ -341,4 +433,15 @@ class ChatMessage {
   final MessageType type;
   final DateTime timestamp;
   final Map<String, dynamic>? giftData;
+
+  ChatMessage({
+    required this.id,
+    required this.userId,
+    required this.username,
+    this.userAvatar,
+    required this.message,
+    required this.type,
+    required this.timestamp,
+    this.giftData,
+  });
 }

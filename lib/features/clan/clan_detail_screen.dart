@@ -1,8 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/models/clan_model.dart';
-import '../../core/services/clan_service.dart';
+import '../clan/services/clan_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
@@ -16,9 +17,9 @@ import 'widgets/clan_progress_bar.dart';
 import 'widgets/clan_badge.dart';
 
 class ClanDetailScreen extends StatefulWidget {
+  final ClanModel clan;
 
   const ClanDetailScreen({required this.clan, super.key});
-  final ClanModel clan;
 
   @override
   State<ClanDetailScreen> createState() => _ClanDetailScreenState();
@@ -30,12 +31,12 @@ class ClanDetailScreen extends StatefulWidget {
   }
 }
 
-class _ClanDetailScreenState extends State<ClanDetailScreen> 
+class _ClanDetailScreenState extends State<ClanDetailScreen>
     with LoadingMixin, ToastMixin, DialogMixin {
-  
+
   final ClanService _clanService = ServiceLocator().get<ClanService>();
   final AuthService _authService = ServiceLocator().get<AuthService>();
-  
+
   late ClanModel _clan;
   String? _currentUserId;
   bool _isMember = false;
@@ -60,7 +61,7 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
   }
 
   void _setupStream() {
-    _clanService.streamClan(_clan.id).listen((ClanModel? clan) {
+    _clanService.streamClan(_clan.id).listen((clan) {
       if (clan != null && mounted) {
         setState(() {
           _clan = clan;
@@ -132,23 +133,23 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
 
     return Scaffold(
       body: CustomScrollView(
-        slivers: <>[
+        slivers: [
           // Header
           SliverAppBar(
             expandedHeight: 200,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              background: DecoratedBox(
+              background: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: <>[Colors.deepPurple, Colors.purple],
+                    colors: [Colors.deepPurple, Colors.purple],
                   ),
                 ),
                 child: Stack(
                   fit: StackFit.expand,
-                  children: <>[
+                  children: [
                     if (_clan.emblem != null)
                       Positioned(
                         right: -50,
@@ -166,7 +167,7 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
                       bottom: 20,
                       left: 16,
                       child: Row(
-                        children: <>[
+                        children: [
                           Container(
                             width: 80,
                             height: 80,
@@ -175,24 +176,24 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
                               shape: BoxShape.circle,
                               image: _clan.emblem != null
                                   ? DecorationImage(
-                                      image: NetworkImage(_clan.emblem!),
-                                      fit: BoxFit.cover,
-                                    )
+                                image: NetworkImage(_clan.emblem!),
+                                fit: BoxFit.cover,
+                              )
                                   : null,
                             ),
                             child: _clan.emblem == null
                                 ? const Icon(
-                                    Icons.groups,
-                                    size: 40,
-                                    color: Colors.deepPurple,
-                                  )
+                              Icons.groups,
+                              size: 40,
+                              color: Colors.deepPurple,
+                            )
                                 : null,
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <>[
+                              children: [
                                 Text(
                                   _clan.name,
                                   style: const TextStyle(
@@ -203,7 +204,7 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
-                                  children: <>[
+                                  children: [
                                     ClanBadge(level: _clan.level),
                                     const SizedBox(width: 8),
                                     Text(
@@ -224,11 +225,11 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
                 ),
               ),
             ),
-            actions: <>[
+            actions: [
               if (_isMember)
-                PopupMenuButton(
+                PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert, color: Colors.white),
-                  itemBuilder: (BuildContext context) => <>[
+                  itemBuilder: (context) => [
                     if (canManage)
                       const PopupMenuItem(
                         value: 'requests',
@@ -248,31 +249,35 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
                       child: Text('Leave Clan'),
                     ),
                   ],
-                  onSelected: (Object? value) async {
+                  onSelected: (value) async {
                     switch (value) {
                       case 'requests':
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (BuildContext context) => ClanRequestsScreen(clanId: _clan.id),
+                            builder: (context) => ClanRequestsScreen(clanId: _clan.id),
                           ),
                         );
+                        break;
                       case 'settings':
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (BuildContext context) => ClanSettingsScreen(clan: _clan),
+                            builder: (context) => ClanSettingsScreen(clan: _clan),
                           ),
                         ).then((_) => _clanService.getClan(_clan.id));
+                        break;
                       case 'members':
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (BuildContext context) => ClanMembersScreen(clan: _clan),
+                            builder: (context) => ClanMembersScreen(clan: _clan),
                           ),
                         );
+                        break;
                       case 'leave':
                         _leaveClan();
+                        break;
                     }
                   },
                 ),
@@ -285,16 +290,16 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <>[
+                children: [
                   // XP Progress
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
-                        children: <>[
+                        children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: <>[
+                            children: [
                               const Text('Clan XP'),
                               Text('${_clan.xp}/${_clan.xpToNextLevel}'),
                             ],
@@ -311,7 +316,7 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
                   const SizedBox(height: 16),
 
                   // Description
-                  if (_clan.description != null) ...<>[
+                  if (_clan.description != null) ...[
                     const Text(
                       'Description',
                       style: TextStyle(
@@ -325,7 +330,7 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
                   ],
 
                   // Rules
-                  if (_clan.rules != null) ...<>[
+                  if (_clan.rules != null) ...[
                     const Text(
                       'Rules',
                       style: TextStyle(
@@ -343,10 +348,10 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
-                        children: <>[
+                        children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: <>[
+                            children: [
                               _buildStatItem(
                                 'Created',
                                 _formatDate(_clan.createdAt),
@@ -362,10 +367,10 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
                           const SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: <>[
+                            children: [
                               _buildStatItem(
                                 'Total Activity',
-                                '${_clan.totalActivity}',
+                                '${_clan.getTotalActivity()}',
                                 Icons.trending_up,
                               ),
                               _buildStatItem(
@@ -390,7 +395,7 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
               padding: const EdgeInsets.all(16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <>[
+                children: [
                   const Text(
                     'Members',
                     style: TextStyle(
@@ -403,7 +408,7 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (BuildContext context) => ClanMembersScreen(clan: _clan),
+                          builder: (context) => ClanMembersScreen(clan: _clan),
                         ),
                       );
                     },
@@ -417,7 +422,7 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
           // Member List
           SliverList(
             delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
+                  (context, index) {
                 if (index >= _clan.members.length) return null;
                 final member = _clan.members[index];
                 return ListTile(
@@ -430,7 +435,7 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
                         : null,
                   ),
                   title: Row(
-                    children: <>[
+                    children: [
                       Text(member.username),
                       const SizedBox(width: 8),
                       Container(
@@ -439,7 +444,7 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: _getRoleColor(member.role).withValues(alpha: 0.1),
+                          color: _getRoleColor(member.role).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -455,13 +460,13 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
                   subtitle: Text('Activity: ${member.activityPoints}'),
                   trailing: member.isOnline
                       ? Container(
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            color: Colors.green,
-                            shape: BoxShape.circle,
-                          ),
-                        )
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
+                  )
                       : null,
                 );
               },
@@ -472,37 +477,37 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
       ),
       bottomNavigationBar: !_isMember && !_hasPendingRequest
           ? Container(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton(
-                onPressed: _joinClan,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  minimumSize: const Size(double.infinity, 48),
-                ),
-                child: Text(
-                  _clan.joinType == ClanJoinType.approval
-                      ? 'Request to Join'
-                      : 'Join Clan',
-                ),
-              ),
-            )
+        padding: const EdgeInsets.all(16),
+        child: ElevatedButton(
+          onPressed: _joinClan,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.deepPurple,
+            minimumSize: const Size(double.infinity, 48),
+          ),
+          child: Text(
+            _clan.joinType == ClanJoinType.approval
+                ? 'Request to Join'
+                : 'Join Clan',
+          ),
+        ),
+      )
           : _hasPendingRequest
-              ? Container(
-                  padding: const EdgeInsets.all(16),
-                  child: const Center(
-                    child: Text(
-                      'Join request pending',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                )
-              : null,
+          ? Container(
+        padding: const EdgeInsets.all(16),
+        child: const Center(
+          child: Text(
+            'Join request pending',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+      )
+          : null,
     );
   }
 
   Widget _buildStatItem(String label, String value, IconData icon) {
     return Column(
-      children: <>[
+      children: [
         Icon(icon, color: Colors.deepPurple, size: 20),
         const SizedBox(height: 4),
         Text(
@@ -550,8 +555,8 @@ class _ClanDetailScreenState extends State<ClanDetailScreen>
   }
 
   String _formatDate(DateTime date) {
-    final DateTime now = DateTime.now();
-    final Duration difference = now.difference(date);
+    final now = DateTime.now();
+    final difference = now.difference(date);
 
     if (difference.inDays > 30) {
       return '${difference.inDays ~/ 30} months ago';

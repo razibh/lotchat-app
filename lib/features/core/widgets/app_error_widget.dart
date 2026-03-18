@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 
 class AppErrorWidget extends StatelessWidget {
-
-  const AppErrorWidget({
-    required this.message, super.key,
-    this.details,
-    this.onRetry,
-  });
   final String message;
   final String? details;
   final VoidCallback? onRetry;
+
+  const AppErrorWidget({
+    required this.message,
+    this.details,
+    this.onRetry,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +20,7 @@ class AppErrorWidget extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
+          children: [
             Icon(
               Icons.error_outline,
               size: 64,
@@ -33,7 +35,7 @@ class AppErrorWidget extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            if (details != null) ...<>[
+            if (details != null) ...[
               const SizedBox(height: 8),
               Text(
                 details!,
@@ -41,7 +43,7 @@ class AppErrorWidget extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ],
-            if (onRetry != null) ...<>[
+            if (onRetry != null) ...[
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: onRetry,

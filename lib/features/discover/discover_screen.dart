@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/recommendation_service.dart';
 import '../../mixins/pagination_mixin.dart';
 import '../../mixins/toast_mixin.dart';
-import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/empty_state_widget.dart';
 import '../../widgets/animation/fade_animation.dart';
 import '../profile/profile_screen.dart';
@@ -15,54 +16,83 @@ class DiscoverScreen extends StatefulWidget {
   State<DiscoverScreen> createState() => _DiscoverScreenState();
 }
 
-class _DiscoverScreenState extends State<DiscoverScreen> 
+class _DiscoverScreenState extends State<DiscoverScreen>
     with PaginationMixin<Map<String, dynamic>>, ToastMixin {
-  
-  final RecommendationService _recommendationService = ServiceLocator().get<RecommendationService>();
+
+  final RecommendationService _recommendationService = ServiceLocator.instance.get<RecommendationService>();
   String _selectedTab = 'For You';
-  final List<String> _tabs = <String>['For You', 'Popular', 'Nearby', 'New'];
+  final List<String> _tabs = ['For You', 'Popular', 'Nearby', 'New'];
 
   @override
   void initState() {
     super.initState();
-    initPagination();
-    loadMore();
+    initPagination(); // PaginationMixin এর initPagination কল
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadFirstPage(setState); // setState প্যারামিটার সহ
+    });
   }
 
   @override
-  Future<List<Map<String, dynamic>>> fetchPage(int page) async {
-    // Fetch posts from service
+  void dispose() {
+    disposePagination(); // PaginationMixin এর disposePagination কল
+    super.dispose();
+  }
+
+  @override
+  Future<PaginationResult<Map<String, dynamic>>> fetchPage(int page) async {
+    // Simulate API call with different data based on selected tab
     await Future.delayed(const Duration(seconds: 1));
-    
-    return List.generate(10, (int index) {
-      final bool isImage = index % 3 != 0;
-      return <String, dynamic>{
-        'id': 'post_$index',
-        'userId': 'user_$index',
-        'username': 'User ${index + 1}',
-        'userAvatar': null,
-        'content': 'This is post number ${index + 1}. Check out this amazing content!',
-        'mediaUrl': isImage ? 'https://picsum.photos/400/300?random=$index' : null,
+
+    final items = List.generate(10, (index) {
+      final int actualIndex = page * 10 + index;
+      final bool isImage = actualIndex % 3 != 0;
+
+      // Different content based on tab
+      String content = '';
+      if (_selectedTab == 'Popular') {
+        content = '🔥 Popular post #${actualIndex + 1} with many likes!';
+      } else if (_selectedTab == 'Nearby') {
+        content = '📍 Nearby post #${actualIndex + 1} from your area';
+      } else if (_selectedTab == 'New') {
+        content = '🆕 New post #${actualIndex + 1} just now';
+      } else {
+        content = '✨ Recommended for you #${actualIndex + 1}';
+      }
+
+      return {
+        'id': 'post_$actualIndex',
+        'userId': 'user_$actualIndex',
+        'username': 'User ${actualIndex + 1}',
+        'userAvatar': actualIndex % 4 == 0 ? 'https://i.pravatar.cc/150?u=$actualIndex' : null,
+        'content': content,
+        'mediaUrl': isImage ? 'https://picsum.photos/400/300?random=$actualIndex' : null,
         'mediaType': isImage ? 'image' : null,
-        'likes': 100 + (index * 50),
-        'comments': 20 + index,
-        'gifts': 5 + index,
-        'timestamp': DateTime.now().subtract(Duration(hours: index)),
+        'likes': 100 + (actualIndex * 50),
+        'comments': 20 + actualIndex,
+        'gifts': 5 + actualIndex,
+        'timestamp': DateTime.now().subtract(Duration(hours: actualIndex)),
         'isLiked': false,
         'isSaved': false,
       };
     });
+
+    return PaginationResult<Map<String, dynamic>>(
+      items: items,
+      totalPages: 10,
+      totalItems: 100,
+      currentPage: page,
+    );
   }
 
   void _likePost(int index) {
     setState(() {
-      final Map<String, dynamic> post = items[index];
-      if (post['isLiked']) {
-        post['likes'] = post['likes'] - 1;
+      final post = items[index];
+      if (post['isLiked'] == true) {
+        post['likes'] = (post['likes'] as int) - 1;
       } else {
-        post['likes'] = post['likes'] + 1;
+        post['likes'] = (post['likes'] as int) + 1;
       }
-      post['isLiked'] = !post['isLiked'];
+      post['isLiked'] = !(post['isLiked'] ?? false);
     });
   }
 
@@ -77,7 +107,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         height: MediaQuery.of(context).size.height * 0.8,
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: <>[
+          children: [
             const Text(
               'Comments',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -86,7 +116,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             Expanded(
               child: ListView.builder(
                 itemCount: 10,
-                itemBuilder: (BuildContext context, int index) {
+                itemBuilder: (context, index) {
                   return ListTile(
                     leading: const CircleAvatar(
                       child: Icon(Icons.person, size: 20),
@@ -103,7 +133,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             ),
             const Divider(),
             Row(
-              children: <>[
+              children: [
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
@@ -141,21 +171,21 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               crossAxisCount: 3,
             ),
             itemCount: 9,
-            itemBuilder: (BuildContext context, int index) {
+            itemBuilder: (context, index) {
               return GestureDetector(
                 onTap: () {
                   Navigator.pop(context);
-                  showToast('Gift sent!');
+                  showSuccess('Gift sent!');
                 },
                 child: Container(
                   margin: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.purple.withValues(alpha: 0.1),
+                    color: Colors.purple.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: <>[
+                    children: [
                       const Icon(Icons.card_giftcard, color: Colors.purple),
                       const SizedBox(height: 4),
                       Text('${100 * (index + 1)}'),
@@ -171,8 +201,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   String _formatTime(DateTime time) {
-    final DateTime now = DateTime.now();
-    final Duration difference = now.difference(time);
+    final now = DateTime.now();
+    final difference = now.difference(time);
 
     if (difference.inDays > 0) {
       return '${difference.inDays}d';
@@ -185,57 +215,71 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
   }
 
+  Widget _buildLoadingIndicator() {
+    return const Padding(
+      padding: EdgeInsets.all(16.0),
+      child: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Discover'),
-        backgroundColor: Colors.purple,
-        bottom: TabBar(
-          onTap: (int index) {
-            setState(() {
-              _selectedTab = _tabs[index];
-              resetPagination();
-              loadMore();
-            });
-          },
-          tabs: _tabs.map((String tab) => Tab(text: tab)).toList(),
-          indicatorColor: Colors.white,
+    return DefaultTabController(
+      length: _tabs.length,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Discover'),
+          backgroundColor: Colors.purple,
+          foregroundColor: Colors.white,
+          bottom: TabBar(
+            onTap: (int index) {
+              setState(() {
+                _selectedTab = _tabs[index];
+                loadFirstPage(setState); // setState প্যারামিটার সহ
+              });
+            },
+            tabs: _tabs.map((tab) => Tab(text: tab)).toList(),
+            indicatorColor: Colors.white,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+          ),
         ),
-      ),
-      body: items.isEmpty && isLoadingMore
-          ? const Center(child: CircularProgressIndicator())
-          : items.isEmpty
-              ? EmptyStateWidget(
-                  title: 'No Posts Yet',
-                  message: 'Be the first to share something!',
-                  icon: Icons.post_add,
-                  buttonText: 'Create Post',
-                  onButtonPressed: _createPost,
-                )
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    resetPagination();
-                    await loadMore();
-                  },
-                  child: ListView.builder(
-                    controller: scrollController,
-                    itemCount: items.length + (hasMore ? 1 : 0),
-                    itemBuilder: (BuildContext context, int index) {
-                      if (index == items.length) {
-                        return buildPaginationLoadingIndicator();
-                      }
-                      return FadeAnimation(
-                        delay: Duration(milliseconds: index * 100),
-                        child: _buildPostCard(items[index]),
-                      );
-                    },
-                  ),
-                ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _createPost,
-        backgroundColor: Colors.purple,
-        child: const Icon(Icons.add),
+        body: isLoading && items.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : items.isEmpty && !isLoading
+            ? EmptyStateWidget(
+          title: 'No Posts Yet',
+          message: 'Be the first to share something!',
+          icon: Icons.post_add,
+          buttonText: 'Create Post',
+          onButtonPressed: _createPost,
+        )
+            : RefreshIndicator(
+          onRefresh: () async {
+            return loadFirstPage(setState);
+          },
+          child: ListView.builder(
+            controller: scrollController,
+            itemCount: items.length + (hasMore ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index == items.length) {
+                return _buildLoadingIndicator();
+              }
+              return FadeAnimation(
+                delay: Duration(milliseconds: index * 100),
+                child: _buildPostCard(items[index]),
+              );
+            },
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _createPost,
+          backgroundColor: Colors.purple,
+          foregroundColor: Colors.white,
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
@@ -243,9 +287,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   Widget _buildPostCard(Map<String, dynamic> post) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           // Header
           ListTile(
             leading: GestureDetector(
@@ -253,24 +301,25 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (BuildContext context) => ProfileScreen(userId: post['userId']),
+                    builder: (context) => ProfileScreen(userId: post['userId']),
                   ),
                 );
               },
               child: CircleAvatar(
                 backgroundImage: post['userAvatar'] != null
-                    ? NetworkImage(post['userAvatar'])
+                    ? NetworkImage(post['userAvatar'] as String)
                     : null,
+                backgroundColor: Colors.grey.shade200,
                 child: post['userAvatar'] == null
-                    ? Text(post['username'][0].toUpperCase())
+                    ? Text((post['username'] as String)[0].toUpperCase())
                     : null,
               ),
             ),
             title: Text(
-              post['username'],
+              post['username'] as String,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: Text(_formatTime(post['timestamp'])),
+            subtitle: Text(_formatTime(post['timestamp'] as DateTime)),
             trailing: IconButton(
               icon: const Icon(Icons.more_vert),
               onPressed: () {},
@@ -280,7 +329,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           // Content
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(post['content']),
+            child: Text(post['content'] as String),
           ),
           const SizedBox(height: 8),
 
@@ -292,7 +341,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               decoration: BoxDecoration(
                 color: Colors.grey.shade200,
                 image: DecorationImage(
-                  image: NetworkImage(post['mediaUrl']),
+                  image: NetworkImage(post['mediaUrl'] as String),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -303,7 +352,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
-              children: <>[
+              children: [
                 Text('${post['likes']} likes'),
                 const SizedBox(width: 16),
                 Text('${post['comments']} comments'),
@@ -317,11 +366,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           // Actions
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <>[
+            children: [
               _buildActionButton(
-                icon: post['isLiked'] ? Icons.favorite : Icons.favorite_border,
+                icon: post['isLiked'] == true ? Icons.favorite : Icons.favorite_border,
                 label: 'Like',
-                color: post['isLiked'] ? Colors.red : Colors.grey,
+                color: post['isLiked'] == true ? Colors.red : Colors.grey,
                 onTap: () => _likePost(items.indexOf(post)),
               ),
               _buildActionButton(
@@ -337,12 +386,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onTap: () => _sendGift(post),
               ),
               _buildActionButton(
-                icon: post['isSaved'] ? Icons.bookmark : Icons.bookmark_border,
+                icon: post['isSaved'] == true ? Icons.bookmark : Icons.bookmark_border,
                 label: 'Save',
-                color: post['isSaved'] ? Colors.blue : Colors.grey,
+                color: post['isSaved'] == true ? Colors.blue : Colors.grey,
                 onTap: () {
                   setState(() {
-                    post['isSaved'] = !post['isSaved'];
+                    post['isSaved'] = !(post['isSaved'] ?? false);
                   });
                 },
               ),
@@ -361,10 +410,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         child: Row(
-          children: <>[
+          children: [
             Icon(icon, color: color, size: 20),
             const SizedBox(width: 4),
             Text(
@@ -393,7 +443,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             const Text(
               'Create Post',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -410,7 +460,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             ),
             const SizedBox(height: 16),
             Row(
-              children: <>[
+              children: [
                 IconButton(
                   icon: const Icon(Icons.photo, color: Colors.green),
                   onPressed: () {},
@@ -429,6 +479,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     Navigator.pop(context);
                     showSuccess('Post created!');
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple,
+                  ),
                   child: const Text('Post'),
                 ),
               ],

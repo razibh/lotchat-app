@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import '../core/models/user_model.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
+import '../core/models/user_models.dart';
 
 class BadgeWidget extends StatelessWidget {
-
-  const BadgeWidget({
-    required this.tier, super.key,
-    this.size = 24,
-    this.showTooltip = true,
-  });
   final UserTier tier;
   final double size;
   final bool showTooltip;
+
+  const BadgeWidget({
+    super.key,
+    required this.tier,
+    this.size = 24,
+    this.showTooltip = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +28,7 @@ class BadgeWidget extends StatelessWidget {
             color: Colors.white,
             width: size * 0.1,
           ),
-          boxShadow: <>[
+          boxShadow: [
             BoxShadow(
               color: _getColor().withValues(alpha: 0.5),
               blurRadius: size * 0.2,
@@ -51,7 +53,7 @@ class BadgeWidget extends StatelessWidget {
       builder: (BuildContext context) => AlertDialog(
         title: Text(_getTitle()),
         content: Text(_getDescription()),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
@@ -76,7 +78,7 @@ class BadgeWidget extends StatelessWidget {
         return const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <>[Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+          colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
         );
       case UserTier.svip1:
       case UserTier.svip2:
@@ -89,13 +91,13 @@ class BadgeWidget extends StatelessWidget {
         return const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <>[Color(0xFFEC4899), Color(0xFF8B5CF6), Color(0xFFF59E0B)],
+          colors: [Color(0xFFEC4899), Color(0xFF8B5CF6), Color(0xFFF59E0B)],
         );
       default:
         return const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <>[Colors.grey, Colors.grey],
+          colors: [Colors.grey, Colors.grey],
         );
     }
   }
@@ -193,7 +195,7 @@ class BadgeWidget extends StatelessWidget {
       case UserTier.svip8:
         return 'SVIP Level 8';
       default:
-        return 'User';
+        return 'Regular User';
     }
   }
 
@@ -250,15 +252,16 @@ class BadgeWidget extends StatelessWidget {
 }
 
 class BadgeCollection extends StatelessWidget {
-
-  const BadgeCollection({
-    required this.badges, super.key,
-    this.size = 20,
-    this.maxDisplay = 3,
-  });
   final List<UserTier> badges;
   final double size;
   final int maxDisplay;
+
+  const BadgeCollection({
+    super.key,
+    required this.badges,
+    this.size = 20,
+    this.maxDisplay = 3,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -267,14 +270,15 @@ class BadgeCollection extends StatelessWidget {
 
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: <>[
+      children: [
         ...displayBadges.map((UserTier badge) => Padding(
           padding: const EdgeInsets.only(right: 2),
           child: BadgeWidget(
             tier: badge,
             size: size,
+            showTooltip: true,
           ),
-        ),),
+        )),
         if (remaining > 0)
           Container(
             width: size,

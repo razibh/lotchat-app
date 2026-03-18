@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 // User Roles Enum
 enum UserRole {
   user,
@@ -16,6 +18,31 @@ enum UserStatus {
   suspended,
   pending,
   verified,
+}
+
+// User Tier Enum
+enum UserTier {
+  normal,
+  vip,
+  vip1,
+  vip2,
+  vip3,
+  vip4,
+  vip5,
+  vip6,
+  vip7,
+  vip8,
+  vip9,
+  vip10,
+  svip,
+  svip1,
+  svip2,
+  svip3,
+  svip4,
+  svip5,
+  svip6,
+  svip7,
+  svip8
 }
 
 // Badge Type Enum
@@ -40,253 +67,6 @@ enum Gender {
 
 // User Class
 class User {
-
-  User({
-    required this.id,
-    required this.username,
-    required this.email,
-    required this.name,
-    required this.role, required this.countryId, required this.createdAt, this.avatar,
-    this.coverImage,
-    this.bio,
-    this.status = UserStatus.active,
-    this.updatedAt,
-    this.lastLoginAt,
-    this.isVerified = false,
-    this.isEmailVerified = false,
-    this.isPhoneVerified = false,
-    this.isTwoFactorEnabled = false,
-    this.badge,
-    this.metadata,
-    this.stats,
-    this.settings,
-    this.socialLinks,
-    this.gender,
-    this.dateOfBirth,
-    this.phoneNumber,
-    this.address,
-  });
-
-  // Factory constructor for regular user
-  factory User.regular({
-    required String id,
-    required String email,
-    required String name,
-    required String username,
-    required String countryId,
-    String? avatar,
-    String? bio,
-    UserStatus status = UserStatus.active,
-    bool isVerified = false,
-  }) {
-    return User(
-      id: id,
-      username: username,
-      email: email,
-      name: name,
-      avatar: avatar,
-      bio: bio,
-      role: UserRole.user,
-      status: status,
-      countryId: countryId,
-      createdAt: DateTime.now(),
-      isVerified: isVerified,
-    );
-  }
-
-  // Factory constructor for host
-  factory User.host({
-    required String id,
-    required String email,
-    required String name,
-    required String username,
-    required String countryId,
-    required String agencyId,
-    String? avatar,
-    String? bio,
-    UserStatus status = UserStatus.active,
-    bool isVerified = false,
-  }) {
-    return User(
-      id: id,
-      username: username,
-      email: email,
-      name: name,
-      avatar: avatar,
-      bio: bio,
-      role: UserRole.host,
-      status: status,
-      countryId: countryId,
-      createdAt: DateTime.now(),
-      isVerified: isVerified,
-      badge: UserBadge(
-        type: BadgeType.host,
-        isVerified: isVerified,
-      ),
-      metadata: <String, dynamic>{'agencyId': agencyId},
-    );
-  }
-
-  // Factory constructor for agency
-  factory User.agency({
-    required String id,
-    required String email,
-    required String name,
-    required String username,
-    required String countryId,
-    required String agencyId,
-    String? avatar,
-    String? bio,
-    UserStatus status = UserStatus.active,
-    bool isVerified = false,
-  }) {
-    return User(
-      id: id,
-      username: username,
-      email: email,
-      name: name,
-      avatar: avatar,
-      bio: bio,
-      role: UserRole.agency,
-      status: status,
-      countryId: countryId,
-      createdAt: DateTime.now(),
-      isVerified: isVerified,
-      badge: UserBadge(
-        type: BadgeType.agency,
-        agencyId: agencyId,
-        isVerified: isVerified,
-      ),
-      metadata: <String, dynamic>{'agencyId': agencyId},
-    );
-  }
-
-  // Factory constructor for country manager
-  factory User.countryManager({
-    required String id,
-    required String email,
-    required String name,
-    required String username,
-    required String countryId,
-    String? avatar,
-    String? bio,
-    UserStatus status = UserStatus.active,
-    bool isVerified = false,
-  }) {
-    return User(
-      id: id,
-      username: username,
-      email: email,
-      name: name,
-      avatar: avatar,
-      bio: bio,
-      role: UserRole.countryManager,
-      status: status,
-      countryId: countryId,
-      createdAt: DateTime.now(),
-      isVerified: isVerified,
-      badge: UserBadge(
-        type: BadgeType.official,
-        isVerified: isVerified,
-      ),
-    );
-  }
-
-  // Factory constructor for coin seller
-  factory User.coinSeller({
-    required String id,
-    required String email,
-    required String name,
-    required String username,
-    required String countryId,
-    required String sellerId,
-    String? avatar,
-    String? bio,
-    UserStatus status = UserStatus.active,
-    bool isVerified = false,
-  }) {
-    return User(
-      id: id,
-      username: username,
-      email: email,
-      name: name,
-      avatar: avatar,
-      bio: bio,
-      role: UserRole.coinSeller,
-      status: status,
-      countryId: countryId,
-      createdAt: DateTime.now(),
-      isVerified: isVerified,
-      badge: UserBadge(
-        type: BadgeType.coinSeller,
-        sellerId: sellerId,
-        isVerified: isVerified,
-      ),
-      metadata: <String, dynamic>{'sellerId': sellerId},
-    );
-  }
-
-  // Factory constructor for admin
-  factory User.admin({
-    required String id,
-    required String email,
-    required String name,
-    required String username,
-    String? avatar,
-    String? bio,
-    UserStatus status = UserStatus.active,
-    bool isVerified = true,
-  }) {
-    return User(
-      id: id,
-      username: username,
-      email: email,
-      name: name,
-      avatar: avatar,
-      bio: bio,
-      role: UserRole.admin,
-      status: status,
-      countryId: 'global',
-      createdAt: DateTime.now(),
-      isVerified: isVerified,
-      badge: UserBadge(
-        type: BadgeType.official,
-        isVerified: true,
-      ),
-    );
-  }
-
-  // JSON deserialization
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['id'],
-      username: json['username'],
-      email: json['email'],
-      name: json['name'],
-      avatar: json['avatar'],
-      coverImage: json['coverImage'],
-      bio: json['bio'],
-      role: _parseUserRole(json['role']),
-      status: _parseUserStatus(json['status']),
-      countryId: json['countryId'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
-      lastLoginAt: json['lastLoginAt'] != null ? DateTime.parse(json['lastLoginAt']) : null,
-      isVerified: json['isVerified'] ?? false,
-      isEmailVerified: json['isEmailVerified'] ?? false,
-      isPhoneVerified: json['isPhoneVerified'] ?? false,
-      isTwoFactorEnabled: json['isTwoFactorEnabled'] ?? false,
-      badge: json['badge'] != null ? UserBadge.fromJson(json['badge']) : null,
-      metadata: json['metadata'],
-      stats: json['stats'] != null ? UserStats.fromJson(json['stats']) : null,
-      settings: json['settings'] != null ? UserSettings.fromJson(json['settings']) : null,
-      socialLinks: json['socialLinks'] != null ? SocialLinks.fromJson(json['socialLinks']) : null,
-      gender: json['gender'] != null ? _parseGender(json['gender']) : null,
-      dateOfBirth: json['dateOfBirth'] != null ? DateTime.parse(json['dateOfBirth']) : null,
-      phoneNumber: json['phoneNumber'],
-      address: json['address'],
-    );
-  }
   final String id;
   final String username;
   final String email;
@@ -313,6 +93,415 @@ class User {
   final DateTime? dateOfBirth;
   final String? phoneNumber;
   final String? address;
+  final int coins;
+  final int diamonds;
+  final UserTier? tier;
+
+  // 🟢 NEW fields for friend_service
+  final bool isOnline;
+  final List<String> interests;
+  final String? photoURL; // alias for avatar
+
+  // 🟢 NEW fields for edit_profile
+  final String? location;
+  final String? website;
+
+  User({
+    required this.id,
+    required this.username,
+    required this.email,
+    required this.name,
+    required this.role,
+    required this.countryId,
+    required this.createdAt,
+    this.avatar,
+    this.coverImage,
+    this.bio,
+    this.status = UserStatus.active,
+    this.updatedAt,
+    this.lastLoginAt,
+    this.isVerified = false,
+    this.isEmailVerified = false,
+    this.isPhoneVerified = false,
+    this.isTwoFactorEnabled = false,
+    this.badge,
+    this.metadata,
+    this.stats,
+    this.settings,
+    this.socialLinks,
+    this.gender,
+    this.dateOfBirth,
+    this.phoneNumber,
+    this.address,
+    this.coins = 0,
+    this.diamonds = 0,
+    this.tier,
+    // 🟢 নতুন fields
+    this.isOnline = false,
+    this.interests = const [],
+    this.photoURL,
+    this.location,
+    this.website,
+  });
+
+  // Factory constructor for regular user
+  factory User.regular({
+    required String id,
+    required String email,
+    required String name,
+    required String username,
+    required String countryId,
+    String? avatar,
+    String? bio,
+    UserStatus status = UserStatus.active,
+    bool isVerified = false,
+    int coins = 0,
+    int diamonds = 0,
+    UserTier? tier,
+    bool isOnline = false,
+    List<String>? interests,
+    String? photoURL,
+    String? phoneNumber,
+    DateTime? createdAt,
+    String? location,
+    String? website,
+  }) {
+    return User(
+      id: id,
+      username: username,
+      email: email,
+      name: name,
+      avatar: avatar,
+      photoURL: photoURL ?? avatar,
+      bio: bio,
+      role: UserRole.user,
+      status: status,
+      countryId: countryId,
+      createdAt: createdAt ?? DateTime.now(),
+      isVerified: isVerified,
+      coins: coins,
+      diamonds: diamonds,
+      tier: tier,
+      isOnline: isOnline,
+      interests: interests ?? [],
+      phoneNumber: phoneNumber,
+      location: location,
+      website: website,
+    );
+  }
+
+  // Factory constructor for host
+  factory User.host({
+    required String id,
+    required String email,
+    required String name,
+    required String username,
+    required String countryId,
+    required String agencyId,
+    String? avatar,
+    String? bio,
+    UserStatus status = UserStatus.active,
+    bool isVerified = false,
+    int coins = 0,
+    int diamonds = 0,
+    UserTier? tier,
+    bool isOnline = false,
+    List<String>? interests,
+    String? photoURL,
+    String? phoneNumber,
+    DateTime? createdAt,
+    String? location,
+    String? website,
+  }) {
+    return User(
+      id: id,
+      username: username,
+      email: email,
+      name: name,
+      avatar: avatar,
+      photoURL: photoURL ?? avatar,
+      bio: bio,
+      role: UserRole.host,
+      status: status,
+      countryId: countryId,
+      createdAt: createdAt ?? DateTime.now(),
+      isVerified: isVerified,
+      badge: UserBadge(
+        type: BadgeType.host,
+        isVerified: isVerified,
+      ),
+      metadata: {'agencyId': agencyId},
+      coins: coins,
+      diamonds: diamonds,
+      tier: tier,
+      isOnline: isOnline,
+      interests: interests ?? [],
+      phoneNumber: phoneNumber,
+      location: location,
+      website: website,
+    );
+  }
+
+  // Factory constructor for agency
+  factory User.agency({
+    required String id,
+    required String email,
+    required String name,
+    required String username,
+    required String countryId,
+    required String agencyId,
+    String? avatar,
+    String? bio,
+    UserStatus status = UserStatus.active,
+    bool isVerified = false,
+    int coins = 0,
+    int diamonds = 0,
+    UserTier? tier,
+    bool isOnline = false,
+    List<String>? interests,
+    String? photoURL,
+    String? phoneNumber,
+    DateTime? createdAt,
+    String? location,
+    String? website,
+  }) {
+    return User(
+      id: id,
+      username: username,
+      email: email,
+      name: name,
+      avatar: avatar,
+      photoURL: photoURL ?? avatar,
+      bio: bio,
+      role: UserRole.agency,
+      status: status,
+      countryId: countryId,
+      createdAt: createdAt ?? DateTime.now(),
+      isVerified: isVerified,
+      badge: UserBadge(
+        type: BadgeType.agency,
+        agencyId: agencyId,
+        isVerified: isVerified,
+      ),
+      metadata: {'agencyId': agencyId},
+      coins: coins,
+      diamonds: diamonds,
+      tier: tier,
+      isOnline: isOnline,
+      interests: interests ?? [],
+      phoneNumber: phoneNumber,
+      location: location,
+      website: website,
+    );
+  }
+
+  // Factory constructor for country manager
+  factory User.countryManager({
+    required String id,
+    required String email,
+    required String name,
+    required String username,
+    required String countryId,
+    String? avatar,
+    String? bio,
+    UserStatus status = UserStatus.active,
+    bool isVerified = false,
+    int coins = 0,
+    int diamonds = 0,
+    UserTier? tier,
+    bool isOnline = false,
+    List<String>? interests,
+    String? photoURL,
+    String? phoneNumber,
+    DateTime? createdAt,
+    String? location,
+    String? website,
+  }) {
+    return User(
+      id: id,
+      username: username,
+      email: email,
+      name: name,
+      avatar: avatar,
+      photoURL: photoURL ?? avatar,
+      bio: bio,
+      role: UserRole.countryManager,
+      status: status,
+      countryId: countryId,
+      createdAt: createdAt ?? DateTime.now(),
+      isVerified: isVerified,
+      badge: UserBadge(
+        type: BadgeType.official,
+        isVerified: isVerified,
+      ),
+      coins: coins,
+      diamonds: diamonds,
+      tier: tier,
+      isOnline: isOnline,
+      interests: interests ?? [],
+      phoneNumber: phoneNumber,
+      location: location,
+      website: website,
+    );
+  }
+
+  // Factory constructor for coin seller
+  factory User.coinSeller({
+    required String id,
+    required String email,
+    required String name,
+    required String username,
+    required String countryId,
+    required String sellerId,
+    String? avatar,
+    String? bio,
+    UserStatus status = UserStatus.active,
+    bool isVerified = false,
+    int coins = 0,
+    int diamonds = 0,
+    UserTier? tier,
+    bool isOnline = false,
+    List<String>? interests,
+    String? photoURL,
+    String? phoneNumber,
+    DateTime? createdAt,
+    String? location,
+    String? website,
+  }) {
+    return User(
+      id: id,
+      username: username,
+      email: email,
+      name: name,
+      avatar: avatar,
+      photoURL: photoURL ?? avatar,
+      bio: bio,
+      role: UserRole.coinSeller,
+      status: status,
+      countryId: countryId,
+      createdAt: createdAt ?? DateTime.now(),
+      isVerified: isVerified,
+      badge: UserBadge(
+        type: BadgeType.coinSeller,
+        sellerId: sellerId,
+        isVerified: isVerified,
+      ),
+      metadata: {'sellerId': sellerId},
+      coins: coins,
+      diamonds: diamonds,
+      tier: tier,
+      isOnline: isOnline,
+      interests: interests ?? [],
+      phoneNumber: phoneNumber,
+      location: location,
+      website: website,
+    );
+  }
+
+  // Factory constructor for admin
+  factory User.admin({
+    required String id,
+    required String email,
+    required String name,
+    required String username,
+    String? avatar,
+    String? bio,
+    UserStatus status = UserStatus.active,
+    bool isVerified = true,
+    int coins = 0,
+    int diamonds = 0,
+    UserTier? tier,
+    bool isOnline = false,
+    List<String>? interests,
+    String? photoURL,
+    String? phoneNumber,
+    DateTime? createdAt,
+    String? location,
+    String? website,
+  }) {
+    return User(
+      id: id,
+      username: username,
+      email: email,
+      name: name,
+      avatar: avatar,
+      photoURL: photoURL ?? avatar,
+      bio: bio,
+      role: UserRole.admin,
+      status: status,
+      countryId: 'global',
+      createdAt: createdAt ?? DateTime.now(),
+      isVerified: isVerified,
+      badge: UserBadge(
+        type: BadgeType.official,
+        isVerified: true,
+      ),
+      coins: coins,
+      diamonds: diamonds,
+      tier: tier,
+      isOnline: isOnline,
+      interests: interests ?? [],
+      phoneNumber: phoneNumber,
+      location: location,
+      website: website,
+    );
+  }
+
+  // JSON deserialization
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'] ?? '',
+      username: json['username'] ?? '',
+      email: json['email'] ?? '',
+      name: json['name'] ?? '',
+      avatar: json['avatar'],
+      coverImage: json['coverImage'],
+      photoURL: json['photoURL'] ?? json['avatar'],
+      bio: json['bio'],
+      role: _parseUserRole(json['role']),
+      status: _parseUserStatus(json['status']),
+      countryId: json['countryId'] ?? '',
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      lastLoginAt: json['lastLoginAt'] != null ? DateTime.parse(json['lastLoginAt']) : null,
+      isVerified: json['isVerified'] ?? false,
+      isEmailVerified: json['isEmailVerified'] ?? false,
+      isPhoneVerified: json['isPhoneVerified'] ?? false,
+      isTwoFactorEnabled: json['isTwoFactorEnabled'] ?? false,
+      badge: json['badge'] != null ? UserBadge.fromJson(json['badge']) : null,
+      metadata: json['metadata'],
+      stats: json['stats'] != null ? UserStats.fromJson(json['stats']) : null,
+      settings: json['settings'] != null ? UserSettings.fromJson(json['settings']) : null,
+      socialLinks: json['socialLinks'] != null ? SocialLinks.fromJson(json['socialLinks']) : null,
+      gender: json['gender'] != null ? _parseGender(json['gender']) : null,
+      dateOfBirth: json['dateOfBirth'] != null ? DateTime.parse(json['dateOfBirth']) : null,
+      phoneNumber: json['phoneNumber'],
+      address: json['address'],
+      coins: json['coins'] ?? 0,
+      diamonds: json['diamonds'] ?? 0,
+      tier: json['tier'] != null ? _parseUserTier(json['tier']) : null,
+      // 🟢 নতুন fields parse
+      isOnline: json['isOnline'] ?? false,
+      interests: List<String>.from(json['interests'] ?? []),
+      location: json['location'],
+      website: json['website'],
+    );
+  }
+
+  // Parse UserTier from string
+  static UserTier? _parseUserTier(String? tier) {
+    if (tier == null) return null;
+    switch (tier.toLowerCase()) {
+      case 'vip':
+        return UserTier.vip;
+      case 'svip':
+        return UserTier.svip;
+      default:
+        return UserTier.normal;
+    }
+  }
 
   // Copy with method
   User copyWith({
@@ -342,6 +531,15 @@ class User {
     DateTime? dateOfBirth,
     String? phoneNumber,
     String? address,
+    int? coins,
+    int? diamonds,
+    UserTier? tier,
+    // 🟢 নতুন fields
+    bool? isOnline,
+    List<String>? interests,
+    String? photoURL,
+    String? location,
+    String? website,
   }) {
     return User(
       id: id ?? this.id,
@@ -350,6 +548,7 @@ class User {
       name: name ?? this.name,
       avatar: avatar ?? this.avatar,
       coverImage: coverImage ?? this.coverImage,
+      photoURL: photoURL ?? this.photoURL,
       bio: bio ?? this.bio,
       role: role ?? this.role,
       status: status ?? this.status,
@@ -370,7 +569,55 @@ class User {
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       address: address ?? this.address,
+      coins: coins ?? this.coins,
+      diamonds: diamonds ?? this.diamonds,
+      tier: tier ?? this.tier,
+      isOnline: isOnline ?? this.isOnline,
+      interests: interests ?? this.interests,
+      location: location ?? this.location,
+      website: website ?? this.website,
     );
+  }
+
+  // JSON serialization
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'username': username,
+      'email': email,
+      'name': name,
+      'avatar': avatar,
+      'coverImage': coverImage,
+      'photoURL': photoURL,
+      'bio': bio,
+      'role': role.toString(),
+      'status': status.toString(),
+      'countryId': countryId,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+      'lastLoginAt': lastLoginAt?.toIso8601String(),
+      'isVerified': isVerified,
+      'isEmailVerified': isEmailVerified,
+      'isPhoneVerified': isPhoneVerified,
+      'isTwoFactorEnabled': isTwoFactorEnabled,
+      'badge': badge?.toJson(),
+      'metadata': metadata,
+      'stats': stats?.toJson(),
+      'settings': settings?.toJson(),
+      'socialLinks': socialLinks?.toJson(),
+      'gender': gender?.toString(),
+      'dateOfBirth': dateOfBirth?.toIso8601String(),
+      'phoneNumber': phoneNumber,
+      'address': address,
+      'coins': coins,
+      'diamonds': diamonds,
+      'tier': tier?.toString().split('.').last,
+      // 🟢 নতুন fields
+      'isOnline': isOnline,
+      'interests': interests,
+      'location': location,
+      'website': website,
+    };
   }
 
   // Role-based navigation
@@ -395,17 +642,17 @@ class User {
   bool canAccess(String feature) {
     switch (role) {
       case UserRole.admin:
-        return true; // Admin can access everything
+        return true;
       case UserRole.countryManager:
-        return <String>['agencies', 'hosts', 'reports', 'issues', 'recruitment'].contains(feature);
+        return ['agencies', 'hosts', 'reports', 'issues', 'recruitment'].contains(feature);
       case UserRole.agency:
-        return <String>['hosts', 'earnings', 'commission', 'recruit'].contains(feature);
+        return ['hosts', 'earnings', 'commission', 'recruit'].contains(feature);
       case UserRole.coinSeller:
-        return <String>['inventory', 'transfers', 'earnings', 'packages'].contains(feature);
+        return ['inventory', 'transfers', 'earnings', 'packages'].contains(feature);
       case UserRole.host:
-        return <String>['rooms', 'earnings', 'analytics', 'schedule'].contains(feature);
+        return ['rooms', 'earnings', 'analytics', 'schedule'].contains(feature);
       default:
-        return <String>['games', 'wallet', 'profile', 'friends', 'rooms'].contains(feature);
+        return ['games', 'wallet', 'profile', 'friends', 'rooms'].contains(feature);
     }
   }
 
@@ -415,45 +662,13 @@ class User {
   // Initials for avatar
   String get initials {
     if (name.isNotEmpty) {
-      final var nameParts = name.split(' ');
+      final nameParts = name.split(' ');
       if (nameParts.length > 1) {
         return '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase();
       }
       return name[0].toUpperCase();
     }
     return username[0].toUpperCase();
-  }
-
-  // JSON serialization
-  Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'id': id,
-      'username': username,
-      'email': email,
-      'name': name,
-      'avatar': avatar,
-      'coverImage': coverImage,
-      'bio': bio,
-      'role': role.toString(),
-      'status': status.toString(),
-      'countryId': countryId,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
-      'lastLoginAt': lastLoginAt?.toIso8601String(),
-      'isVerified': isVerified,
-      'isEmailVerified': isEmailVerified,
-      'isPhoneVerified': isPhoneVerified,
-      'isTwoFactorEnabled': isTwoFactorEnabled,
-      'badge': badge?.toJson(),
-      'metadata': metadata,
-      'stats': stats?.toJson(),
-      'settings': settings?.toJson(),
-      'socialLinks': socialLinks?.toJson(),
-      'gender': gender?.toString(),
-      'dateOfBirth': dateOfBirth?.toIso8601String(),
-      'phoneNumber': phoneNumber,
-      'address': address,
-    };
   }
 
   // Helper methods for parsing enums
@@ -509,6 +724,11 @@ class User {
 
 // User Badge Class
 class UserBadge {
+  final BadgeType type;
+  final String? agencyId;
+  final String? sellerId;
+  final DateTime? assignedAt;
+  final bool isVerified;
 
   UserBadge({
     required this.type,
@@ -527,14 +747,9 @@ class UserBadge {
       isVerified: json['isVerified'] ?? false,
     );
   }
-  final BadgeType type;
-  final String? agencyId;
-  final String? sellerId;
-  final DateTime? assignedAt;
-  final bool isVerified;
 
   bool get hasBadge => type != BadgeType.none;
-  
+
   String get badgeName {
     switch (type) {
       case BadgeType.agency:
@@ -559,26 +774,26 @@ class UserBadge {
   Color get badgeColor {
     switch (type) {
       case BadgeType.agency:
-        return const Color(0xFF9C27B0); // Purple
+        return const Color(0xFF9C27B0);
       case BadgeType.coinSeller:
-        return const Color(0xFFFF9800); // Orange
+        return const Color(0xFFFF9800);
       case BadgeType.official:
-        return const Color(0xFF2196F3); // Blue
+        return const Color(0xFF2196F3);
       case BadgeType.vip:
-        return const Color(0xFFF44336); // Red
+        return const Color(0xFFF44336);
       case BadgeType.host:
-        return const Color(0xFFE91E63); // Pink
+        return const Color(0xFFE91E63);
       case BadgeType.moderator:
-        return const Color(0xFF4CAF50); // Green
+        return const Color(0xFF4CAF50);
       case BadgeType.streamer:
-        return const Color(0xFF673AB7); // Deep Purple
+        return const Color(0xFF673AB7);
       default:
         return Colors.grey;
     }
   }
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
+    return {
       'type': type.toString(),
       'agencyId': agencyId,
       'sellerId': sellerId,
@@ -611,6 +826,29 @@ class UserBadge {
 
 // User Stats Class
 class UserStats {
+  final int followers;
+  final int following;
+  final int friends;
+  final int totalRooms;
+  final int totalHours;
+  final int totalGifts;
+  final int totalGiftsReceived;
+  final int totalGiftsSent;
+  final double totalEarnings;
+  final double totalSpent;
+  final double totalWithdrawn;
+  final double coinBalance;
+  final double diamondBalance;
+  final int level;
+  final int xp;
+  final int xpToNextLevel;
+  final int streak;
+  final int longestStreak;
+  final double rating;
+  final int rank;
+  final int achievements;
+  final int badges;
+  final DateTime? lastActive;
 
   UserStats({
     this.followers = 0,
@@ -665,32 +903,9 @@ class UserStats {
       lastActive: json['lastActive'] != null ? DateTime.parse(json['lastActive']) : null,
     );
   }
-  final int followers;
-  final int following;
-  final int friends;
-  final int totalRooms;
-  final int totalHours;
-  final int totalGifts;
-  final int totalGiftsReceived;
-  final int totalGiftsSent;
-  final double totalEarnings;
-  final double totalSpent;
-  final double totalWithdrawn;
-  final double coinBalance;
-  final double diamondBalance;
-  final int level;
-  final int xp;
-  final int xpToNextLevel;
-  final int streak;
-  final int longestStreak;
-  final double rating;
-  final int rank;
-  final int achievements;
-  final int badges;
-  final DateTime? lastActive;
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
+    return {
       'followers': followers,
       'following': following,
       'friends': friends,
@@ -720,6 +935,21 @@ class UserStats {
 
 // User Settings Class
 class UserSettings {
+  final bool notifications;
+  final bool soundEnabled;
+  final bool vibrationEnabled;
+  final bool darkMode;
+  final String language;
+  final bool privateAccount;
+  final bool showOnlineStatus;
+  final bool allowFriendRequests;
+  final bool allowMessages;
+  final bool allowGifts;
+  final bool allowComments;
+  final bool saveHistory;
+  final bool autoPlay;
+  final int videoQuality;
+  final String? theme;
 
   UserSettings({
     this.notifications = true,
@@ -758,24 +988,9 @@ class UserSettings {
       theme: json['theme'],
     );
   }
-  final bool notifications;
-  final bool soundEnabled;
-  final bool vibrationEnabled;
-  final bool darkMode;
-  final String language;
-  final bool privateAccount;
-  final bool showOnlineStatus;
-  final bool allowFriendRequests;
-  final bool allowMessages;
-  final bool allowGifts;
-  final bool allowComments;
-  final bool saveHistory;
-  final bool autoPlay;
-  final int videoQuality;
-  final String? theme;
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
+    return {
       'notifications': notifications,
       'soundEnabled': soundEnabled,
       'vibrationEnabled': vibrationEnabled,
@@ -797,6 +1012,16 @@ class UserSettings {
 
 // Social Links Class
 class SocialLinks {
+  final String? facebook;
+  final String? instagram;
+  final String? twitter;
+  final String? youtube;
+  final String? tiktok;
+  final String? snapchat;
+  final String? discord;
+  final String? telegram;
+  final String? whatsapp;
+  final String? website;
 
   SocialLinks({
     this.facebook,
@@ -825,19 +1050,9 @@ class SocialLinks {
       website: json['website'],
     );
   }
-  final String? facebook;
-  final String? instagram;
-  final String? twitter;
-  final String? youtube;
-  final String? tiktok;
-  final String? snapchat;
-  final String? discord;
-  final String? telegram;
-  final String? whatsapp;
-  final String? website;
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
+    return {
       'facebook': facebook,
       'instagram': instagram,
       'twitter': twitter,
@@ -854,22 +1069,21 @@ class SocialLinks {
 
 // Level Calculator Extension
 extension LevelCalculator on UserStats {
-  int get currentLevel {
-    // Level calculation formula
-    return level;
-  }
+  int get currentLevel => level;
 
-  double get levelProgress {
-    return xp / xpToNextLevel;
-  }
+  double get levelProgress => xp / xpToNextLevel;
 
-  int get xpNeededForNextLevel {
-    return xpToNextLevel - xp;
-  }
+  int get xpNeededForNextLevel => xpToNextLevel - xp;
 }
 
 // User Achievement Class
 class UserAchievement {
+  final String id;
+  final String name;
+  final String description;
+  final String icon;
+  final DateTime earnedAt;
+  final int xpReward;
 
   UserAchievement({
     required this.id,
@@ -882,23 +1096,19 @@ class UserAchievement {
 
   factory UserAchievement.fromJson(Map<String, dynamic> json) {
     return UserAchievement(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      icon: json['icon'],
-      earnedAt: DateTime.parse(json['earnedAt']),
-      xpReward: json['xpReward'],
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      icon: json['icon'] ?? '',
+      earnedAt: json['earnedAt'] != null
+          ? DateTime.parse(json['earnedAt'])
+          : DateTime.now(),
+      xpReward: json['xpReward'] ?? 0,
     );
   }
-  final String id;
-  final String name;
-  final String description;
-  final String icon;
-  final DateTime earnedAt;
-  final int xpReward;
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
+    return {
       'id': id,
       'name': name,
       'description': description,
@@ -911,30 +1121,6 @@ class UserAchievement {
 
 // User Friend Class
 class UserFriend {
-
-  UserFriend({
-    required this.userId,
-    required this.username,
-    required this.name,
-    required this.isOnline, required this.isFollowing, required this.isFollower, required this.isMutual, this.avatar,
-    this.lastActive,
-    this.friendSince,
-  });
-
-  factory UserFriend.fromJson(Map<String, dynamic> json) {
-    return UserFriend(
-      userId: json['userId'],
-      username: json['username'],
-      name: json['name'],
-      avatar: json['avatar'],
-      isOnline: json['isOnline'] ?? false,
-      lastActive: json['lastActive'] != null ? DateTime.parse(json['lastActive']) : null,
-      isFollowing: json['isFollowing'] ?? false,
-      isFollower: json['isFollower'] ?? false,
-      isMutual: json['isMutual'] ?? false,
-      friendSince: json['friendSince'] != null ? DateTime.parse(json['friendSince']) : null,
-    );
-  }
   final String userId;
   final String username;
   final String name;
@@ -946,8 +1132,36 @@ class UserFriend {
   final bool isMutual;
   final DateTime? friendSince;
 
+  UserFriend({
+    required this.userId,
+    required this.username,
+    required this.name,
+    required this.isOnline,
+    required this.isFollowing,
+    required this.isFollower,
+    required this.isMutual,
+    this.avatar,
+    this.lastActive,
+    this.friendSince,
+  });
+
+  factory UserFriend.fromJson(Map<String, dynamic> json) {
+    return UserFriend(
+      userId: json['userId'] ?? '',
+      username: json['username'] ?? '',
+      name: json['name'] ?? '',
+      avatar: json['avatar'],
+      isOnline: json['isOnline'] ?? false,
+      lastActive: json['lastActive'] != null ? DateTime.parse(json['lastActive']) : null,
+      isFollowing: json['isFollowing'] ?? false,
+      isFollower: json['isFollower'] ?? false,
+      isMutual: json['isMutual'] ?? false,
+      friendSince: json['friendSince'] != null ? DateTime.parse(json['friendSince']) : null,
+    );
+  }
+
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
+    return {
       'userId': userId,
       'username': username,
       'name': name,

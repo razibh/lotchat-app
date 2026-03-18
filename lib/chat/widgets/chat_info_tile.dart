@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 
 class ChatInfoTile extends StatelessWidget {
-
   const ChatInfoTile({
-    required this.icon, required this.title, super.key,
+    super.key,
+    required this.icon,
+    required this.title,
     this.subtitle,
     this.trailing,
     this.onTap,
     this.color,
   });
+
   final IconData icon;
   final String title;
   final String? subtitle;
@@ -40,8 +43,8 @@ class ChatInfoTile extends StatelessWidget {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<IconData>('icon', icon));
     properties.add(StringProperty('title', title));
-    properties.add(StringProperty('subtitle', subtitle));
+    properties.add(StringProperty('subtitle', subtitle, defaultValue: null));
     properties.add(ObjectFlagProperty<VoidCallback?>.has('onTap', onTap));
-    properties.add(ColorProperty('color', color));
+    properties.add(ColorProperty('color', color, defaultValue: null));
   }
 }

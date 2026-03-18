@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 mixin FormMixin<T extends StatefulWidget> on State<T> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final Map<String, TextEditingController> _controllers = <String, >{};
-  final Map<String, FocusNode> _focusNodes = <String, >{};
-  
+  final Map<String, TextEditingController> _controllers = {};
+  final Map<String, FocusNode> _focusNodes = {};
+
   AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
   bool _isSubmitting = false;
-  Map<String, List<String>> _fieldErrors = <String, List<String>>{};
+  Map<String, List<String>> _fieldErrors = {};
 
   GlobalKey<FormState> get formKey => _formKey;
   AutovalidateMode get autovalidateMode => _autovalidateMode;
@@ -124,7 +124,7 @@ mixin FormMixin<T extends StatefulWidget> on State<T> {
 
   Map<String, List<String>> _parseErrors(Object error) {
     // Override this to parse API errors
-    return <String, List<String>>{};
+    return {};
   }
 
   // Field validation helpers
@@ -174,12 +174,109 @@ mixin FormMixin<T extends StatefulWidget> on State<T> {
     if (value.length < 6) {
       return 'Password must be at least 6 characters';
     }
-    if (!value.contains(RegExp('[A-Z]'))) {
+    if (!value.contains(RegExp(r'[A-Z]'))) {
       return 'Password must contain at least one uppercase letter';
     }
-    if (!value.contains(Reg
-     <Null>{
-      return null,;
-    return null;
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return 'Password must contain at least one number';
+    }
+    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      return 'Password must contain at least one special character';
     }
     return null;
+  }
+
+  String? confirmPasswordValidator(String? value, String password, {String fieldName = 'Confirm password'}) {
+    if (value == null || value.isEmpty) return '$fieldName is required';
+    if (value != password) return 'Passwords do not match';
+    return null;
+  }
+
+  String? urlValidator(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final RegExp urlRegExp = RegExp(
+      r'^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$',
+    );
+    if (!urlRegExp.hasMatch(value)) {
+      return 'Please enter a valid URL';
+    }
+    return null;
+  }
+
+  String? numericValidator(String? value, {String fieldName = 'This field'}) {
+    if (value == null || value.isEmpty) return null;
+    if (double.tryParse(value) == null) {
+      return '$fieldName must be a number';
+    }
+    return null;
+  }
+
+  String? positiveNumberValidator(String? value, {String fieldName = 'This field'}) {
+    if (value == null || value.isEmpty) return null;
+    final num? number = num.tryParse(value);
+    if (number == null) {
+      return '$fieldName must be a number';
+    }
+    if (number <= 0) {
+      return '$fieldName must be a positive number';
+    }
+    return null;
+  }
+
+  String? minValueValidator(String? value, num min, {String fieldName = 'This field'}) {
+    if (value == null || value.isEmpty) return null;
+    final num? number = num.tryParse(value);
+    if (number == null) return '$fieldName must be a number';
+    if (number < min) {
+      return '$fieldName must be at least $min';
+    }
+    return null;
+  }
+
+  String? maxValueValidator(String? value, num max, {String fieldName = 'This field'}) {
+    if (value == null || value.isEmpty) return null;
+    final num? number = num.tryParse(value);
+    if (number == null) return '$fieldName must be a number';
+    if (number > max) {
+      return '$fieldName cannot exceed $max';
+    }
+    return null;
+  }
+
+  String? rangeValidator(String? value, num min, num max, {String fieldName = 'This field'}) {
+    if (value == null || value.isEmpty) return null;
+    final num? number = num.tryParse(value);
+    if (number == null) return '$fieldName must be a number';
+    if (number < min || number > max) {
+      return '$fieldName must be between $min and $max';
+    }
+    return null;
+  }
+
+  String? alphaValidator(String? value, {String fieldName = 'This field'}) {
+    if (value == null || value.isEmpty) return null;
+    if (!RegExp(r'^[a-zA-Z]+$').hasMatch(value)) {
+      return '$fieldName must contain only letters';
+    }
+    return null;
+  }
+
+  String? alphanumericValidator(String? value, {String fieldName = 'This field'}) {
+    if (value == null || value.isEmpty) return null;
+    if (!RegExp(r'^[a-zA-Z0-9]+$').hasMatch(value)) {
+      return '$fieldName must contain only letters and numbers';
+    }
+    return null;
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    for (final focusNode in _focusNodes.values) {
+      focusNode.dispose();
+    }
+    super.dispose();
+  }
+}

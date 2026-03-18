@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/gift_service.dart';
-import '../../core/utils/date_formatter.dart';
-import '../../widgets/common/custom_button.dart';
+import '../../core/utils/date_formatters.dart';
 import '../../widgets/common/empty_state_widget.dart';
 import '../../widgets/animation/fade_animation.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../features/profile/profile_screen.dart';
-import '../../features/gifts/gift_panel.dart';
+import '../../widgets/gift_panel.dart';
+
 
 class PostDetailScreen extends StatefulWidget {
+  final Map<String, dynamic> post;
 
   const PostDetailScreen({
-    required this.post, super.key,
+    required this.post,
+    super.key,
   });
-  final Map<String, dynamic> post;
 
   @override
   State<PostDetailScreen> createState() => _PostDetailScreenState();
@@ -29,15 +31,15 @@ class PostDetailScreen extends StatefulWidget {
   }
 }
 
-class _PostDetailScreenState extends State<PostDetailScreen> 
+class _PostDetailScreenState extends State<PostDetailScreen>
     with LoadingMixin, ToastMixin {
-  
+
   final NotificationService _notificationService = ServiceLocator().get<NotificationService>();
   final GiftService _giftService = ServiceLocator().get<GiftService>();
-  
+
   late Map<String, dynamic> _post;
   final TextEditingController _commentController = TextEditingController();
-  List<Map<String, dynamic>> _comments = <Map<String, dynamic>>[];
+  List<Map<String, dynamic>> _comments = [];
   bool _isLiked = false;
   int _likeCount = 0;
   bool _showGiftPanel = false;
@@ -59,8 +61,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   Future<void> _loadComments() async {
     // Mock comments
     setState(() {
-      _comments = List.generate(10, (int index) {
-        return <String, dynamic>{
+      _comments = List.generate(10, (index) {
+        return {
           'id': 'comment_$index',
           'userId': 'user_$index',
           'username': 'User ${index + 1}',
@@ -68,7 +70,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           'content': 'This is comment number ${index + 1}. Great post!',
           'timestamp': DateTime.now().subtract(Duration(minutes: index * 5)),
           'likes': index * 2,
-          'replies': <dynamic>[],
+          'replies': [],
         };
       });
     });
@@ -84,7 +86,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   Future<void> _addComment() async {
     if (_commentController.text.trim().isEmpty) return;
 
-    final newComment = <String, >{
+    final newComment = {
       'id': 'comment_new',
       'userId': 'current_user',
       'username': 'You',
@@ -92,7 +94,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       'content': _commentController.text,
       'timestamp': DateTime.now(),
       'likes': 0,
-      'replies': <dynamic>[],
+      'replies': [],
     };
 
     setState(() {
@@ -116,9 +118,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Row(
-              children: <>[
+              children: [
                 CircleAvatar(
                   radius: 16,
                   backgroundImage: NetworkImage(comment['userAvatar']),
@@ -165,7 +167,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             const Text(
               'Share Post',
               style: TextStyle(
@@ -176,7 +178,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: <>[
+              children: [
                 _buildShareOption(
                   icon: Icons.share,
                   label: 'Share',
@@ -221,12 +223,12 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return InkWell(
       onTap: onTap,
       child: Column(
-        children: <>[
+        children: [
           Container(
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color),
@@ -247,13 +249,14 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       appBar: AppBar(
         title: const Text('Post'),
         backgroundColor: Colors.purple,
-        actions: <>[
+        foregroundColor: Colors.white,
+        actions: [
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: _sharePost,
           ),
-          PopupMenuButton(
-            itemBuilder: (BuildContext context) => <>[
+          PopupMenuButton<String>(
+            itemBuilder: (BuildContext context) => [
               const PopupMenuItem(
                 value: 'report',
                 child: Text('Report'),
@@ -263,7 +266,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 child: Text('Block User'),
               ),
             ],
-            onSelected: (Object? value) {
+            onSelected: (String value) {
               if (value == 'report') {
                 showSuccess('Post reported');
               } else if (value == 'block') {
@@ -276,75 +279,79 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
-              children: <>[
+        children: [
+          // Post Content
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // Post Header
+                FadeAnimation(
+                  child: _buildPostHeader(),
+                ),
+                const SizedBox(height: 16),
+
                 // Post Content
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: <>[
-                      // Post Header
-                      FadeAnimation(
-                        child: _buildPostHeader(),
-                      ),
-                      const SizedBox(height: 16),
+                FadeAnimation(
+                  delay: const Duration(milliseconds: 100),
+                  child: _buildPostContent(),
+                ),
+                const SizedBox(height: 16),
 
-                      // Post Content
-                      FadeAnimation(
-                        delay: const Duration(milliseconds: 100),
-                        child: _buildPostContent(),
-                      ),
-                      const SizedBox(height: 16),
+                // Post Stats
+                FadeAnimation(
+                  delay: const Duration(milliseconds: 150),
+                  child: _buildPostStats(),
+                ),
+                const Divider(),
 
-                      // Post Stats
-                      FadeAnimation(
-                        delay: const Duration(milliseconds: 150),
-                        child: _buildPostStats(),
-                      ),
-                      const Divider(),
+                // Post Actions
+                FadeAnimation(
+                  delay: const Duration(milliseconds: 200),
+                  child: _buildPostActions(),
+                ),
+                const Divider(),
+                const SizedBox(height: 8),
 
-                      // Post Actions
-                      FadeAnimation(
-                        delay: const Duration(milliseconds: 200),
-                        child: _buildPostActions(),
-                      ),
-                      const Divider(),
-                      const SizedBox(height: 8),
-
-                      // Comments Header
-                      const Text(
-                        'Comments',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Comments List
-                      ..._comments.map((Map<String, dynamic> comment) => FadeAnimation(
-                        child: _buildComment(comment),
-                      ),),
-                    ],
+                // Comments Header
+                const Text(
+                  'Comments',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+                const SizedBox(height: 16),
 
-                // Comment Input
-                _buildCommentInput(),
-
-                // Gift Panel
-                if (_showGiftPanel)
-                  GiftPanel(
-                    receiverId: _post['userId'],
-                    roomId: null,
-                    onGiftSent: (gift, multiplier) {
-                      setState(() {
-                        _showGiftPanel = false;
-                      });
-                      showSuccess('Gift sent!');
-                    },
-                  ),
+                // Comments List
+                ..._comments.map((comment) => FadeAnimation(
+                  child: _buildComment(comment),
+                )).toList(),
               ],
             ),
+          ),
+
+          // Comment Input
+          _buildCommentInput(),
+
+          // Gift Panel
+          if (_showGiftPanel)
+            GiftPanel(
+              receiverId: _post['userId'],
+              onSendGift: (gift) {
+                setState(() {
+                  _showGiftPanel = false;
+                });
+                showSuccess('Gift sent!');
+              },
+              onClose: () {
+                setState(() {
+                  _showGiftPanel = false;
+                });
+              },
+            ),
+        ],
+      ),
     );
   }
 
@@ -355,7 +362,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (BuildContext context) => ProfileScreen(userId: _post['userId']),
+              builder: (context) => ProfileScreen(userId: _post['userId']),
             ),
           );
         },
@@ -363,6 +370,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           backgroundImage: _post['userAvatar'] != null
               ? NetworkImage(_post['userAvatar'])
               : null,
+          backgroundColor: Colors.grey.shade200,
           child: _post['userAvatar'] == null
               ? Text(_post['username'][0].toUpperCase())
               : null,
@@ -380,7 +388,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   Widget _buildPostContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         // Post Text
         Text(
           _post['content'],
@@ -397,6 +405,15 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               fit: BoxFit.cover,
               width: double.infinity,
               height: 300,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 300,
+                  color: Colors.grey.shade200,
+                  child: const Center(
+                    child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                  ),
+                );
+              },
             ),
           ),
       ],
@@ -405,9 +422,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
   Widget _buildPostStats() {
     return Row(
-      children: <>[
+      children: [
         Row(
-          children: <>[
+          children: [
             Icon(
               Icons.favorite,
               size: 16,
@@ -419,7 +436,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         ),
         const SizedBox(width: 16),
         Row(
-          children: <>[
+          children: [
             const Icon(Icons.comment, size: 16, color: Colors.grey),
             const SizedBox(width: 4),
             Text('${_comments.length}'),
@@ -427,7 +444,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         ),
         const SizedBox(width: 16),
         Row(
-          children: <>[
+          children: [
             const Icon(Icons.card_giftcard, size: 16, color: Colors.purple),
             const SizedBox(width: 4),
             Text('${_post['gifts'] ?? 0}'),
@@ -440,7 +457,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   Widget _buildPostActions() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: <>[
+      children: [
         _buildActionButton(
           icon: _isLiked ? Icons.favorite : Icons.favorite_border,
           label: 'Like',
@@ -483,10 +500,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         child: Row(
-          children: <>[
+          children: [
             Icon(icon, color: color, size: 20),
             const SizedBox(width: 4),
             Text(
@@ -500,30 +518,33 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   Widget _buildComment(Map<String, dynamic> comment) {
+    final index = _comments.indexOf(comment);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (BuildContext context) => ProfileScreen(userId: comment['userId']),
+                  builder: (context) => ProfileScreen(userId: comment['userId']),
                 ),
               );
             },
             child: CircleAvatar(
               radius: 16,
               backgroundImage: NetworkImage(comment['userAvatar']),
+              onBackgroundImageError: (exception, stackTrace) {},
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -532,7 +553,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <>[
+                    children: [
                       Text(
                         comment['username'],
                         style: const TextStyle(
@@ -547,7 +568,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 ),
                 const SizedBox(height: 4),
                 Row(
-                  children: <>[
+                  children: [
                     Text(
                       DateFormatter.timeAgo(comment['timestamp']),
                       style: const TextStyle(
@@ -557,9 +578,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                     ),
                     const SizedBox(width: 12),
                     GestureDetector(
-                      onTap: () => _likeComment(_comments.indexOf(comment)),
+                      onTap: () => _likeComment(index),
                       child: Row(
-                        children: <>[
+                        children: [
                           const Icon(
                             Icons.favorite_border,
                             size: 12,
@@ -602,16 +623,16 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: <>[
+        boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
         ],
       ),
       child: Row(
-        children: <>[
+        children: [
           const CircleAvatar(
             radius: 16,
             backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=current'),

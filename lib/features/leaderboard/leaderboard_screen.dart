@@ -13,15 +13,15 @@ class LeaderboardScreen extends StatefulWidget {
 }
 
 class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin {
-  
+
   final LeaderboardService _leaderboardService = ServiceLocator().get<LeaderboardService>();
   String _selectedPeriod = 'Weekly';
   String _selectedCategory = 'Gifts';
-  
-  final List<String> _periods = <String>['Daily', 'Weekly', 'Monthly', 'All Time'];
-  final List<String> _categories = <String>['Gifts', 'Diamonds', 'Games', 'Followers'];
 
-  List<Map<String, dynamic>> _leaderboardData = <Map<String, dynamic>>[];
+  final List<String> _periods = ['Daily', 'Weekly', 'Monthly', 'All Time'];
+  final List<String> _categories = ['Gifts', 'Diamonds', 'Games', 'Followers'];
+
+  List<Map<String, dynamic>> _leaderboardData = [];
   bool _isLoading = true;
 
   @override
@@ -33,11 +33,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin
   Future<void> _loadLeaderboard() async {
     await runWithLoading(() async {
       await Future.delayed(const Duration(seconds: 1));
-      
+
       setState(() {
         _leaderboardData = List.generate(50, (int index) {
           final bool isCurrentUser = index == 5;
-          return <String, dynamic>{
+          return {
             'rank': index + 1,
             'userId': 'user_$index',
             'name': isCurrentUser ? 'You' : 'User ${index + 1}',
@@ -46,7 +46,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin
             'value': 1000000 - (index * 50000),
             'change': index % 3 == 0 ? 5 : (index % 3 == 1 ? -3 : 0),
             'isCurrentUser': isCurrentUser,
-            'badges': index < 3 ? <String>['🥇', '🥈', '🥉'][index] : null,
+            'badges': index < 3 ? ['🥇', '🥈', '🥉'][index] : null,
           };
         });
         _isLoading = false;
@@ -98,7 +98,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Column(
-            children: <>[
+            children: [
               // Period Filter
               Container(
                 height: 50,
@@ -162,130 +162,123 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with LoadingMixin
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _leaderboardData.isEmpty
-              ? const EmptyStateWidget(
-                  title: 'No Data',
-                  message: 'No leaderboard data available',
-                  icon: Icons.leaderboard,
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _leaderboardData.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final Map<String, dynamic> item = _leaderboardData[index];
-                    return FadeAnimation(
-                      delay: Duration(milliseconds: index * 50),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        decoration: BoxDecoration(
-                          color: item['isCurrentUser'] 
-                              ? Colors.amber.withValues(alpha: 0.1)
-                              : null,
-                          borderRadius: BorderRadius.circular(12),
-                          border: item['isCurrentUser']
-                              ? Border.all(color: Colors.amber, width: 2)
-                              : null,
-                        ),
-                        child: ListTile(
-                          leading: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: _getRankColor(item['rank']).withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: item['badges'] != null
-                                  ? Text(
-                                      item['badges'],
-                                      style: const TextStyle(fontSize: 20),
-                                    )
-                                  : Text(
-                                      '#${item['rank']}',
-                                      style: TextStyle(
-                                        color: _getRankColor(item['rank']),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                          leading: CircleAvatar(
-                            backgroundImage: item['avatar'] != null
-                                ? NetworkImage(item['avatar'])
-                                : null,
-                            child: item['avatar'] == null
-                                ? Text(item['name'][0].toUpperCase())
-                                : null,
-                          ),
-                          title: Row(
-                            children: <>[
-                              Text(
-                                item['name'],
-                                style: TextStyle(
-                                  fontWeight: item['isCurrentUser'] 
-                                      ? FontWeight.bold 
-                                      : FontWeight.normal,
-                                ),
-                              ),
-                              if (item['isCurrentUser'])
-                                const Padding(
-                                  padding: EdgeInsets.only(left: 8),
-                                  child: Icon(
-                                    Icons.star,
-                                    color: Colors.amber,
-                                    size: 16,
-                                  ),
-                                ),
-                            ],
-                          ),
-                          subtitle: Text(item['username']),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <>[
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: <>[
-                                  Text(
-                                    _formatValue(item['value']),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  if (item['change'] != 0)
-                                    Row(
-                                      children: <>[
-                                        Icon(
-                                          _getChangeIcon(item['change']),
-                                          color: _getChangeColor(item['change']),
-                                          size: 12,
-                                        ),
-                                        Text(
-                                          '${item['change'].abs()}',
-                                          style: TextStyle(
-                                            color: _getChangeColor(item['change']),
-                                            fontSize: 10,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                Icons.chevron_right,
-                                color: Colors.grey.shade400,
-                              ),
-                            ],
-                          ),
-                          onTap: () {
-                            // Navigate to user profile
-                          },
+          ? const EmptyStateWidget(
+        title: 'No Data',
+        message: 'No leaderboard data available',
+        icon: Icons.leaderboard,
+      )
+          : ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _leaderboardData.length,
+        itemBuilder: (BuildContext context, int index) {
+          final Map<String, dynamic> item = _leaderboardData[index];
+          return FadeAnimation(
+            delay: Duration(milliseconds: index * 50),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: item['isCurrentUser'] == true
+                    ? Colors.amber.withValues(alpha: 0.1)
+                    : null,
+                borderRadius: BorderRadius.circular(12),
+                border: item['isCurrentUser'] == true
+                    ? Border.all(color: Colors.amber, width: 2)
+                    : null,
+              ),
+              child: ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _getRankColor(item['rank']).withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: item['badges'] != null
+                        ? Text(
+                      item['badges'],
+                      style: const TextStyle(fontSize: 20),
+                    )
+                        : Text(
+                      '#${item['rank']}',
+                      style: TextStyle(
+                        color: _getRankColor(item['rank']),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                title: Row(
+                  children: [
+                    Text(
+                      item['name'],
+                      style: TextStyle(
+                        fontWeight: item['isCurrentUser'] == true
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                    if (item['isCurrentUser'] == true)
+                      const Padding(
+                        padding: EdgeInsets.only(left: 8),
+                        child: Icon(
+                          Icons.star,
+                          color: Colors.amber,
+                          size: 16,
                         ),
                       ),
-                    );
-                  },
+                  ],
                 ),
+                subtitle: Text(item['username']),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          _formatValue(item['value']),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        if (item['change'] != 0)
+                          Row(
+                            children: [
+                              Icon(
+                                _getChangeIcon(item['change']),
+                                color: _getChangeColor(item['change']),
+                                size: 12,
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                '${item['change'].abs()}',
+                                style: TextStyle(
+                                  color: _getChangeColor(item['change']),
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey.shade400,
+                    ),
+                  ],
+                ),
+                onTap: () {
+                  // Navigate to user profile
+                },
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

@@ -55,6 +55,20 @@ class AppConstants {
   static const int maxBioLength = 150;
   static const int maxDisplayNameLength = 50;
 
+  // 🟢 দ্বিতীয় ফাইল থেকে যোগ করা হয়েছে - Regex patterns
+  static final RegExp emailRegex = RegExp(
+    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+  );
+  static final RegExp passwordRegex = RegExp(
+    r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
+  );
+  static final RegExp usernameRegex = RegExp(
+    r'^[a-zA-Z0-9_]{3,20}$',
+  );
+  static final RegExp phoneRegex = RegExp(
+    r'^\+?[\d\s-]{10,}$',
+  );
+
   // Room Settings
   static const int maxRoomTitleLength = 50;
   static const int maxRoomDescriptionLength = 200;
@@ -72,6 +86,15 @@ class AppConstants {
   static const int minGameBet = 10;
   static const int maxGameBet = 10000;
   static const int gameCountdown = 10; // seconds
+
+  // 🟢 দ্বিতীয় ফাইল থেকে যোগ করা হয়েছে - Game limits
+  static const Map<String, Map<String, int>> gameLimits = <String, Map<String, int>>{
+    'roulette': <String, int>{'minBet': 100, 'maxBet': 10000},
+    'threePatti': <String, int>{'minBet': 500, 'maxBet': 50000},
+    'ludo': <String, int>{'minBet': 200, 'maxBet': 20000},
+    'carrom': <String, int>{'minBet': 200, 'maxBet': 20000},
+    'greedyCat': <String, int>{'minBet': 100, 'maxBet': 5000},
+  };
 
   // PK Battle Settings
   static const int minPkBet = 50;
@@ -162,6 +185,12 @@ class AppConstants {
   static const int animationSlow = 500;
   static const int animationVerySlow = 800;
 
+  // 🟢 দ্বিতীয় ফাইল থেকে যোগ করা হয়েছে
+  static const int splashDuration = 2000; // milliseconds
+  static const int dialogAnimationDuration = 300; // milliseconds
+  static const int snackbarDuration = 3000; // milliseconds
+  static const int toastDuration = 2000; // milliseconds
+
   // Layout Breakpoints
   static const double mobileBreakpoint = 480;
   static const double tabletBreakpoint = 768;
@@ -246,6 +275,12 @@ class AppConstants {
   static const int defaultPageSize = 20;
   static const int maxCachedPages = 5;
 
+  // 🟢 দ্বিতীয় ফাইল থেকে যোগ করা হয়েছে
+  static const String defaultAvatar = 'assets/images/default_avatar.png';
+  static const String defaultRoomCover = 'assets/images/default_room_cover.jpg';
+  static const String defaultCountry = 'US';
+  static const String defaultLanguage = 'en';
+
   // Feature Flags
   static const bool enableVoiceCall = true;
   static const bool enableVideoCall = true;
@@ -254,6 +289,14 @@ class AppConstants {
   static const bool enableAgencySystem = true;
   static const bool enableCoinSeller = true;
   static const bool enableCountryManager = true;
+
+  // 🟢 দ্বিতীয় ফাইল থেকে যোগ করা হয়েছে
+  static const bool enableGames = true;
+  static const bool enableClanSystem = true;
+  static const bool enableAISuggestions = true;
+  static const bool enableVoiceTranslation = false;
+  static const bool enableScreenRecording = true;
+  static const bool enableAutoModeration = true;
 
   // Environment
   static const bool isProduction = false;
@@ -264,6 +307,62 @@ class AppConstants {
   static const bool enableLogging = true;
   static const bool enableCrashReporting = true;
   static const bool enableAnalytics = true;
+
+  // 🟢 দ্বিতীয় ফাইল থেকে যোগ করা হয়েছে - Rate Limits
+  static const int maxLoginAttempts = 5;
+  static const int loginLockoutDuration = 15; // minutes
+  static const int maxOtpAttempts = 3;
+  static const int otpExpiryDuration = 5; // minutes
+
+  // 🟢 দ্বিতীয় ফাইল থেকে যোগ করা হয়েছে - Session
+  static const int sessionTimeout = 60; // minutes
+  static const bool rememberMeDefault = true;
+
+  // 🟢 দ্বিতীয় ফাইল থেকে যোগ করা হয়েছে - Notifications
+  static const int maxNotifications = 100;
+  static const int notificationCleanupDays = 30;
+
+  // 🟢 দ্বিতীয় ফাইল থেকে যোগ করা হয়েছে - Maintenance
+  static const bool isMaintenanceMode = false;
+  static const String maintenanceMessage = 'App is under maintenance. Please check back later.';
+
+  // 🟢 দ্বিতীয় ফাইল থেকে যোগ করা হয়েছে - VIP Levels
+  static const int vipLevels = 10;
+  static const int svipLevels = 8;
+  static const Map<int, int> vipCoinThreshold = <int, int>{
+    1: 10000,
+    2: 50000,
+    3: 100000,
+    4: 200000,
+    5: 500000,
+    6: 1000000,
+    7: 2000000,
+    8: 5000000,
+    9: 10000000,
+    10: 20000000,
+  };
+
+  // 🟢 দ্বিতীয় ফাইল থেকে যোগ করা হয়েছে - Chat Limits
+  static const int maxChatParticipants = 50;
+  static const int maxMessageReactions = 20;
+  static const int maxAttachmentSize = 50 * 1024 * 1024; // 50MB
+  static const int maxMessageLength = 1000;
+  static const int maxMessagesPerMinute = 30;
+  static const int maxGiftsPerMinute = 10;
+
+  // 🟢 দ্বিতীয় ফাইল থেকে যোগ করা হয়েছে - Image/Video Limits
+  static const int maxImageSize = 10 * 1024 * 1024; // 10MB
+  static const int maxImageDimension = 1920;
+  static const int imageQuality = 85;
+  static const int maxVideoSize = 100 * 1024 * 1024; // 100MB
+  static const int maxVideoDuration = 300; // 5 minutes
+  static const int videoQuality = 720;
+
+  // 🟢 দ্বিতীয় ফাইল থেকে যোগ করা হয়েছে - Cache Settings
+  static const int cacheMaxAgeDays = 7; // days
+  static const int imageCacheSize = 100; // MB
+  static const int cacheCleanupInterval = 24; // hours
+  static const double infiniteScrollThreshold = 0.8;
 }
 
 class ApiConstants {

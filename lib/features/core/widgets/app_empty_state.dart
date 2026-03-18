@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 
 class AppEmptyState extends StatelessWidget {
-
-  const AppEmptyState({
-    required this.title, required this.message, super.key,
-    this.icon = Icons.inbox,
-    this.buttonText,
-    this.onButtonPressed,
-  });
   final String title;
   final String message;
   final IconData icon;
   final String? buttonText;
   final VoidCallback? onButtonPressed;
+
+  const AppEmptyState({
+    required this.title,
+    required this.message,
+    this.icon = Icons.inbox,
+    this.buttonText,
+    this.onButtonPressed,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +24,7 @@ class AppEmptyState extends StatelessWidget {
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
+          children: [
             Icon(
               icon,
               size: 80,
@@ -44,7 +47,7 @@ class AppEmptyState extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            if (buttonText != null && onButtonPressed != null) ...<>[
+            if (buttonText != null && onButtonPressed != null) ...[
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: onButtonPressed,

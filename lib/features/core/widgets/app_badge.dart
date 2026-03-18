@@ -1,17 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 
 class AppBadge extends StatelessWidget {
-
-  const AppBadge({
-    required this.child, super.key,
-    this.text,
-    this.count,
-    this.color = Colors.red,
-    this.textColor = Colors.white,
-    this.size = 20,
-    this.showZero = false,
-    this.isDot = false,
-  });
   final Widget child;
   final String? text;
   final int? count;
@@ -21,17 +11,29 @@ class AppBadge extends StatelessWidget {
   final bool showZero;
   final bool isDot;
 
+  const AppBadge({
+    required this.child,
+    this.text,
+    this.count,
+    this.color = Colors.red,
+    this.textColor = Colors.white,
+    this.size = 20,
+    this.showZero = false,
+    this.isDot = false,
+    super.key,
+  });
+
   @override
   Widget build(BuildContext context) {
     final int displayCount = count ?? 0;
-    
+
     if (!showZero && displayCount == 0 && !isDot) {
       return child;
     }
 
     return Stack(
       clipBehavior: Clip.none,
-      children: <>[
+      children: [
         child,
         Positioned(
           top: -size * 0.3,
@@ -59,7 +61,7 @@ class AppBadge extends StatelessWidget {
     }
 
     final String displayText = text ?? _getCountText();
-    
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: size * 0.3,
@@ -72,9 +74,9 @@ class AppBadge extends StatelessWidget {
           color: Colors.white,
           width: 1.5,
         ),
-        boxShadow: <>[
+        boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.5),
+            color: color.withOpacity(0.5),
             blurRadius: 4,
             spreadRadius: 1,
           ),
@@ -119,13 +121,14 @@ class AppBadge extends StatelessWidget {
 }
 
 class NotificationBadge extends StatelessWidget {
-
-  const NotificationBadge({
-    required this.count, super.key,
-    this.color = Colors.red,
-  });
   final int count;
   final Color color;
+
+  const NotificationBadge({
+    required this.count,
+    this.color = Colors.red,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -163,16 +166,18 @@ class NotificationBadge extends StatelessWidget {
 }
 
 class StatusBadge extends StatelessWidget {
-
-  const StatusBadge({
-    required this.text, required this.color, super.key,
-    this.textColor = Colors.white,
-    this.fontSize = 12,
-  });
   final String text;
   final Color color;
   final Color textColor;
   final double fontSize;
+
+  const StatusBadge({
+    required this.text,
+    required this.color,
+    this.textColor = Colors.white,
+    this.fontSize = 12,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -7,13 +7,13 @@ class LightTheme {
   static const Color backgroundColor = Color(0xFFF5F5F5);
   static const Color surfaceColor = Colors.white;
   static const Color cardColor = Colors.white;
-  
+
   static ThemeData get theme {
     return ThemeData(
       brightness: Brightness.light,
       primaryColor: primaryColor,
       scaffoldBackgroundColor: backgroundColor,
-      
+
       // AppBar Theme
       appBarTheme: const AppBarTheme(
         backgroundColor: primaryColor,
@@ -27,7 +27,7 @@ class LightTheme {
         ),
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      
+
       // Text Theme
       textTheme: const TextTheme(
         displayLarge: TextStyle(
@@ -68,7 +68,7 @@ class LightTheme {
           color: Color(0xFF9CA3AF),
         ),
       ),
-      
+
       // Button Themes
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -80,7 +80,7 @@ class LightTheme {
           ),
         ),
       ),
-      
+
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primaryColor,
@@ -91,13 +91,13 @@ class LightTheme {
           ),
         ),
       ),
-      
+
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryColor,
         ),
       ),
-      
+
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
@@ -120,16 +120,16 @@ class LightTheme {
         hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
         labelStyle: const TextStyle(color: Color(0xFF6B7280)),
       ),
-      
-      // Card Theme
-      cardTheme: CardTheme(
+
+      // Card Theme - Fixed: CardThemeData ব্যবহার করে
+      cardTheme: CardThemeData(
         color: cardColor,
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
       ),
-      
+
       // Chip Theme
       chipTheme: ChipThemeData(
         backgroundColor: Colors.grey.shade100,
@@ -141,7 +141,7 @@ class LightTheme {
           borderRadius: BorderRadius.circular(16),
         ),
       ),
-      
+
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
@@ -150,25 +150,26 @@ class LightTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
-      
-      // Tab Bar Theme
-      tabBarTheme: const TabBarTheme(
+
+      // Tab Bar Theme - Fixed: TabBarThemeData ব্যবহার করে
+      tabBarTheme: TabBarThemeData(
         labelColor: primaryColor,
-        unselectedLabelColor: Color(0xFF9CA3AF),
+        unselectedLabelColor: const Color(0xFF9CA3AF),
         indicatorColor: primaryColor,
       ),
-      
+
       // Divider Theme
       dividerTheme: DividerThemeData(
         color: Colors.grey.shade200,
         thickness: 1,
       ),
-      
+
       // Color Scheme
       colorScheme: const ColorScheme.light(
         primary: primaryColor,
         secondary: secondaryColor,
         error: Colors.red,
+        onPrimary: Colors.white,
         onSecondary: Colors.white,
       ),
     );

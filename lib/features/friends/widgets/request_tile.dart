@@ -1,231 +1,127 @@
 import 'package:flutter/material.dart';
-import '../../../core/utils/date_formatter.dart';
-import '../../profile/profile_screen.dart';
 
-class RequestTile extends StatelessWidget {
-
-  const RequestTile({
-    required this.request, super.key,
-    this.onAccept,
-    this.onReject,
-    this.onCancel,
-    this.isIncoming = true,
-  });
-  final Map<String, dynamic> request;
-  final VoidCallback? onAccept;
-  final VoidCallback? onReject;
-  final VoidCallback? onCancel;
-  final bool isIncoming;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: <>[
-            // Avatar
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (BuildContext context) => ProfileScreen(userId: request['userId']),
-                  ),
-                );
-              },
-              child: CircleAvatar(
-                radius: 30,
-                backgroundImage: request['avatar'] != null
-                    ? NetworkImage(request['avatar'])
-                    : null,
-                child: request['avatar'] == null
-                    ? Text(request['name'][0].toUpperCase())
-                    : null,
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <>[
-                  Text(
-                    request['name'],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '@${request['username']}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  if (request['mutualFriends'] != null) ...<>[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: <>[
-                        Icon(
-                          Icons.people,
-                          size: 12,
-                          color: Colors.grey.shade600,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${request['mutualFriends']} mutual friends',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  if (request['commonInterests'] != null &&
-                      request['commonInterests'].isNotEmpty) ...<>[
-                    const SizedBox(height: 4),
-                    SizedBox(
-                      height: 20,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: request['commonInterests'].length > 2
-                            ? 2
-                            : request['commonInterests'].length,
-                        itemBuilder: (BuildContext context, int index) {
-                          final interest = request['commonInterests'][index];
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            margin: const EdgeInsets.only(right: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              interest,
-                              style: const TextStyle(
-                                fontSize: 8,
-                                color: Colors.blue,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 4),
-                  Text(
-                    'Received ${DateFormatter.timeAgo(request['timestamp'])}',
-                    style: const TextStyle(
-                      fontSize: 8,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Actions
-            if (isIncoming) ...<>[
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <>[
-                  IconButton(
-                    icon: const Icon(Icons.check_circle, color: Colors.green),
-                    onPressed: onAccept,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.cancel, color: Colors.red),
-                    onPressed: onReject,
-                  ),
-                ],
-              ),
-            ] else ...<>[
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.red),
-                onPressed: onCancel,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+class DateFormatter {
+  // Format date
+  static String formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
   }
 
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<Map<String, dynamic>>('request', request));
-    properties.add(ObjectFlagProperty<VoidCallback?>.has('onAccept', onAccept));
-    properties.add(ObjectFlagProperty<VoidCallback?>.has('onReject', onReject));
-    properties.add(ObjectFlagProperty<VoidCallback?>.has('onCancel', onCancel));
-    properties.add(DiagnosticsProperty<bool>('isIncoming', isIncoming));
-  }
-}
-
-class SentRequestTile extends StatelessWidget {
-
-  const SentRequestTile({
-    required this.request, required this.onCancel, super.key,
-  });
-  final Map<String, dynamic> request;
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundImage: request['avatar'] != null
-              ? NetworkImage(request['avatar'])
-              : null,
-          child: request['avatar'] == null
-              ? Text(request['name'][0].toUpperCase())
-              : null,
-        ),
-        title: Text(request['name']),
-        subtitle: Text('Request sent ${DateFormatter.timeAgo(request['timestamp'])}'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <>[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Text(
-                'Pending',
-                style: TextStyle(
-                  color: Colors.orange,
-                  fontSize: 10,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.red),
-              onPressed: onCancel,
-            ),
-          ],
-        ),
-      ),
-    );
+  // Format time
+  static String formatTime(DateTime date) {
+    return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<Map<String, dynamic>>('request', request));
-    properties.add(ObjectFlagProperty<VoidCallback>.has('onCancel', onCancel));
+  // Format date and time
+  static String formatDateTime(DateTime date) {
+    return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  // Time ago format
+  static String timeAgo(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays > 365) {
+      return '${(difference.inDays / 365).floor()}y ago';
+    } else if (difference.inDays > 30) {
+      return '${(difference.inDays / 30).floor()}mo ago';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  // Format for chat
+  static String formatChatTime(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final dateOnly = DateTime(date.year, date.month, date.day);
+
+    if (dateOnly == today) {
+      return formatTime(date);
+    } else if (dateOnly == yesterday) {
+      return 'Yesterday';
+    } else {
+      return formatDate(date);
+    }
+  }
+
+  // Get day name
+  static String getDayName(DateTime date) {
+    switch (date.weekday) {
+      case 1:
+        return 'Monday';
+      case 2:
+        return 'Tuesday';
+      case 3:
+        return 'Wednesday';
+      case 4:
+        return 'Thursday';
+      case 5:
+        return 'Friday';
+      case 6:
+        return 'Saturday';
+      case 7:
+        return 'Sunday';
+      default:
+        return '';
+    }
+  }
+
+  // Get month name
+  static String getMonthName(DateTime date) {
+    switch (date.month) {
+      case 1:
+        return 'January';
+      case 2:
+        return 'February';
+      case 3:
+        return 'March';
+      case 4:
+        return 'April';
+      case 5:
+        return 'May';
+      case 6:
+        return 'June';
+      case 7:
+        return 'July';
+      case 8:
+        return 'August';
+      case 9:
+        return 'September';
+      case 10:
+        return 'October';
+      case 11:
+        return 'November';
+      case 12:
+        return 'December';
+      default:
+        return '';
+    }
+  }
+
+  // Check if same day
+  static bool isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  // Check if today
+  static bool isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
+  }
+
+  // Check if yesterday
+  static bool isYesterday(DateTime date) {
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    return date.year == yesterday.year &&
+        date.month == yesterday.month &&
+        date.day == yesterday.day;
   }
 }

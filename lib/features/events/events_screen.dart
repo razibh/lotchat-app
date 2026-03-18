@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/event_service.dart';
+import '../../core/models/event_model.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../widgets/animation/fade_animation.dart';
-import '../../widgets/common/custom_button.dart';
 
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key});
@@ -13,13 +14,13 @@ class EventsScreen extends StatefulWidget {
   State<EventsScreen> createState() => _EventsScreenState();
 }
 
-class _EventsScreenState extends State<EventsScreen> 
+class _EventsScreenState extends State<EventsScreen>
     with LoadingMixin, ToastMixin {
-  
-  final _eventService = ServiceLocator().get<EventService>();
-  
-  List<EventModel> _activeEvents = <EventModel>[];
-  List<EventModel> _upcomingEvents = <EventModel>[];
+
+  final EventService _eventService = ServiceLocator().get<EventService>();
+
+  List<EventModel> _activeEvents = [];
+  List<EventModel> _upcomingEvents = [];
   bool _isLoading = true;
 
   @override
@@ -31,74 +32,13 @@ class _EventsScreenState extends State<EventsScreen>
   Future<void> _loadEvents() async {
     await runWithLoading(() async {
       await Future.delayed(const Duration(seconds: 1));
-      
-      _activeEvents = <EventModel>[
-        EventModel(
-          id: 'e1',
-          title: "Valentine's Day Special",
-          description: 'Double hearts on all gifts!',
-          type: 'holiday',
-          startDate: DateTime.now().subtract(const Duration(days: 1)),
-          endDate: DateTime.now().add(const Duration(days: 6)),
-          rewards: '2x Gift Points',
-          participants: 15420,
-          image: 'valentine',
-          color: Colors.pink,
-        ),
-        EventModel(
-          id: 'e2',
-          title: 'Weekend Bonus',
-          description: 'Earn 50% more coins on all activities',
-          type: 'weekend',
-          startDate: DateTime.now().subtract(const Duration(days: 2)),
-          endDate: DateTime.now().add(const Duration(days: 1)),
-          rewards: '+50% Coins',
-          participants: 8320,
-          image: 'weekend',
-          color: Colors.blue,
-        ),
-        EventModel(
-          id: 'e3',
-          title: 'PK Championship',
-          description: 'Compete for the ultimate prize',
-          type: 'tournament',
-          startDate: DateTime.now(),
-          endDate: DateTime.now().add(const Duration(days: 3)),
-          rewards: '10,000 Coins + Badge',
-          participants: 1250,
-          image: 'tournament',
-          color: Colors.purple,
-        ),
-      ];
 
-      _upcomingEvents = <EventModel>[
-        EventModel(
-          id: 'e4',
-          title: 'New Year Celebration',
-          description: 'Welcome the new year with special gifts',
-          type: 'holiday',
-          startDate: DateTime.now().add(const Duration(days: 25)),
-          endDate: DateTime.now().add(const Duration(days: 32)),
-          rewards: 'Special Frames & Badges',
-          participants: 0,
-          image: 'newyear',
-          color: Colors.amber,
-        ),
-        EventModel(
-          id: 'e5',
-          title: 'Spring Festival',
-          description: 'Spring themed gifts and effects',
-          type: 'seasonal',
-          startDate: DateTime.now().add(const Duration(days: 15)),
-          endDate: DateTime.now().add(const Duration(days: 45)),
-          rewards: 'Limited Edition Items',
-          participants: 0,
-          image: 'spring',
-          color: Colors.green,
-        ),
-      ];
-      
-      _isLoading = false;
+      _activeEvents = await _eventService.getActiveEvents();
+      _upcomingEvents = await _eventService.getUpcomingEvents();
+
+      setState(() {
+        _isLoading = false;
+      });
     });
   }
 
@@ -109,18 +49,18 @@ class _EventsScreenState extends State<EventsScreen>
         title: Text(event.title),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             const Icon(Icons.celebration, size: 50, color: Colors.amber),
             const SizedBox(height: 16),
             Text('Join ${event.title}?'),
             const SizedBox(height: 8),
             Text(
-              'Rewards: ${event.rewards}',
+              'Rewards: ${event.rewards['value'] ?? event.rewards.toString()}',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Later'),
@@ -144,46 +84,54 @@ class _EventsScreenState extends State<EventsScreen>
     return '${start.day}/${start.month} - ${end.day}/${end.month}';
   }
 
+  String _getRewardString(Map<String, dynamic> rewards) {
+    if (rewards.containsKey('value')) {
+      return rewards['value'].toString();
+    }
+    return 'Special Rewards';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Special Events'),
         backgroundColor: Colors.amber,
+        foregroundColor: Colors.white,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <>[
-                  // Active Events
-                  const Text(
-                    '🔥 Active Events',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ..._activeEvents.map((EventModel event) => _buildEventCard(event, true)),
-
-                  const SizedBox(height: 24),
-
-                  // Upcoming Events
-                  const Text(
-                    '📅 Upcoming Events',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ..._upcomingEvents.map((EventModel event) => _buildEventCard(event, false)),
-                ],
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Active Events
+            const Text(
+              '🔥 Active Events',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 12),
+            ..._activeEvents.map((event) => _buildEventCard(event, true)).toList(),
+
+            const SizedBox(height: 24),
+
+            // Upcoming Events
+            const Text(
+              '📅 Upcoming Events',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ..._upcomingEvents.map((event) => _buildEventCard(event, false)).toList(),
+          ],
+        ),
+      ),
     );
   }
 
@@ -191,14 +139,18 @@ class _EventsScreenState extends State<EventsScreen>
     return FadeAnimation(
       child: Card(
         margin: const EdgeInsets.only(bottom: 12),
-        child: DecoratedBox(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: <>[
-                event.color.withValues(alpha: 0.1),
-                event.color.withValues(alpha: 0.05),
+              colors: [
+                event.color.withOpacity(0.1),
+                event.color.withOpacity(0.05),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
@@ -206,14 +158,14 @@ class _EventsScreenState extends State<EventsScreen>
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              children: <>[
+              children: [
                 Row(
-                  children: <>[
+                  children: [
                     Container(
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: event.color.withValues(alpha: 0.2),
+                        color: event.color.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -226,7 +178,7 @@ class _EventsScreenState extends State<EventsScreen>
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <>[
+                        children: [
                           Text(
                             event.title,
                             style: const TextStyle(
@@ -244,7 +196,7 @@ class _EventsScreenState extends State<EventsScreen>
                           ),
                           const SizedBox(height: 4),
                           Row(
-                            children: <>[
+                            children: [
                               Icon(Icons.calendar_today, size: 12, color: Colors.grey.shade600),
                               const SizedBox(width: 4),
                               Text(
@@ -262,28 +214,28 @@ class _EventsScreenState extends State<EventsScreen>
                   ],
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Progress/Info
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <>[
+                  children: [
                     Row(
-                      children: <>[
+                      children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: event.color.withValues(alpha: 0.2),
+                            color: event.color.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Row(
-                            children: <>[
+                            children: [
                               Icon(Icons.card_giftcard, size: 12, color: event.color),
                               const SizedBox(width: 4),
                               Text(
-                                event.rewards,
+                                _getRewardString(event.rewards),
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: event.color,
@@ -301,11 +253,11 @@ class _EventsScreenState extends State<EventsScreen>
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.1),
+                              color: Colors.blue.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Row(
-                              children: <>[
+                              children: [
                                 const Icon(Icons.people, size: 12, color: Colors.blue),
                                 const SizedBox(width: 4),
                                 Text(
@@ -320,13 +272,20 @@ class _EventsScreenState extends State<EventsScreen>
                           ),
                       ],
                     ),
-                    
-                    CustomButton(
-                      text: isActive ? 'Join' : 'Remind',
-                      onPressed: () => _joinEvent(event),
-                      color: event.color,
+
+                    SizedBox(
                       height: 36,
-                      isFullWidth: false,
+                      child: ElevatedButton(
+                        onPressed: () => _joinEvent(event),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: event.color,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(isActive ? 'Join' : 'Remind'),
+                      ),
                     ),
                   ],
                 ),
@@ -338,44 +297,18 @@ class _EventsScreenState extends State<EventsScreen>
     );
   }
 
-  IconData _getEventIcon(String type) {
+  IconData _getEventIcon(EventType type) {
     switch (type) {
-      case 'holiday':
+      case EventType.holiday:
         return Icons.celebration;
-      case 'weekend':
+      case EventType.promotion:
         return Icons.weekend;
-      case 'tournament':
+      case EventType.tournament:
         return Icons.emoji_events;
-      case 'seasonal':
+      case EventType.festival:
         return Icons.park;
       default:
         return Icons.event;
     }
   }
-}
-
-class EventModel {
-
-  EventModel({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.type,
-    required this.startDate,
-    required this.endDate,
-    required this.rewards,
-    required this.participants,
-    required this.image,
-    required this.color,
-  });
-  final String id;
-  final String title;
-  final String description;
-  final String type;
-  final DateTime startDate;
-  final DateTime endDate;
-  final String rewards;
-  final int participants;
-  final String image;
-  final Color color;
 }

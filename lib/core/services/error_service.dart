@@ -1,12 +1,27 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'logger_service.dart';
 
 class ErrorService {
+  // Singleton pattern - শুধু একটি factory constructor
   factory ErrorService() => _instance;
-  ErrorService._internal();
+
+  // Private constructor
+  ErrorService._internal() {
+    _initializeServices();
+  }
+
   static final ErrorService _instance = ErrorService._internal();
 
-  final LoggerService _logger = LoggerService();
+  late final LoggerService _logger;
+
+  void _initializeServices() {
+    try {
+      _logger = LoggerService();
+    } catch (e) {
+      debugPrint('Error initializing services: $e');
+    }
+  }
 
   // ==================== ERROR HANDLING ====================
 
@@ -38,22 +53,26 @@ class ErrorService {
         return 'Connection timeout. Please check your internet.';
       }
     }
-    
+
     // Firebase errors
-    if (error.toString().contains('PERMISSION_DENIED')) {
+    final errorString = error.toString().toLowerCase();
+
+    if (errorString.contains('permission_denied')) {
       return "You don't have permission to perform this action";
-    } else if (error.toString().contains('NOT_FOUND')) {
+    } else if (errorString.contains('not_found')) {
       return 'The requested item was not found';
-    } else if (error.toString().contains('ALREADY_EXISTS')) {
+    } else if (errorString.contains('already_exists')) {
       return 'This item already exists';
     }
-    
+
     // Network errors
-    if (error.toString().contains('SocketException') ||
-        error.toString().contains('Network')) {
+    if (errorString.contains('socketexception') ||
+        errorString.contains('network') ||
+        errorString.contains('timeout') ||
+        errorString.contains('failed host lookup')) {
       return 'Network error. Please check your connection.';
     }
-    
+
     return 'Something went wrong. Please try again.';
   }
 
@@ -63,7 +82,7 @@ class ErrorService {
       builder: (BuildContext context) => AlertDialog(
         title: const Text('Error'),
         content: Text(message),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
@@ -77,18 +96,19 @@ class ErrorService {
 
   void handleAuthError(dynamic error, BuildContext context) {
     var message = 'Authentication failed';
-    
-    if (error.toString().contains('user-not-found')) {
+    final errorString = error.toString().toLowerCase();
+
+    if (errorString.contains('user-not-found')) {
       message = 'No user found with this email';
-    } else if (error.toString().contains('wrong-password')) {
+    } else if (errorString.contains('wrong-password')) {
       message = 'Wrong password';
-    } else if (error.toString().contains('email-already-in-use')) {
+    } else if (errorString.contains('email-already-in-use')) {
       message = 'Email already in use';
-    } else if (error.toString().contains('weak-password')) {
+    } else if (errorString.contains('weak-password')) {
       message = 'Password is too weak';
-    } else if (error.toString().contains('invalid-email')) {
+    } else if (errorString.contains('invalid-email')) {
       message = 'Invalid email address';
-    } else if (error.toString().contains('network-request-failed')) {
+    } else if (errorString.contains('network-request-failed')) {
       message = 'Network error. Please check your connection.';
     }
 
@@ -102,12 +122,13 @@ class ErrorService {
 
   void handlePaymentError(dynamic error, BuildContext context) {
     var message = 'Payment failed';
-    
-    if (error.toString().contains('insufficient-funds')) {
+    final errorString = error.toString().toLowerCase();
+
+    if (errorString.contains('insufficient-funds')) {
       message = 'Insufficient funds';
-    } else if (error.toString().contains('payment-cancelled')) {
+    } else if (errorString.contains('payment-cancelled')) {
       message = 'Payment was cancelled';
-    } else if (error.toString().contains('payment-failed')) {
+    } else if (errorString.contains('payment-failed')) {
       message = 'Payment processing failed';
     }
 
@@ -122,11 +143,11 @@ class ErrorService {
   // ==================== TRY-CATCH WRAPPER ====================
 
   Future<T?> tryCatch<T>(
-    Future<T> Function() action, {
-    String? errorMessage,
-    bool showToUser = false,
-    BuildContext? context,
-  }) async {
+      Future<T> Function() action, {
+        String? errorMessage,
+        bool showToUser = false,
+        BuildContext? context,
+      }) async {
     try {
       return await action();
     } catch (e, s) {
@@ -152,7 +173,7 @@ class ErrorService {
     RegExp? pattern,
     String? patternMessage,
   }) {
-    final List<String> errors = <String>[];
+    final List<String> errors = [];
 
     if (required && value.isEmpty) {
       errors.add('${fieldName ?? 'Field'} is required');
@@ -179,39 +200,42 @@ class ErrorService {
   // ==================== NETWORK ERRORS ====================
 
   bool isNetworkError(dynamic error) {
-    return error.toString().contains('SocketException') ||
-           error.toString().contains('Network') ||
-           error.toString().contains('Timeout') ||
-           error.toString().contains('Failed host lookup');
+    final errorString = error.toString().toLowerCase();
+    return errorString.contains('socketexception') ||
+        errorString.contains('network') ||
+        errorString.contains('timeout') ||
+        errorString.contains('failed host lookup');
   }
 
   bool isServerError(dynamic error) {
-    return error.toString().contains('500') ||
-           error.toString().contains('502') ||
-           error.toString().contains('503');
+    final errorString = error.toString();
+    return errorString.contains('500') ||
+        errorString.contains('502') ||
+        errorString.contains('503');
   }
 
   bool isClientError(dynamic error) {
-    return error.toString().contains('400') ||
-           error.toString().contains('401') ||
-           error.toString().contains('403') ||
-           error.toString().contains('404');
+    final errorString = error.toString();
+    return errorString.contains('400') ||
+        errorString.contains('401') ||
+        errorString.contains('403') ||
+        errorString.contains('404');
   }
 
   // ==================== ERROR RECOVERY ====================
 
   Future<bool> retryOperation<T>(
-    Future<T> Function() operation, {
-    int maxRetries = 3,
-    Duration delay = const Duration(seconds: 1),
-  }) async {
+      Future<T> Function() operation, {
+        int maxRetries = 3,
+        Duration delay = const Duration(seconds: 1),
+      }) async {
     for (var i = 0; i < maxRetries; i++) {
       try {
         await operation();
         return true;
       } catch (e) {
         if (i == maxRetries - 1) {
-          _logger.error('Operation failed after $maxRetries retries', error: e);
+          _logger?.error('Operation failed after $maxRetries retries', error: e);
           return false;
         }
         await Future.delayed(delay * (i + 1));
@@ -224,13 +248,13 @@ class ErrorService {
 // ==================== MODEL CLASSES ====================
 
 class ValidationResult {
+  final bool isValid;
+  final List<String> errors;
 
   ValidationResult({
     required this.isValid,
     required this.errors,
   });
-  final bool isValid;
-  final List<String> errors;
 
   String? get firstError => errors.isNotEmpty ? errors.first : null;
 }

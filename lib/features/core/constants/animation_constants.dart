@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class AnimationConstants {
   // Durations
-  static const Duration durationInstant = Duration();
+  static const Duration durationInstant = Duration(milliseconds: 0);
   static const Duration durationFastest = Duration(milliseconds: 150);
   static const Duration durationFast = Duration(milliseconds: 300);
   static const Duration durationNormal = Duration(milliseconds: 500);
@@ -21,7 +21,7 @@ class AnimationConstants {
   static const Curve curveElastic = Curves.elasticOut;
   static const Curve curveFastOutSlowIn = Curves.fastOutSlowIn;
   static const Curve curveDecelerate = Curves.decelerate;
-  static const Curve curveAccelerate = Curves.accelerate;
+  static const Curve curveAccelerate = Curves.easeIn; // ✅ 'accelerate' নেই, 'easeIn' ব্যবহার করুন
   static const Curve curveLinear = Curves.linear;
   static const Curve curveEase = Curves.ease;
   static const Curve curveEaseIn = Curves.easeIn;
@@ -30,7 +30,7 @@ class AnimationConstants {
 
   // Page Transitions
   static const PageTransitionsTheme pageTransitions = PageTransitionsTheme(
-    builders: <, >{
+    builders: {
       TargetPlatform.android: CupertinoPageTransitionsBuilder(),
       TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
     },
@@ -38,7 +38,7 @@ class AnimationConstants {
 
   // Hero Animations
   static const double heroMinScale = 0.6;
-  static const double heroMaxScale = 1;
+  static const double heroMaxScale = 1.0;
   static const double heroMinBlur = 0;
   static const double heroMaxBlur = 10;
 
@@ -56,7 +56,7 @@ class AnimationConstants {
 
   // Scale Animations
   static const double scaleMin = 0.8;
-  static const double scaleNormal = 1;
+  static const double scaleNormal = 1.0;
   static const double scaleMax = 1.2;
 
   // Rotation Animations
@@ -68,25 +68,25 @@ class AnimationConstants {
   // Shimmer Animations
   static const Duration shimmerDuration = Duration(milliseconds: 1500);
   static const Gradient shimmerGradient = LinearGradient(
-    colors: <>[
+    colors: [
       Color(0xFFEBEBEB),
       Color(0xFFF5F5F5),
       Color(0xFFEBEBEB),
     ],
-    stops: <double>[0.1, 0.3, 0.5],
+    stops: [0.1, 0.3, 0.5],
     begin: Alignment(-1, -0.3),
     end: Alignment(1, 0.3),
   );
 
   // Pulse Animations
   static const Duration pulseDuration = Duration(milliseconds: 800);
-  static const double pulseMinScale = 1;
+  static const double pulseMinScale = 1.0;
   static const double pulseMaxScale = 1.1;
 
   // Loading Animations
   static const Duration loadingSpinDuration = Duration(milliseconds: 800);
   static const double loadingMinOpacity = 0.3;
-  static const double loadingMaxOpacity = 1;
+  static const double loadingMaxOpacity = 1.0;
 
   // Gift Animations
   static const Duration giftFlyDuration = Duration(milliseconds: 800);
@@ -97,7 +97,7 @@ class AnimationConstants {
   static const Duration likeDuration = Duration(milliseconds: 500);
   static const double likeStartScale = 0.8;
   static const double likePeakScale = 1.4;
-  static const double likeEndScale = 1;
+  static const double likeEndScale = 1.0;
 
   // Confetti Animations
   static const Duration confettiDuration = Duration(seconds: 3);
@@ -109,7 +109,7 @@ class AnimationConstants {
   static const Curve transitionCurve = Curves.easeInOutCubic;
 
   // Spring Physics
-  static const double springMass = 1;
+  static const double springMass = 1.0;
   static const double springStiffness = 200;
   static const double springDamping = 20;
 
@@ -149,7 +149,7 @@ class AnimationConstants {
       case 'decelerate':
         return curveDecelerate;
       case 'accelerate':
-        return curveAccelerate;
+        return curveAccelerate; // এখন 'accelerate' ঠিক আছে
       case 'linear':
         return curveLinear;
       case 'ease':

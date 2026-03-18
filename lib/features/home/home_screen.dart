@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/providers/auth_provider.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../../core/providers/country_provider.dart';
 import '../../core/providers/notification_provider.dart';
 import '../../core/widgets/gradient_background.dart';
 import '../../core/widgets/role_based_drawer.dart';
-import '../../core/widgets/country_selector.dart';
+import '../../widgets/country_selector.dart';
 import '../../core/models/room_model.dart';
-import '../../core/services/room_service.dart';
 import '../../core/services/navigation_service.dart';
 import '../games/games_screen.dart';
 import '../wallet/wallet_screen.dart';
@@ -31,10 +31,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   String _searchQuery = '';
   int _selectedNavIndex = 0;
   bool _isLoading = true;
-  List<RoomModel> _rooms = <RoomModel>[];
-  List<RoomModel> _followingRooms = <RoomModel>[];
-  List<RoomModel> _nearbyRooms = <RoomModel>[];
-  List<Map<String, dynamic>> _hotRooms = <Map<String, dynamic>>[];
+  List<RoomModel> _rooms = [];
+  List<RoomModel> _followingRooms = [];
+  List<RoomModel> _nearbyRooms = [];
+  List<Map<String, dynamic>> _hotRooms = [];
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -71,9 +71,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
-    
+
     try {
-      await Future.wait(<Future<void>>[
+      await Future.wait([
         _loadRooms(),
         _loadHotRooms(),
       ]);
@@ -85,35 +85,45 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _loadRooms() async {
-    // Simulate API call
     await Future.delayed(const Duration(seconds: 1));
-    
-    // Sample data
-    _rooms = List.generate(10, (int index) {
+
+    _rooms = List.generate(10, (index) {
       return RoomModel(
         id: 'room_${100 + index}',
-        title: '${_selectedCountry == 'All' ? 'International' : _selectedCountry} Room ${index + 1}',
+        name: '${_selectedCountry == 'All' ? 'International' : _selectedCountry} Room ${index + 1}',
+        hostId: 'host_${index + 1}',
         hostName: 'Host ${index + 1}',
         hostAvatar: null,
-        viewers: 150 + (index * 50),
-        tags: <String>['music', 'chat', 'fun'],
+        category: index % 3 == 0 ? 'music' : (index % 3 == 1 ? 'gaming' : 'chat'),
+        description: 'This is a sample room description',
+        viewerCount: 150 + (index * 50),
+        maxSeats: 9,
+        seats: [],
+        isPKActive: false,
+        isPrivate: false,
+        createdAt: DateTime.now().subtract(Duration(hours: index)),
+        moderators: [],
+        giftsReceived: {},
         country: _selectedCountry == 'All' ? 'International' : _selectedCountry,
-        isLive: index % 3 == 0,
-        isTrending: index < 3,
+        status: index % 3 == 0 ? RoomStatus.active : RoomStatus.active,
+        tags: ['music', 'chat', 'fun'],
+        totalGifts: 5 + index,
+        totalMessages: 20 + index,
+        totalParticipants: 150 + (index * 50),
       );
     });
 
-    _followingRooms = _rooms.where((RoomModel r) => r.isTrending).toList();
-    _nearbyRooms = _rooms.where((RoomModel r) => r.country == _selectedCountry).toList();
+    _followingRooms = _rooms.where((room) => room.viewerCount > 300).toList();
+    _nearbyRooms = _rooms.where((room) => room.country == _selectedCountry).toList();
   }
 
   Future<void> _loadHotRooms() async {
-    _hotRooms = <Map<String, dynamic>>[
-      <String, dynamic>{'title': 'Music Night', 'viewers': 1250, 'color': Colors.purple},
-      <String, dynamic>{'title': 'Gaming Zone', 'viewers': 980, 'color': Colors.blue},
-      <String, dynamic>{'title': 'Talk Show', 'viewers': 750, 'color': Colors.green},
-      <String, dynamic>{'title': 'Singing Battle', 'viewers': 620, 'color': Colors.orange},
-      <String, dynamic>{'title': 'Comedy Club', 'viewers': 540, 'color': Colors.red},
+    _hotRooms = [
+      {'title': 'Music Night', 'viewers': 1250, 'color': Colors.purple},
+      {'title': 'Gaming Zone', 'viewers': 980, 'color': Colors.blue},
+      {'title': 'Talk Show', 'viewers': 750, 'color': Colors.green},
+      {'title': 'Singing Battle', 'viewers': 620, 'color': Colors.orange},
+      {'title': 'Comedy Club', 'viewers': 540, 'color': Colors.red},
     ];
   }
 
@@ -125,18 +135,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   List<RoomModel> get _filteredRooms {
     if (_searchQuery.isEmpty) return _rooms;
-    
-    return _rooms.where((RoomModel room) =>
-      room.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-      room.hostName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-      room.tags.any((tag) => tag.toLowerCase().contains(_searchQuery.toLowerCase())),
-    ).toList();
+
+    return _rooms.where((room) {
+      final name = room.name.toLowerCase();
+      final host = room.hostName.toLowerCase();
+      final query = _searchQuery.toLowerCase();
+
+      if (name.contains(query) || host.contains(query)) {
+        return true;
+      }
+
+      return room.tags?.any((tag) => tag.toLowerCase().contains(query)) ?? false;
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final countryProvider = Provider.of<CountryProvider>(context);
+    final notificationProvider = Provider.of<NotificationProvider>(context);
 
     return WillPopScope(
       onWillPop: () async {
@@ -148,17 +165,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         return true;
       },
       child: Scaffold(
-        drawer: authProvider.isLoggedIn 
+        drawer: authProvider.isLoggedIn
             ? RoleBasedDrawer(
-                user: authProvider.currentUser,
-                onLogout: () => _handleLogout(context),
-              )
+          user: authProvider.currentUser,
+          onLogout: () => _handleLogout(context),
+        )
             : _buildGuestDrawer(context),
         body: GradientBackground(
           child: SafeArea(
             child: NestedScrollView(
-              headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-                return <>[
+              headerSliverBuilder: (context, innerBoxIsScrolled) {
+                return [
                   SliverAppBar(
                     floating: true,
                     pinned: true,
@@ -172,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: <>[
+                            colors: [
                               AppColors.accentPurple,
                               AppColors.accentBlue,
                             ],
@@ -180,8 +197,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                         child: SafeArea(
                           child: Column(
-                            children: <>[
-                              _buildTopBar(context, authProvider, countryProvider),
+                            children: [
+                              _buildTopBar(context, authProvider, countryProvider, notificationProvider),
                               _buildCountrySelector(countryProvider),
                               _buildHotStrip(),
                             ],
@@ -195,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       indicatorWeight: 3,
                       labelColor: Colors.white,
                       unselectedLabelColor: Colors.white70,
-                      tabs: const <>[
+                      tabs: const [
                         Tab(text: 'For You'),
                         Tab(text: 'Following'),
                         Tab(text: 'Nearby'),
@@ -207,13 +224,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               body: _isLoading
                   ? _buildShimmerLoading()
                   : TabBarView(
-                      controller: _tabController,
-                      children: <>[
-                        _buildRoomList(_filteredRooms),
-                        _buildRoomList(_followingRooms),
-                        _buildNearbyList(),
-                      ],
-                    ),
+                controller: _tabController,
+                children: [
+                  _buildRoomList(_filteredRooms),
+                  _buildRoomList(_followingRooms),
+                  _buildNearbyList(),
+                ],
+              ),
             ),
           ),
         ),
@@ -222,24 +239,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildTopBar(BuildContext context, AuthProvider auth, CountryProvider country) {
+  Widget _buildTopBar(BuildContext context, AuthProvider auth, CountryProvider country, NotificationProvider notification) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           Builder(
-            builder: (BuildContext context) => IconButton(
+            builder: (context) => IconButton(
               icon: const Icon(Icons.menu, color: Colors.white),
               onPressed: () => Scaffold.of(context).openDrawer(),
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
+            flex: 2,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
-                  auth.isLoggedIn 
+                  auth.isLoggedIn
                       ? 'Welcome, ${auth.currentUser?.name ?? 'User'}!'
                       : 'Welcome, Guest!',
                   style: const TextStyle(
@@ -250,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
                 if (country.selectedCountry != null)
                   Row(
-                    children: <>[
+                    children: [
                       Text(
                         country.selectedCountry!.flag,
                         style: const TextStyle(fontSize: 14),
@@ -265,12 +283,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ],
             ),
           ),
-          // Search Bar
           Expanded(
+            flex: 3,
             child: Container(
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: TextField(
@@ -281,12 +299,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   prefixIcon: const Icon(Icons.search, color: Colors.white, size: 20),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.white, size: 16),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _searchQuery = '');
-                          },
-                        )
+                    icon: const Icon(Icons.clear, color: Colors.white, size: 16),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                  )
                       : null,
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -296,12 +314,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
           ),
           const SizedBox(width: 8),
-          // Filter Button
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: IconButton(
@@ -309,16 +326,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               onPressed: _showFilterDialog,
             ),
           ),
-          // Notification Button
-          if (auth.isLoggedIn) ...<>[
+          if (auth.isLoggedIn) ...[
             const SizedBox(width: 8),
             Stack(
-              children: <>[
+              children: [
                 Container(
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: Colors.white.withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
@@ -328,17 +344,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     },
                   ),
                 ),
-                if (Provider.of<NotificationProvider>(context).hasUnread)
-                  Positioned(
+                if (notification.hasUnread)
+                  const Positioned(
                     top: 5,
                     right: 5,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
+                    child: CircleAvatar(
+                      radius: 4,
+                      backgroundColor: Colors.red,
                     ),
                   ),
               ],
@@ -369,42 +381,43 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: _hotRooms.length,
-        itemBuilder: (BuildContext context, int index) {
-          final Map<String, dynamic> room = _hotRooms[index];
+        itemBuilder: (context, index) {
+          final room = _hotRooms[index];
+          final color = room['color'] as Color;
           return Container(
             width: 140,
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: <>[
-                  (room['color'] as Color).withValues(alpha: 0.8),
-                  (room['color'] as Color).withValues(alpha: 0.4),
+                colors: [
+                  color.withOpacity(0.8),
+                  color.withOpacity(0.4),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: <>[
+              boxShadow: [
                 BoxShadow(
-                  color: (room['color'] as Color).withValues(alpha: 0.3),
+                  color: color.withOpacity(0.3),
                   blurRadius: 8,
                   spreadRadius: 1,
                 ),
               ],
             ),
             child: Stack(
-              children: <>[
+              children: [
                 Positioned(
                   top: 8,
                   right: 8,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.3),
+                      color: Colors.black.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
-                      children: <>[
+                      children: [
                         const Icon(Icons.visibility, color: Colors.white, size: 10),
                         const SizedBox(width: 2),
                         Text(
@@ -418,7 +431,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: <>[
+                    children: [
                       const Icon(Icons.whatshot, color: Colors.white, size: 20),
                       const SizedBox(height: 4),
                       Text(
@@ -445,20 +458,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
+          children: [
             Icon(
               Icons.room_preferences,
               size: 80,
-              color: Colors.white.withValues(alpha: 0.3),
+              color: Colors.white.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
             Text(
               _searchQuery.isNotEmpty
                   ? 'No rooms match "$_searchQuery"'
                   : _tabController.index == 1
-                      ? 'No followed rooms yet'
-                      : 'No rooms available',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                  ? 'No followed rooms yet'
+                  : 'No rooms available',
+              style: TextStyle(color: Colors.white.withOpacity(0.5)),
             ),
             if (_tabController.index == 1)
               TextButton(
@@ -475,8 +488,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: rooms.length,
-      itemBuilder: (BuildContext context, int index) {
-        final RoomModel room = rooms[index];
+      itemBuilder: (context, index) {
+        final room = rooms[index];
         return RoomCard(
           room: room,
           onTap: () {
@@ -492,7 +505,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
+          children: [
             const Icon(Icons.public, size: 80, color: Colors.white30),
             const SizedBox(height: 16),
             const Text(
@@ -519,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: 5,
-      itemBuilder: (BuildContext context, int index) {
+      itemBuilder: (context, index) {
         return Shimmer.fromColors(
           baseColor: Colors.grey[800]!,
           highlightColor: Colors.grey[600]!,
@@ -539,7 +552,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget _buildBottomNavBar() {
     return BottomNavigationBar(
       currentIndex: _selectedNavIndex,
-      onTap: (int index) {
+      onTap: (index) {
         setState(() => _selectedNavIndex = index);
         _handleNavigation(index);
       },
@@ -547,7 +560,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       backgroundColor: AppColors.surfaceDark,
       selectedItemColor: AppColors.accentPurple,
       unselectedItemColor: Colors.white54,
-      items: const <>[
+      items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.home),
           label: 'Home',
@@ -576,12 +589,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     switch (index) {
       case 1:
         NavigationService.navigateTo('/explore');
+        break;
       case 2:
         NavigationService.navigateTo('/games');
+        break;
       case 3:
         NavigationService.navigateTo('/wallet');
+        break;
       case 4:
         NavigationService.navigateTo('/profile');
+        break;
     }
   }
 
@@ -589,12 +606,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return Drawer(
       backgroundColor: AppColors.surfaceDark,
       child: Column(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: <>[
+                colors: [
                   AppColors.accentPurple,
                   AppColors.accentBlue,
                 ],
@@ -603,7 +620,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             child: const SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <>[
+                children: [
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: Colors.white,
@@ -629,7 +646,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
-              children: <>[
+              children: [
                 _buildDrawerItem(Icons.home, 'Home', () {
                   Navigator.pop(context);
                 }),
@@ -665,7 +682,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (BuildContext context) => Container(
+      builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.5,
         decoration: const BoxDecoration(
           color: AppColors.surfaceDark,
@@ -675,7 +692,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ),
         child: Column(
-          children: <>[
+          children: [
             Container(
               padding: const EdgeInsets.all(16),
               child: const Text(
@@ -691,7 +708,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(16),
-                children: <>[
+                children: [
                   const Text(
                     'Region',
                     style: TextStyle(color: Colors.white70, fontSize: 14),
@@ -700,22 +717,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: <String>['All', 'Asia', 'Europe', 'America', 'Africa', 'Oceania']
-                        .map((String region) => FilterChip(
-                              label: Text(region),
-                              selected: _selectedRegion == region,
-                              onSelected: (bool selected) {
-                                setState(() {
-                                  _selectedRegion = region;
-                                });
-                                Navigator.pop(context);
-                              },
-                              backgroundColor: Colors.white.withValues(alpha: 0.1),
-                              selectedColor: AppColors.accentPurple,
-                              labelStyle: TextStyle(
-                                color: _selectedRegion == region ? Colors.white : Colors.white70,
-                              ),
-                            ),)
+                    children: ['All', 'Asia', 'Europe', 'America', 'Africa', 'Oceania']
+                        .map((region) => FilterChip(
+                      label: Text(region),
+                      selected: _selectedRegion == region,
+                      onSelected: (selected) {
+                        setState(() {
+                          _selectedRegion = region;
+                        });
+                        Navigator.pop(context);
+                      },
+                      backgroundColor: Colors.white.withOpacity(0.1),
+                      selectedColor: AppColors.accentPurple,
+                      labelStyle: TextStyle(
+                        color: _selectedRegion == region ? Colors.white : Colors.white70,
+                      ),
+                    ))
                         .toList(),
                   ),
                   const SizedBox(height: 20),
@@ -727,13 +744,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: <String>['All', 'Voice', 'Video', 'Games', 'Music']
-                        .map((String type) => FilterChip(
-                              label: Text(type),
-                              onSelected: (bool selected) {},
-                              backgroundColor: Colors.white.withValues(alpha: 0.1),
-                              labelStyle: const TextStyle(color: Colors.white70),
-                            ),)
+                    children: ['All', 'Voice', 'Video', 'Games', 'Music']
+                        .map((type) => FilterChip(
+                      label: Text(type),
+                      onSelected: (selected) {},
+                      backgroundColor: Colors.white.withOpacity(0.1),
+                      labelStyle: const TextStyle(color: Colors.white70),
+                    ))
                         .toList(),
                   ),
                   const SizedBox(height: 20),
@@ -745,13 +762,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: <String>['Trending', 'Newest', 'Most Viewers', 'Nearby']
-                        .map((String sort) => FilterChip(
-                              label: Text(sort),
-                              onSelected: (bool selected) {},
-                              backgroundColor: Colors.white.withValues(alpha: 0.1),
-                              labelStyle: const TextStyle(color: Colors.white70),
-                            ),)
+                    children: ['Trending', 'Newest', 'Most Viewers', 'Nearby']
+                        .map((sort) => FilterChip(
+                      label: Text(sort),
+                      onSelected: (selected) {},
+                      backgroundColor: Colors.white.withOpacity(0.1),
+                      labelStyle: const TextStyle(color: Colors.white70),
+                    ))
                         .toList(),
                   ),
                 ],
@@ -760,7 +777,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
-                children: <>[
+                children: [
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
@@ -795,10 +812,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _showCountrySelector() {
+    final countryProvider = Provider.of<CountryProvider>(context, listen: false);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (BuildContext context) => Container(
+      builder: (context) => Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
           color: AppColors.surfaceDark,
@@ -809,13 +828,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             const Text(
               'Select Country',
               style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            ...Provider.of<CountryProvider>(context).supportedCountries.map((country) {
+            ...countryProvider.supportedCountries.map((country) {
               return ListTile(
                 leading: Text(country.flag, style: const TextStyle(fontSize: 24)),
                 title: Text(country.name, style: const TextStyle(color: Colors.white)),
@@ -843,86 +862,57 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 }
 
-// Room Card Widget (if not exists in separate file)
+// Room Card Widget
 class RoomCard extends StatelessWidget {
-
-  const RoomCard({
-    required this.room, required this.onTap, super.key,
-  });
   final RoomModel room;
   final VoidCallback onTap;
 
+  const RoomCard({
+    required this.room,
+    required this.onTap,
+    super.key,
+  });
+
   @override
   Widget build(BuildContext context) {
+    final isLive = room.status == RoomStatus.active;
+    final isTrending = room.viewerCount > 300;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: <>[
-              if (room.isTrending) Colors.purple else Colors.blue,
-              if (room.isTrending) Colors.pink else Colors.cyan,
-            ].map((Object? c) => c.withOpacity(0.3)).toList(),
+            colors: [
+              if (isTrending) Colors.purple else Colors.blue,
+              if (isTrending) Colors.pink else Colors.cyan,
+            ].map((c) => c.withOpacity(0.3)).toList(),
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: room.isLive ? Colors.red : Colors.white24,
-            width: room.isLive ? 2 : 1,
+            color: isLive ? Colors.red : Colors.white24,
+            width: isLive ? 2 : 1,
           ),
         ),
         child: Stack(
-          children: <>[
-            if (room.isLive)
-              Positioned(
+          children: [
+            if (isLive)
+              const Positioned(
                 top: 12,
                 left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <>[
-                      Icon(Icons.fiber_manual_record, color: Colors.white, size: 8),
-                      SizedBox(width: 4),
-                      Text(
-                        'LIVE',
-                        style: TextStyle(color: Colors.white, fontSize: 8),
-                      ),
-                    ],
-                  ),
-                ),
+                child: _LiveBadge(),
               ),
-            if (room.isTrending)
-              Positioned(
+            if (isTrending)
+              const Positioned(
                 top: 12,
                 right: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <>[
-                      Icon(Icons.whatshot, color: Colors.white, size: 8),
-                      SizedBox(width: 4),
-                      Text(
-                        'TRENDING',
-                        style: TextStyle(color: Colors.white, fontSize: 8),
-                      ),
-                    ],
-                  ),
-                ),
+                child: _TrendingBadge(),
               ),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
-                children: <>[
+                children: [
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: Colors.purple,
@@ -935,9 +925,9 @@ class RoomCard extends StatelessWidget {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <>[
+                      children: [
                         Text(
-                          room.title,
+                          room.name,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -951,39 +941,40 @@ class RoomCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Row(
-                          children: <>[
+                          children: [
                             const Icon(Icons.visibility, color: Colors.white70, size: 14),
                             const SizedBox(width: 4),
                             Text(
-                              '${room.viewers} viewers',
+                              '${room.viewerCount} viewers',
                               style: const TextStyle(color: Colors.white70, fontSize: 12),
                             ),
                             const SizedBox(width: 16),
                             const Icon(Icons.public, color: Colors.white70, size: 14),
                             const SizedBox(width: 4),
                             Text(
-                              room.country,
+                              room.country ?? 'International',
                               style: const TextStyle(color: Colors.white70, fontSize: 12),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          children: room.tags.map((tag) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '#$tag',
-                                style: const TextStyle(color: Colors.white70, fontSize: 10),
-                              ),
-                            );
-                          }).toList(),
-                        ),
+                        if (room.tags != null)
+                          Wrap(
+                            spacing: 8,
+                            children: room.tags!.map((tag) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '#$tag',
+                                  style: const TextStyle(color: Colors.white70, fontSize: 10),
+                                ),
+                              );
+                            }).toList(),
+                          ),
                       ],
                     ),
                   ),
@@ -1001,5 +992,57 @@ class RoomCard extends StatelessWidget {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<RoomModel>('room', room));
     properties.add(ObjectFlagProperty<VoidCallback>.has('onTap', onTap));
+  }
+}
+
+class _LiveBadge extends StatelessWidget {
+  const _LiveBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.red,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.fiber_manual_record, color: Colors.white, size: 8),
+          SizedBox(width: 4),
+          Text(
+            'LIVE',
+            style: TextStyle(color: Colors.white, fontSize: 8),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrendingBadge extends StatelessWidget {
+  const _TrendingBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.orange,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.whatshot, color: Colors.white, size: 8),
+          SizedBox(width: 4),
+          Text(
+            'TRENDING',
+            style: TextStyle(color: Colors.white, fontSize: 8),
+          ),
+        ],
+      ),
+    );
   }
 }

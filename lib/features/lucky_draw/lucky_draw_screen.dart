@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 import '../../core/di/service_locator.dart';
 import '../../core/services/lucky_draw_service.dart';
 import '../../core/services/payment_service.dart';
@@ -7,7 +8,6 @@ import '../../mixins/toast_mixin.dart';
 import '../../mixins/dialog_mixin.dart';
 import '../../widgets/animation/fade_animation.dart';
 import '../../widgets/common/custom_button.dart';
-import 'dart:math';
 
 class LuckyDrawScreen extends StatefulWidget {
   const LuckyDrawScreen({super.key});
@@ -16,22 +16,22 @@ class LuckyDrawScreen extends StatefulWidget {
   State<LuckyDrawScreen> createState() => _LuckyDrawScreenState();
 }
 
-class _LuckyDrawScreenState extends State<LuckyDrawScreen> 
+class _LuckyDrawScreenState extends State<LuckyDrawScreen>
     with LoadingMixin, ToastMixin, DialogMixin, SingleTickerProviderStateMixin {
-  
-  final _luckyDrawService = ServiceLocator().get<LuckyDrawService>();
+
+  final LuckyDrawService _luckyDrawService = ServiceLocator().get<LuckyDrawService>();
   final PaymentService _paymentService = ServiceLocator().get<PaymentService>();
-  
+
   late AnimationController _spinController;
   late Animation<double> _spinAnimation;
-  
+
   int _userCoins = 10000;
   bool _isSpinning = false;
   int? _selectedPrizeIndex;
-  List<LuckyDrawPrize> _prizes = <LuckyDrawPrize>[];
-  final List<LuckyDrawPrize> _history = <LuckyDrawPrize>[];
+  List<LuckyDrawPrize> _prizes = [];
+  final List<LuckyDrawPrize> _history = [];
   int _spinCount = 0;
-
+  bool _isLoading = true;
   @override
   void initState() {
     super.initState();
@@ -39,14 +39,14 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     );
-    
+
     _spinAnimation = Tween<double>(begin: 0, end: 360 * 10).animate(
       CurvedAnimation(
         parent: _spinController,
         curve: Curves.easeOutCubic,
       ),
     );
-    
+
     _spinController.addStatusListener((AnimationStatus status) {
       if (status == AnimationStatus.completed) {
         setState(() {
@@ -55,7 +55,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
         _showResult();
       }
     });
-    
+
     _loadData();
   }
 
@@ -68,8 +68,8 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
   Future<void> _loadData() async {
     await runWithLoading(() async {
       await Future.delayed(const Duration(seconds: 1));
-      
-      _prizes = <LuckyDrawPrize>[
+
+      _prizes = [
         LuckyDrawPrize(
           id: '1',
           name: '100 Coins',
@@ -163,12 +163,12 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
 
   Future<void> _showResult() async {
     final Random random = Random();
-    final List<LuckyDrawPrize> results = <LuckyDrawPrize>[];
-    
+    final List<LuckyDrawPrize> results = [];
+
     for (var i = 0; i < _spinCount; i++) {
       final double rand = random.nextDouble();
       double cumulative = 0;
-      
+
       for (LuckyDrawPrize prize in _prizes) {
         cumulative += prize.probability;
         if (rand < cumulative) {
@@ -196,7 +196,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
         title: Text(prize.isRare ? '🎉 JACKPOT!' : 'Congratulations!'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Container(
               width: 100,
               height: 100,
@@ -223,7 +223,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
                 color: prize.color,
               ),
             ),
-            if (prize.value > 0) ...<>[
+            if (prize.value > 0) ...[
               const SizedBox(height: 8),
               Text(
                 '+${prize.value} coins',
@@ -232,7 +232,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
             ],
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Awesome!'),
@@ -252,7 +252,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
         title: const Text('Draw Results'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -260,7 +260,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
-                children: <>[
+                children: [
                   Text(
                     'Total Coins: +$totalCoins',
                     style: const TextStyle(
@@ -269,7 +269,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
                       color: Colors.green,
                     ),
                   ),
-                  if (rareCount > 0) ...<>[
+                  if (rareCount > 0) ...[
                     const SizedBox(height: 8),
                     Text(
                       'Rare Items: $rareCount',
@@ -300,7 +300,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: <>[
+                      children: [
                         Icon(prize.icon, color: prize.color, size: 24),
                         const SizedBox(height: 4),
                         Text(
@@ -319,7 +319,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Great!'),
@@ -335,7 +335,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
       appBar: AppBar(
         title: const Text('Lucky Draw'),
         backgroundColor: Colors.amber,
-        actions: <>[
+        actions: [
           Container(
             margin: const EdgeInsets.all(8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -344,7 +344,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
-              children: <>[
+              children: [
                 const Icon(Icons.monetization_on, color: Colors.amber, size: 16),
                 const SizedBox(width: 4),
                 Text(
@@ -359,255 +359,255 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: <>[
-                  // Wheel Preview
-                  SizedBox(
-                    height: 300,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: <>[
-                        // Wheel
-                        AnimatedBuilder(
-                          animation: _spinAnimation,
-                          builder: (BuildContext context, Widget? child) {
-                            return Transform.rotate(
-                              angle: _spinAnimation.value * pi / 180,
-                              child: Container(
-                                width: 250,
-                                height: 250,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: const RadialGradient(
-                                    colors: <>[Colors.amber, Colors.orange],
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Wheel Preview
+            SizedBox(
+              height: 300,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Wheel
+                  AnimatedBuilder(
+                    animation: _spinAnimation,
+                    builder: (BuildContext context, Widget? child) {
+                      return Transform.rotate(
+                        angle: _spinAnimation.value * pi / 180,
+                        child: Container(
+                          width: 250,
+                          height: 250,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const RadialGradient(
+                              colors: [Colors.amber, Colors.orange],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.amber.withValues(alpha: 0.5),
+                                blurRadius: 20,
+                                spreadRadius: 5,
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            children: [
+                              ...List.generate(8, (int index) {
+                                final double angle = (2 * pi / 8) * index;
+                                return Positioned(
+                                  left: 125 + 80 * cos(angle) - 20,
+                                  top: 125 + 80 * sin(angle) - 20,
+                                  child: Icon(
+                                    _prizes[index].icon,
+                                    color: Colors.white,
+                                    size: 30,
                                   ),
-                                  boxShadow: <>[
-                                    BoxShadow(
-                                      color: Colors.amber.withValues(alpha: 0.5),
-                                      blurRadius: 20,
-                                      spreadRadius: 5,
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // Center Logo
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.card_giftcard,
+                      color: Colors.amber,
+                      size: 40,
+                    ),
+                  ),
+
+                  // Pointer
+                  const Positioned(
+                    top: 0,
+                    child: Icon(
+                      Icons.arrow_drop_down,
+                      color: Colors.red,
+                      size: 50,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Draw Options
+            Row(
+              children: [
+                Expanded(
+                  child: _buildDrawCard(
+                    cost: 1000,
+                    draws: 1,
+                    discount: false,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildDrawCard(
+                    cost: 5000,
+                    draws: 6,
+                    discount: true,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildDrawCard(
+                    cost: 9000,
+                    draws: 12,
+                    discount: true,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Prize List
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Available Prizes',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ..._prizes.map((LuckyDrawPrize prize) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: prize.color.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              prize.icon,
+                              color: prize.color,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  prize.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                LinearProgressIndicator(
+                                  value: prize.probability,
+                                  backgroundColor: Colors.grey.shade200,
+                                  valueColor: AlwaysStoppedAnimation<Color>(prize.color),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: prize.isRare
+                                  ? Colors.purple.withValues(alpha: 0.1)
+                                  : Colors.grey.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '${(prize.probability * 100).toStringAsFixed(1)}%',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: prize.isRare ? Colors.purple : Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )).toList(),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Recent Wins
+            if (_history.isNotEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Recent Wins',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 80,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _history.length > 10 ? 10 : _history.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            final LuckyDrawPrize prize = _history[index];
+                            return Container(
+                              width: 80,
+                              margin: const EdgeInsets.only(right: 8),
+                              decoration: BoxDecoration(
+                                color: prize.color.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(prize.icon, color: prize.color, size: 24),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    prize.name.length > 10
+                                        ? '${prize.name.substring(0, 8)}...'
+                                        : prize.name,
+                                    style: TextStyle(
+                                      fontSize: 8,
+                                      color: prize.color,
                                     ),
-                                  ],
-                                ),
-                                child: Stack(
-                                  children: <>[
-                                    ...List.generate(8, (int index) {
-                                      final double angle = (2 * pi / 8) * index;
-                                      return Positioned(
-                                        left: 125 + 80 * cos(angle) - 20,
-                                        top: 125 + 80 * sin(angle) - 20,
-                                        child: Icon(
-                                          _prizes[index].icon,
-                                          color: Colors.white,
-                                          size: 30,
-                                        ),
-                                      );
-                                    }),
-                                  ],
-                                ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
                             );
                           },
                         ),
-                        
-                        // Center Logo
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.card_giftcard,
-                            color: Colors.amber,
-                            size: 40,
-                          ),
-                        ),
-                        
-                        // Pointer
-                        const Positioned(
-                          top: 0,
-                          child: Icon(
-                            Icons.arrow_drop_down,
-                            color: Colors.red,
-                            size: 50,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Draw Options
-                  Row(
-                    children: <>[
-                      Expanded(
-                        child: _buildDrawCard(
-                          cost: 1000,
-                          draws: 1,
-                          discount: false,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildDrawCard(
-                          cost: 5000,
-                          draws: 6,
-                          discount: true,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildDrawCard(
-                          cost: 9000,
-                          draws: 12,
-                          discount: true,
-                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-
-                  // Prize List
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <>[
-                          const Text(
-                            'Available Prizes',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          ..._prizes.map((LuckyDrawPrize prize) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              children: <>[
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: prize.color.withValues(alpha: 0.2),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    prize.icon,
-                                    color: prize.color,
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: <>[
-                                      Text(
-                                        prize.name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      LinearProgressIndicator(
-                                        value: prize.probability,
-                                        backgroundColor: Colors.grey.shade200,
-                                        valueColor: AlwaysStoppedAnimation<Color>(prize.color),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: prize.isRare
-                                        ? Colors.purple.withValues(alpha: 0.1)
-                                        : Colors.grey.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    '${(prize.probability * 100).toStringAsFixed(1)}%',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: prize.isRare ? Colors.purple : Colors.grey,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Recent Wins
-                  if (_history.isNotEmpty)
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <>[
-                            const Text(
-                              'Recent Wins',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              height: 80,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: _history.length > 10 ? 10 : _history.length,
-                                itemBuilder: (BuildContext context, int index) {
-                                  final LuckyDrawPrize prize = _history[index];
-                                  return Container(
-                                    width: 80,
-                                    margin: const EdgeInsets.only(right: 8),
-                                    decoration: BoxDecoration(
-                                      color: prize.color.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: <>[
-                                        Icon(prize.icon, color: prize.color, size: 24),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          prize.name.length > 10
-                                              ? '${prize.name.substring(0, 8)}...'
-                                              : prize.name,
-                                          style: TextStyle(
-                                            fontSize: 8,
-                                            color: prize.color,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
+                ),
               ),
-            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -617,17 +617,17 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
     required bool discount,
   }) {
     final int savings = discount ? ((cost / draws) * 0.2).round() : 0;
-    
+
     return GestureDetector(
       onTap: _isSpinning ? null : () => _spinWheel(cost, draws),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: <>[Colors.amber, Colors.orange],
+            colors: [Colors.amber, Colors.orange],
           ),
           borderRadius: BorderRadius.circular(12),
-          boxShadow: <>[
+          boxShadow: [
             BoxShadow(
               color: Colors.amber.withValues(alpha: 0.3),
               blurRadius: 10,
@@ -636,7 +636,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
           ],
         ),
         child: Column(
-          children: <>[
+          children: [
             Text(
               '$draws ${draws == 1 ? 'Draw' : 'Draws'}',
               style: const TextStyle(
@@ -648,7 +648,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: <>[
+              children: [
                 const Icon(Icons.monetization_on, color: Colors.white, size: 16),
                 const SizedBox(width: 4),
                 Text(
@@ -661,7 +661,7 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
                 ),
               ],
             ),
-            if (discount) ...<>[
+            if (discount) ...[
               const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -687,6 +687,13 @@ class _LuckyDrawScreenState extends State<LuckyDrawScreen>
 }
 
 class LuckyDrawPrize {
+  final String id;
+  final String name;
+  final int value;
+  final double probability;
+  final Color color;
+  final IconData icon;
+  final bool isRare;
 
   LuckyDrawPrize({
     required this.id,
@@ -697,11 +704,4 @@ class LuckyDrawPrize {
     required this.icon,
     required this.isRare,
   });
-  final String id;
-  final String name;
-  final int value;
-  final double probability;
-  final Color color;
-  final IconData icon;
-  final bool isRare;
 }

@@ -4,7 +4,7 @@ import '../../../core/di/service_locator.dart';
 
 mixin AnalyticsMixin<T extends StatefulWidget> on State<T> {
   final AnalyticsService _analytics = ServiceLocator().get<AnalyticsService>();
-  
+
   @override
   void initState() {
     super.initState();
@@ -25,110 +25,110 @@ mixin AnalyticsMixin<T extends StatefulWidget> on State<T> {
 
   // Track user action
   Future<void> trackUserAction(String action, {Map<String, dynamic>? properties}) async {
-    await trackEvent('user_action', parameters: <String, dynamic>{
+    await trackEvent('user_action', parameters: {
       'action': action,
       ...?properties,
-    },);
+    });
   }
 
   // Track button click
   Future<void> trackButtonClick(String buttonName, {Map<String, dynamic>? properties}) async {
-    await trackEvent('button_click', parameters: <String, dynamic>{
+    await trackEvent('button_click', parameters: {
       'button_name': buttonName,
       'screen': widget.runtimeType.toString(),
       ...?properties,
-    },);
+    });
   }
 
   // Track form submission
   Future<void> trackFormSubmit(String formName, {bool success = true, String? error}) async {
-    await trackEvent('form_submit', parameters: <String, dynamic>{
+    await trackEvent('form_submit', parameters: {
       'form_name': formName,
       'success': success,
       if (error != null) 'error': error,
       'screen': widget.runtimeType.toString(),
-    },);
+    });
   }
 
   // Track search
   Future<void> trackSearch(String query, {int resultCount = 0}) async {
-    await trackEvent('search', parameters: <String, dynamic>{
+    await trackEvent('search', parameters: {
       'query': query,
       'result_count': resultCount,
       'screen': widget.runtimeType.toString(),
-    },);
+    });
   }
 
   // Track filter
   Future<void> trackFilter(Map<String, dynamic> filters) async {
-    await trackEvent('filter', parameters: <String, dynamic>{
+    await trackEvent('filter', parameters: {
       ...filters,
       'screen': widget.runtimeType.toString(),
-    },);
+    });
   }
 
   // Track pagination
   Future<void> trackPagination(int page, int pageSize) async {
-    await trackEvent('pagination', parameters: <String, dynamic>{
+    await trackEvent('pagination', parameters: {
       'page': page,
       'page_size': pageSize,
       'screen': widget.runtimeType.toString(),
-    },);
+    });
   }
 
   // Track error
   Future<void> trackError(String error, {String? description, StackTrace? stackTrace}) async {
-    await trackEvent('error', parameters: <String, dynamic>{
+    await trackEvent('error', parameters: {
       'error': error,
       if (description != null) 'description': description,
       'screen': widget.runtimeType.toString(),
-    },);
+    });
   }
 
   // Track performance
   Future<void> trackPerformance(String operation, Duration duration) async {
-    await trackEvent('performance', parameters: <String, dynamic>{
+    await trackEvent('performance', parameters: {
       'operation': operation,
       'duration_ms': duration.inMilliseconds,
       'screen': widget.runtimeType.toString(),
-    },);
+    });
   }
 
   // Track feature usage
   Future<void> trackFeatureUsage(String feature, {Map<String, dynamic>? properties}) async {
-    await trackEvent('feature_usage', parameters: <String, dynamic>{
+    await trackEvent('feature_usage', parameters: {
       'feature': feature,
       ...?properties,
       'screen': widget.runtimeType.toString(),
-    },);
+    });
   }
 
   // Track navigation
   Future<void> trackNavigation(String from, String to) async {
-    await trackEvent('navigation', parameters: <String, dynamic>{
+    await trackEvent('navigation', parameters: {
       'from': from,
       'to': to,
-    },);
+    });
   }
 
   // Track share
   Future<void> trackShare(String contentType, String itemId) async {
-    await trackEvent('share', parameters: <String, dynamic>{
+    await trackEvent('share', parameters: {
       'content_type': contentType,
       'item_id': itemId,
-    },);
+    });
   }
 
   // Track rating
   Future<void> trackRating(int rating, {String? comment}) async {
-    await trackEvent('rating', parameters: <String, dynamic>{
+    await trackEvent('rating', parameters: {
       'rating': rating,
       if (comment != null) 'comment': comment,
-    },);
+    });
   }
 
   // Track time spent
-  final Map<String, DateTime> _timers = <String, DateTime>{};
+  final Map<String, DateTime> _timers = {};
 
   void startTimer(String timerName) {
     _timers[timerName] = DateTime.now();
@@ -143,11 +143,9 @@ mixin AnalyticsMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  // Set user properties
+  // Set user properties - using trackEvent instead of setUserProperty
   Future<void> setUserProperties(Map<String, dynamic> properties) async {
-    for (MapEntry<String, dynamic> entry in properties.entries) {
-      await _analytics.setUserProperty(entry.key, entry.value.toString());
-    }
+    await trackEvent('user_properties', parameters: properties);
   }
 
   // Track session

@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import '../../core/services/connectivity_service.dart';
 
 class AppProvider extends ChangeNotifier {
+  bool _isLoading = false;
+  String? _error;
+  bool _isConnected = true;
 
   AppProvider() {
     _initConnectivity();
   }
-  bool _isLoading = false;
-  String? _error;
-  bool _isConnected = true;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isConnected => _isConnected;
 
   void _initConnectivity() {
-    ConnectivityService().connectionStream.listen((ConnectionStatus status) {
-      _isConnected = status;
+    ConnectivityService().connectionStream.listen((isConnected) {
+      _isConnected = isConnected as bool; // type cast
       notifyListeners();
     });
   }

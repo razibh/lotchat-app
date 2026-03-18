@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 
 class MessageReportDialog extends StatefulWidget {
-
   const MessageReportDialog({
-    required this.onSubmit, super.key,
+    super.key,
+    required this.onSubmit,
   });
+
   final Function(String, String) onSubmit;
 
   @override
@@ -21,7 +23,7 @@ class _MessageReportDialogState extends State<MessageReportDialog> {
   String? _selectedReason;
   final TextEditingController _descriptionController = TextEditingController();
 
-  final List<String> _reasons = <String>[
+  final List<String> _reasons = [
     'Harassment',
     'Spam',
     'Inappropriate content',
@@ -39,7 +41,7 @@ class _MessageReportDialogState extends State<MessageReportDialog> {
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             const Text(
               'Why are you reporting this message?',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -57,7 +59,7 @@ class _MessageReportDialogState extends State<MessageReportDialog> {
                 },
               );
             }),
-            if (_selectedReason == 'Other') ...<>[
+            if (_selectedReason == 'Other') ...[
               const SizedBox(height: 16),
               TextField(
                 controller: _descriptionController,
@@ -71,7 +73,7 @@ class _MessageReportDialogState extends State<MessageReportDialog> {
           ],
         ),
       ),
-      actions: <>[
+      actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
@@ -79,12 +81,12 @@ class _MessageReportDialogState extends State<MessageReportDialog> {
         ElevatedButton(
           onPressed: _selectedReason != null
               ? () {
-                  widget.onSubmit(
-                    _selectedReason!,
-                    _descriptionController.text,
-                  );
-                  Navigator.pop(context);
-                }
+            widget.onSubmit(
+              _selectedReason!,
+              _descriptionController.text,
+            );
+            Navigator.pop(context);
+          }
               : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.red,
@@ -93,5 +95,11 @@ class _MessageReportDialogState extends State<MessageReportDialog> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    super.dispose();
   }
 }

@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 
 class AppShimmer extends StatefulWidget {
-
-  const AppShimmer({
-    required this.child, super.key,
-    this.isLoading = true,
-    this.baseColor = Colors.grey,
-    this.highlightColor = Colors.white,
-    this.duration = const Duration(milliseconds: 1500),
-  });
   final Widget child;
   final bool isLoading;
   final Color baseColor;
   final Color highlightColor;
   final Duration duration;
+
+  const AppShimmer({
+    required this.child,
+    this.isLoading = true,
+    this.baseColor = Colors.grey,
+    this.highlightColor = Colors.white,
+    this.duration = const Duration(milliseconds: 1500),
+    super.key,
+  });
 
   @override
   State<AppShimmer> createState() => _AppShimmerState();
@@ -39,7 +41,7 @@ class _AppShimmerState extends State<AppShimmer> with SingleTickerProviderStateM
       vsync: this,
       duration: widget.duration,
     )..repeat();
-    
+
     _animation = Tween<double>(begin: -1, end: 2).animate(
       CurvedAnimation(
         parent: _controller,
@@ -61,8 +63,8 @@ class _AppShimmerState extends State<AppShimmer> with SingleTickerProviderStateM
     return ShaderMask(
       shaderCallback: (Rect bounds) {
         return LinearGradient(
-          colors: <>[widget.baseColor, widget.highlightColor, widget.baseColor],
-          stops: const <double>[0, 0.5, 1],
+          colors: [widget.baseColor, widget.highlightColor, widget.baseColor],
+          stops: const [0, 0.5, 1],
           begin: Alignment(-1 + _animation.value * 2, -0.5),
           end: Alignment(1 + _animation.value * 2, 0.5),
         ).createShader(bounds);
@@ -74,9 +76,9 @@ class _AppShimmerState extends State<AppShimmer> with SingleTickerProviderStateM
 }
 
 class ShimmerLoading extends StatelessWidget {
+  final Widget child;
 
   const ShimmerLoading({required this.child, super.key});
-  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -88,14 +90,16 @@ class ShimmerLoading extends StatelessWidget {
 
 // Shimmer Placeholders
 class ShimmerRect extends StatelessWidget {
-
-  const ShimmerRect({
-    required this.width, required this.height, super.key,
-    this.borderRadius = 0,
-  });
   final double width;
   final double height;
   final double borderRadius;
+
+  const ShimmerRect({
+    required this.width,
+    required this.height,
+    this.borderRadius = 0,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -121,9 +125,9 @@ class ShimmerRect extends StatelessWidget {
 }
 
 class ShimmerCircle extends StatelessWidget {
+  final double radius;
 
   const ShimmerCircle({required this.radius, super.key});
-  final double radius;
 
   @override
   Widget build(BuildContext context) {
@@ -147,13 +151,14 @@ class ShimmerCircle extends StatelessWidget {
 }
 
 class ShimmerText extends StatelessWidget {
-
-  const ShimmerText({
-    required this.width, super.key,
-    this.height = 16,
-  });
   final double width;
   final double height;
+
+  const ShimmerText({
+    required this.width,
+    this.height = 16,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -178,12 +183,14 @@ class ShimmerText extends StatelessWidget {
 }
 
 class ShimmerCard extends StatelessWidget {
-
-  const ShimmerCard({
-    required this.height, required this.width, super.key,
-  });
   final double height;
   final double width;
+
+  const ShimmerCard({
+    required this.height,
+    required this.width,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -208,16 +215,16 @@ class ShimmerCard extends StatelessWidget {
 }
 
 class ShimmerList extends StatelessWidget {
-
-  const ShimmerList({
-    super.key,
-    this.itemCount = 5,
-    this.itemHeight = 80,
-    this.spacing = 8,
-  });
   final int itemCount;
   final double itemHeight;
   final double spacing;
+
+  const ShimmerList({
+    this.itemCount = 5,
+    this.itemHeight = 80,
+    this.spacing = 8,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -246,18 +253,18 @@ class ShimmerList extends StatelessWidget {
 }
 
 class ShimmerGrid extends StatelessWidget {
-
-  const ShimmerGrid({
-    super.key,
-    this.crossAxisCount = 2,
-    this.itemCount = 6,
-    this.itemHeight = 200,
-    this.spacing = 8,
-  });
   final int crossAxisCount;
   final int itemCount;
   final double itemHeight;
   final double spacing;
+
+  const ShimmerGrid({
+    this.crossAxisCount = 2,
+    this.itemCount = 6,
+    this.itemHeight = 200,
+    this.spacing = 8,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

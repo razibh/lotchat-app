@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 
 class AttachmentPicker extends StatelessWidget {
-
   const AttachmentPicker({
-    required this.onPickImage, required this.onPickVideo, required this.onPickFile, required this.onSendLocation, required this.onSendContact, super.key,
+    super.key,
+    required this.onPickImage,
+    required this.onPickVideo,
+    required this.onPickFile,
+    required this.onSendLocation,
+    required this.onSendContact,
   });
+
   final VoidCallback onPickImage;
   final VoidCallback onPickVideo;
   final VoidCallback onPickFile;
@@ -17,7 +23,7 @@ class AttachmentPicker extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
+        children: [
           const Text(
             'Attach',
             style: TextStyle(
@@ -28,7 +34,7 @@ class AttachmentPicker extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <>[
+            children: [
               _buildItem(
                 icon: Icons.photo,
                 label: 'Image',
@@ -52,7 +58,7 @@ class AttachmentPicker extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <>[
+            children: [
               _buildItem(
                 icon: Icons.location_on,
                 label: 'Location',
@@ -69,7 +75,12 @@ class AttachmentPicker extends StatelessWidget {
                 icon: Icons.poll,
                 label: 'Poll',
                 color: Colors.teal,
-                onTap: () {},
+                onTap: () {
+                  // TODO: Implement poll
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Poll feature coming soon!')),
+                  );
+                },
               ),
             ],
           ),
@@ -86,23 +97,27 @@ class AttachmentPicker extends StatelessWidget {
   }) {
     return InkWell(
       onTap: onTap,
-      child: Column(
-        children: <>[
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 30),
             ),
-            child: Icon(icon, color: color, size: 30),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
       ),
     );
   }

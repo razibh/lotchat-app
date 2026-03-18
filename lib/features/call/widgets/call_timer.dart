@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';  // DiagnosticPropertiesBuilder এর জন্য
 
 class CallTimer extends StatefulWidget {
+  final int duration;
 
   const CallTimer({required this.duration, super.key});
-  final int duration;
 
   @override
   State<CallTimer> createState() => _CallTimerState();
@@ -31,20 +32,20 @@ class _CallTimerState extends State<CallTimer> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: <>[
+      children: [
         // Pulse animation when call is active
         AnimatedBuilder(
           animation: _controller,
-          builder: (BuildContext context, Widget? child) {
+          builder: (context, child) {
             return Container(
               width: 10 + (_controller.value * 5),
               height: 10 + (_controller.value * 5),
               decoration: BoxDecoration(
                 color: Colors.green,
                 shape: BoxShape.circle,
-                boxShadow: <>[
+                boxShadow: [
                   BoxShadow(
-                    color: Colors.green.withValues(alpha: 0.5),
+                    color: Colors.green.withOpacity(0.5),
                     blurRadius: 10 * _controller.value,
                     spreadRadius: 2 * _controller.value,
                   ),

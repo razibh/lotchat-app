@@ -1,9 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/di/service_locator.dart';
-import '../../core/services/notification_service.dart';
-import '../../mixins/pagination_mixin.dart';
-import '../../widgets/common/empty_state_widget.dart';
-import '../../widgets/animation/fade_animation.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -12,97 +7,147 @@ class NotificationsScreen extends StatefulWidget {
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> 
-    with PaginationMixin<Map<String, dynamic>> {
-  
-  final NotificationService _notificationService = ServiceLocator().get<NotificationService>();
-  String _selectedFilter = 'All';
-
+class _NotificationsScreenState extends State<NotificationsScreen> with PaginationMixin {
   @override
   void initState() {
     super.initState();
-    initPagination();
-    loadMore();
+    refresh();
   }
 
   @override
-  Future<List<Map<String, dynamic>>> fetchPage(int page) async {
+  Future<PaginationResult> fetchPage(int page) async {
+    // TODO: Implement actual API call
     await Future.delayed(const Duration(seconds: 1));
-    
-    return List.generate(20, (int index) {
-      final int type = index % 5;
-      return <String, dynamic>{
-        'id': 'notif_$index',
-        'type': _getNotificationType(type),
-        'icon': _getNotificationIcon(type),
-        'color': _getNotificationColor(type),
-        'title': _getNotificationTitle(type, index),
-        'body': _getNotificationBody(type, index),
-        'time': DateTime.now().subtract(Duration(minutes: index * 30)),
-        'isRead': index % 3 == 0,
-        'data': <dynamic, dynamic>{},
-      };
-    });
+
+    final items = List.generate(20, (index) => NotificationModel(
+      id: 'notif_$index',
+      title: 'Notification $index',
+      message: 'This is notification number $index',
+      type: 'info',
+      isRead: false,
+      createdAt: DateTime.now(),
+    ));
+
+    return PaginationResult(
+      items: items,
+      hasMore: page < 5,
+    );
   }
 
-  String _getNotificationType(int type) {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Notifications'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.checklist),
+            onPressed: () {
+              setState(() {
+                for (var item in items) {
+                  (item as NotificationModel).isRead = true;
+                }
+              });
+            },
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: refresh,
+        child: items.isEmpty && !isLoading
+            ? const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.notifications_off, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text(
+                'No notifications yet',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+            ],
+          ),
+        )
+            : ListView.builder(
+          controller: scrollController,
+          itemCount: items.length + (hasMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == items.length) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+            final notification = items[index] as NotificationModel;
+            return _buildNotificationItem(notification);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationItem(NotificationModel notification) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: _getNotificationColor(notification.type),
+        child: Icon(
+          _getNotificationIcon(notification.type),
+          color: Colors.white,
+        ),
+      ),
+      title: Text(
+        notification.title,
+        style: TextStyle(
+          fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
+        ),
+      ),
+      subtitle: Text(notification.message),
+      trailing: Text(
+        _formatTime(notification.createdAt),
+        style: const TextStyle(color: Colors.grey, fontSize: 12),
+      ),
+      onTap: () {
+        setState(() {
+          notification.isRead = true;
+        });
+        // Handle notification tap
+      },
+    );
+  }
+
+  Color _getNotificationColor(String type) {
     switch (type) {
-      case 0: return 'gift';
-      case 1: return 'like';
-      case 2: return 'comment';
-      case 3: return 'friend';
-      case 4: return 'system';
-      default: return 'other';
+      case 'success':
+        return Colors.green;
+      case 'warning':
+        return Colors.orange;
+      case 'error':
+        return Colors.red;
+      case 'info':
+      default:
+        return Colors.blue;
     }
   }
 
-  IconData _getNotificationIcon(int type) {
+  IconData _getNotificationIcon(String type) {
     switch (type) {
-      case 0: return Icons.card_giftcard;
-      case 1: return Icons.favorite;
-      case 2: return Icons.comment;
-      case 3: return Icons.person_add;
-      case 4: return Icons.info;
-      default: return Icons.notifications;
-    }
-  }
-
-  Color _getNotificationColor(int type) {
-    switch (type) {
-      case 0: return Colors.purple;
-      case 1: return Colors.red;
-      case 2: return Colors.blue;
-      case 3: return Colors.green;
-      case 4: return Colors.orange;
-      default: return Colors.grey;
-    }
-  }
-
-  String _getNotificationTitle(int type, int index) {
-    switch (type) {
-      case 0: return 'Gift Received';
-      case 1: return 'New Like';
-      case 2: return 'New Comment';
-      case 3: return 'Friend Request';
-      case 4: return 'System Update';
-      default: return 'Notification';
-    }
-  }
-
-  String _getNotificationBody(int type, int index) {
-    switch (type) {
-      case 0: return 'User${index + 1} sent you a gift';
-      case 1: return 'User${index + 1} liked your post';
-      case 2: return 'User${index + 1} commented on your post';
-      case 3: return 'User${index + 1} sent you a friend request';
-      case 4: return 'App update available';
-      default: return 'You have a new notification';
+      case 'success':
+        return Icons.check_circle;
+      case 'warning':
+        return Icons.warning;
+      case 'error':
+        return Icons.error;
+      case 'info':
+      default:
+        return Icons.info;
     }
   }
 
   String _formatTime(DateTime time) {
-    final DateTime now = DateTime.now();
-    final Duration difference = now.difference(time);
+    final now = DateTime.now();
+    final difference = now.difference(time);
 
     if (difference.inDays > 0) {
       return '${difference.inDays}d ago';
@@ -114,166 +159,117 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       return 'Just now';
     }
   }
+}
 
-  void _markAsRead(String id) {
-    setState(() {
-      final int index = items.indexWhere((Map<String, dynamic> n) => n['id'] == id);
-      if (index != -1) {
-        items[index]['isRead'] = true;
-      }
-    });
-  }
+class NotificationModel {
+  final String id;
+  final String title;
+  final String message;
+  final String type;
+  bool isRead;
+  final DateTime createdAt;
 
-  void _markAllAsRead() {
-    setState(() {
-      for (Map<String, dynamic> notif in items) {
-        notif['isRead'] = true;
-      }
-    });
-  }
+  NotificationModel({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.type,
+    this.isRead = false,
+    required this.createdAt,
+  });
+}
 
-  void _clearAll() {
-    setState(() {
-      items.clear();
-    });
-  }
+mixin PaginationMixin<T extends StatefulWidget> on State<T> {
+  final List<dynamic> items = [];
+  final ScrollController scrollController = ScrollController();
+  int currentPage = 1;
+  bool isLoading = false;
+  bool hasMore = true;
+  bool isRefreshing = false;
 
-  List<Map<String, dynamic>> get _filteredNotifications {
-    if (_selectedFilter == 'All') return items;
-    return items.where((Map<String, dynamic> n) => n['type'] == _selectedFilter.toLowerCase()).toList();
+  @override
+  void initState() {
+    super.initState();
+    scrollController.addListener(_onScroll);
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifications'),
-        backgroundColor: Colors.purple,
-        actions: <>[
-          IconButton(
-            icon: const Icon(Icons.done_all),
-            onPressed: _markAllAsRead,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_sweep),
-            onPressed: _clearAll,
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: <String>['All', 'Gift', 'Like', 'Comment', 'Friend', 'System']
-                  .map((String filter) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: FilterChip(
-                          label: Text(filter),
-                          selected: _selectedFilter == filter,
-                          onSelected: (bool selected) {
-                            setState(() {
-                              _selectedFilter = filter;
-                            });
-                          },
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                          selectedColor: Colors.white,
-                          labelStyle: TextStyle(
-                            color: _selectedFilter == filter ? Colors.purple : Colors.white,
-                          ),
-                        ),
-                      ),)
-                  .toList(),
-            ),
-          ),
-        ),
-      ),
-      body: _filteredNotifications.isEmpty
-          ? const EmptyStateWidget(
-              title: 'No Notifications',
-              message: "You're all caught up!",
-              icon: Icons.notifications_off,
-            )
-          : ListView.builder(
-              controller: scrollController,
-              itemCount: _filteredNotifications.length + (hasMore ? 1 : 0),
-              itemBuilder: (BuildContext context, int index) {
-                if (index == _filteredNotifications.length) {
-                  return buildPaginationLoadingIndicator();
-                }
-                
-                final Map<String, dynamic> notif = _filteredNotifications[index];
-                return FadeAnimation(
-                  child: Dismissible(
-                    key: Key(notif['id']),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      color: Colors.red,
-                      child: const Icon(Icons.delete, color: Colors.white),
-                    ),
-                    onDismissed: (DismissDirection direction) {
-                      setState(() {
-                        items.removeWhere((Map<String, dynamic> n) => n['id'] == notif['id']);
-                      });
-                    },
-                    child: ListTile(
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: notif['color'].withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          notif['icon'],
-                          color: notif['color'],
-                          size: 20,
-                        ),
-                      ),
-                      title: Text(
-                        notif['title'],
-                        style: TextStyle(
-                          fontWeight: notif['isRead'] ? FontWeight.normal : FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: Text(notif['body']),
-                      trailing: Text(
-                        _formatTime(notif['time']),
-                        style: TextStyle(
-                          color: notif['isRead'] ? Colors.grey : notif['color'],
-                          fontSize: 12,
-                        ),
-                      ),
-                      onTap: () {
-                        _markAsRead(notif['id']);
-                        _handleNotificationTap(notif);
-                      },
-                    ),
-                  ),
-                );
-              },
-            ),
-    );
+  void dispose() {
+    scrollController.removeListener(_onScroll);
+    scrollController.dispose();
+    super.dispose();
   }
 
-  void _handleNotificationTap(Map<String, dynamic> notif) {
-    switch (notif['type']) {
-      case 'gift':
-        // Navigate to gift receipt
-        break;
-      case 'friend':
-        // Navigate to friend request
-        break;
-      case 'like':
-      case 'comment':
-        // Navigate to post
-        break;
-      case 'system':
-        // Show system message
-        break;
+  void initPagination() {
+    items.clear();
+    currentPage = 1;
+    hasMore = true;
+  }
+
+  void _onScroll() {
+    if (!isLoading &&
+        hasMore &&
+        scrollController.position.pixels >= scrollController.position.maxScrollExtent - 200) {
+      loadMore();
     }
   }
+
+  Future<void> loadMore() async {
+    if (isLoading || !hasMore) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final result = await fetchPage(currentPage);
+
+      setState(() {
+        items.addAll(result.items);
+        hasMore = result.hasMore;
+        currentPage++;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> refresh() async {
+    setState(() {
+      isRefreshing = true;
+      currentPage = 1;
+      hasMore = true;
+    });
+
+    try {
+      final result = await fetchPage(1);
+
+      setState(() {
+        items.clear();
+        items.addAll(result.items);
+        hasMore = result.hasMore;
+        currentPage = 2;
+        isRefreshing = false;
+      });
+    } catch (e) {
+      setState(() {
+        isRefreshing = false;
+      });
+    }
+  }
+
+  Future<PaginationResult> fetchPage(int page);
+}
+
+class PaginationResult {
+  final List<dynamic> items;
+  final bool hasMore;
+
+  PaginationResult({
+    required this.items,
+    required this.hasMore,
+  });
 }

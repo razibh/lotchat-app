@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import '../models/user_model.dart';
+import '../models/user_models.dart' as app; // 🟢 alias ব্যবহার
 import '../services/database_service.dart';
 import '../services/auth_service.dart';
 
 class UserProvider extends ChangeNotifier {
   final DatabaseService _databaseService = DatabaseService();
   final AuthService _authService = AuthService();
-  
-  UserModel? _currentUser;
+
+  app.User? _currentUser; // 🟢 app.User ব্যবহার
   bool _isLoading = false;
   String? _error;
 
-  UserModel? get currentUser => _currentUser;
+  app.User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -21,7 +21,7 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _currentUser = await _databaseService.getUser(uid);
+      _currentUser = await _databaseService.getUser(uid); // 🟢 app.User রিটার্ন করবে
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -37,8 +37,8 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _databaseService.updateUser(_currentUser!.uid, data);
-      await loadUser(_currentUser!.uid);
+      await _databaseService.updateUser(_currentUser!.id, data); // 🟢 uid এর পরিবর্তে id
+      await loadUser(_currentUser!.id);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -51,19 +51,19 @@ class UserProvider extends ChangeNotifier {
     if (_currentUser == null) return;
 
     final int newCoins = _currentUser!.coins + amount;
-    await updateUser(<String, dynamic>{'coins': newCoins});
+    await updateUser({'coins': newCoins});
   }
 
   Future<void> updateDiamonds(int amount) async {
     if (_currentUser == null) return;
 
     final int newDiamonds = _currentUser!.diamonds + amount;
-    await updateUser(<String, dynamic>{'diamonds': newDiamonds});
+    await updateUser({'diamonds': newDiamonds});
   }
 
-  Future<void> updateTier(UserTier tier) async {
+  Future<void> updateTier(int tierIndex) async { // 🟢 UserTier enum নেই, index ব্যবহার
     if (_currentUser == null) return;
-    await updateUser(<String, dynamic>{'tier': tier.index});
+    await updateUser({'tier': tierIndex});
   }
 
   void clearUser() {

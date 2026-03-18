@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/message_model.dart';
 import 'message_reaction.dart';
 
 class MessageBubble extends StatelessWidget {
-
   const MessageBubble({
-    required this.message, required this.isMe, super.key,
+    super.key,
+    required this.message,
+    required this.isMe,
     this.showAvatar = true,
     this.showName = true,
     this.onTap,
@@ -16,6 +18,7 @@ class MessageBubble extends StatelessWidget {
     this.onReport,
     this.onReaction,
   });
+
   final MessageModel message;
   final bool isMe;
   final bool showAvatar;
@@ -43,7 +46,7 @@ class MessageBubble extends StatelessWidget {
         child: Row(
           mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <>[
+          children: [
             if (!isMe && showAvatar)
               _buildAvatar()
             else if (!isMe && !showAvatar)
@@ -51,7 +54,7 @@ class MessageBubble extends StatelessWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                children: <>[
+                children: [
                   if (!isMe && showName)
                     Padding(
                       padding: const EdgeInsets.only(left: 8, bottom: 2),
@@ -75,7 +78,7 @@ class MessageBubble extends StatelessWidget {
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <>[
+                      children: [
                         if (message.replyTo != null)
                           _buildReplyPreview(),
                         if (message.type == MessageType.text)
@@ -135,13 +138,15 @@ class MessageBubble extends StatelessWidget {
             ? NetworkImage(message.senderAvatar!)
             : null,
         child: message.senderAvatar == null
-            ? Text(message.senderName[0].toUpperCase())
+            ? Text(message.senderName.isNotEmpty ? message.senderName[0].toUpperCase() : '?')
             : null,
       ),
     );
   }
 
   Widget _buildReplyPreview() {
+    if (message.replyTo == null) return const SizedBox.shrink();
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(8),
@@ -151,13 +156,13 @@ class MessageBubble extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Row(
-        children: <>[
+        children: [
           const Icon(Icons.reply, size: 12),
           const SizedBox(width: 4),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   message.replyTo!.senderName,
                   style: const TextStyle(
@@ -181,10 +186,10 @@ class MessageBubble extends StatelessWidget {
 
   Widget _buildImage() {
     return Column(
-      children: <>[
-        if (message.thumbnailUrl != null)
+      children: [
+        if (message.mediaUrl != null)
           Image.network(
-            message.thumbnailUrl!,
+            message.mediaUrl!,
             height: 150,
             width: 150,
             fit: BoxFit.cover,
@@ -204,7 +209,7 @@ class MessageBubble extends StatelessWidget {
       width: 150,
       color: Colors.black12,
       child: const Center(
-        child: Icon(Icons.play_circle_fill, size: 40),
+        child: Icon(Icons.play_circle_fill, size: 40, color: Colors.blue),
       ),
     );
   }
@@ -213,19 +218,19 @@ class MessageBubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        children: <>[
+        children: [
           const Icon(Icons.audio_file),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   message.fileName ?? 'Audio',
                   style: const TextStyle(fontSize: 12),
                 ),
                 Text(
-                  _formatDuration(message.duration ?? 0),
+                  _formatDuration(message.duration),
                   style: const TextStyle(fontSize: 10, color: Colors.grey),
                 ),
               ],
@@ -240,19 +245,19 @@ class MessageBubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        children: <>[
+        children: [
           const Icon(Icons.insert_drive_file),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   message.fileName ?? 'File',
                   style: const TextStyle(fontSize: 12),
                 ),
                 Text(
-                  _formatFileSize(message.fileSize ?? 0),
+                  _formatFileSize(message.fileSize),
                   style: const TextStyle(fontSize: 10, color: Colors.grey),
                 ),
               ],
@@ -271,7 +276,7 @@ class MessageBubble extends StatelessWidget {
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
+          children: [
             const Icon(Icons.location_on),
             Text(message.placeName ?? 'Location'),
           ],
@@ -284,14 +289,14 @@ class MessageBubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       child: Row(
-        children: <>[
+        children: [
           const CircleAvatar(
             child: Icon(Icons.person, size: 20),
           ),
           const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: <>[
+            children: [
               Text(message.contactName ?? 'Contact'),
               Text(
                 message.contactPhone ?? '',
@@ -309,18 +314,18 @@ class MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: <>[Colors.purple, Colors.pink],
+          colors: [Colors.purple, Colors.pink],
         ),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
-        children: <>[
+        children: [
           const Icon(Icons.card_giftcard, color: Colors.white),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   message.giftName ?? 'Gift',
                   style: const TextStyle(
@@ -329,7 +334,7 @@ class MessageBubble extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${message.giftPrice} coins',
+                  '${message.giftPrice ?? 0} coins',
                   style: const TextStyle(color: Colors.white70, fontSize: 10),
                 ),
               ],
@@ -344,22 +349,19 @@ class MessageBubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       child: Row(
-        children: <>[
-          Icon(
-            message.callType == 'video' ? Icons.videocam : Icons.call,
-            color: message.callType == 'video' ? Colors.red : Colors.green,
-          ),
+        children: [
+          const Icon(Icons.call),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
-                Text(
-                  message.callType == 'video' ? 'Video Call' : 'Voice Call',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+              children: [
+                const Text(
+                  'Voice Call',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  _formatDuration(message.callDuration ?? 0),
+                  _formatDuration(message.duration),
                   style: const TextStyle(fontSize: 10, color: Colors.grey),
                 ),
               ],
@@ -375,12 +377,7 @@ class MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.only(top: 4),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
-          if (message.isForwarded)
-            const Padding(
-              padding: EdgeInsets.only(right: 4),
-              child: Icon(Icons.reply, size: 10, color: Colors.grey),
-            ),
+        children: [
           if (message.editedAt != null)
             const Padding(
               padding: EdgeInsets.only(right: 4),
@@ -396,27 +393,43 @@ class MessageBubble extends StatelessWidget {
               color: isMe ? Colors.white70 : Colors.grey,
             ),
           ),
-          if (isMe) ...<>[
+          if (isMe) ...[
             const SizedBox(width: 4),
             Icon(
-              message.status == MessageStatus.read
-                  ? Icons.done_all
-                  : message.status == MessageStatus.delivered
-                      ? Icons.done_all
-                      : message.status == MessageStatus.sent
-                          ? Icons.done
-                          : message.status == MessageStatus.sending
-                              ? Icons.schedule
-                              : Icons.error,
+              _getStatusIcon(),
               size: 12,
-              color: message.status == MessageStatus.read
-                  ? Colors.blue
-                  : Colors.white70,
+              color: _getStatusColor(),
             ),
           ],
         ],
       ),
     );
+  }
+
+  IconData _getStatusIcon() {
+    switch (message.status) {
+      case MessageStatus.read:
+        return Icons.done_all;
+      case MessageStatus.delivered:
+        return Icons.done_all;
+      case MessageStatus.sent:
+        return Icons.done;
+      case MessageStatus.sending:
+        return Icons.schedule;
+      case MessageStatus.failed:
+        return Icons.error;
+      default:
+        return Icons.schedule;
+    }
+  }
+
+  Color _getStatusColor() {
+    switch (message.status) {
+      case MessageStatus.read:
+        return Colors.blue;
+      default:
+        return Colors.white70;
+    }
   }
 
   String _formatTime(DateTime time) {
@@ -426,16 +439,21 @@ class MessageBubble extends StatelessWidget {
     if (diff.inMinutes < 1) return 'Now';
     if (diff.inHours < 1) return '${diff.inMinutes}m';
     if (diff.inDays < 1) return '${diff.inHours}h';
-    return '${time.hour}:${time.minute}';
+    return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
   }
 
-  String _formatDuration(int seconds) {
-    final int mins = seconds ~/ 60;
-    final int secs = seconds % 60;
+  // 🟢 FIXED: double? parameter
+  String _formatDuration(double? seconds) {
+    if (seconds == null || seconds <= 0) return '0:00';
+    final int totalSeconds = seconds.toInt();
+    final int mins = totalSeconds ~/ 60;
+    final int secs = totalSeconds % 60;
     return '$mins:${secs.toString().padLeft(2, '0')}';
   }
 
-  String _formatFileSize(int bytes) {
+  // 🟢 FIXED: int? parameter
+  String _formatFileSize(int? bytes) {
+    if (bytes == null || bytes <= 0) return '0 B';
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
@@ -446,7 +464,7 @@ class MessageBubble extends StatelessWidget {
       context: context,
       builder: (BuildContext context) => SafeArea(
         child: Wrap(
-          children: <>[
+          children: [
             if (!isMe)
               ListTile(
                 leading: const Icon(Icons.reply),

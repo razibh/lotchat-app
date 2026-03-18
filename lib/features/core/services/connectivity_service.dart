@@ -12,19 +12,19 @@ class ConnectivityService {
 
   final LoggerService _logger = ServiceLocator().get<LoggerService>();
   final Connectivity _connectivity = Connectivity();
-  
-  final StreamController<ConnectionStatus> _connectionController = 
-      StreamController<ConnectionStatus>.broadcast();
-  
+
+  final StreamController<ConnectionStatus> _connectionController =
+  StreamController<ConnectionStatus>.broadcast();
+
   ConnectionStatus _lastStatus = ConnectionStatus.none;
-  StreamSubscription? _subscription;
+  StreamSubscription<List<ConnectivityResult>>? _subscription;
 
   // Stream for connection changes
   Stream<ConnectionStatus> get connectionStream => _connectionController.stream;
-  
+
   // Last known status
   ConnectionStatus get lastStatus => _lastStatus;
-  
+
   // Is connected
   bool get isConnected => _lastStatus != ConnectionStatus.none;
 
@@ -34,7 +34,7 @@ class ConnectivityService {
       // Get initial status
       final List<ConnectivityResult> result = await _connectivity.checkConnectivity();
       _updateStatus(result);
-      
+
       // Listen for changes
       _subscription = _connectivity.onConnectivityChanged.listen(
         _updateStatus,
@@ -42,7 +42,7 @@ class ConnectivityService {
           _logger.error('Connectivity stream error', error: e);
         },
       );
-      
+
       _logger.info('Connectivity service initialized');
     } catch (e) {
       _logger.error('Failed to initialize connectivity service', error: e);
@@ -51,15 +51,26 @@ class ConnectivityService {
 
   void _updateStatus(List<ConnectivityResult> results) {
     final ConnectivityResult result = results.isNotEmpty ? results.first : ConnectivityResult.none;
-    
+
     ConnectionStatus newStatus;
     switch (result) {
       case ConnectivityResult.wifi:
         newStatus = ConnectionStatus.wifi;
+        break;
       case ConnectivityResult.mobile:
         newStatus = ConnectionStatus.mobile;
-      default:
+        break;
+      case ConnectivityResult.ethernet:
+        newStatus = ConnectionStatus.wifi; // Ethernet কে WiFi হিসেবে গণ্য
+        break;
+      case ConnectivityResult.vpn:
+        newStatus = ConnectionStatus.wifi; // VPN কে WiFi হিসেবে গণ্য
+        break;
+      case ConnectivityResult.bluetooth:
+      case ConnectivityResult.other:
+      case ConnectivityResult.none:
         newStatus = ConnectionStatus.none;
+        break;
     }
 
     if (_lastStatus != newStatus) {
@@ -73,8 +84,7 @@ class ConnectivityService {
   Future<ConnectionStatus> checkConnection() async {
     try {
       final List<ConnectivityResult> result = await _connectivity.checkConnectivity();
-      final results = result;
-      _updateStatus(results);
+      _updateStatus(result);
       return _lastStatus;
     } catch (e) {
       _logger.error('Failed to check connection', error: e);

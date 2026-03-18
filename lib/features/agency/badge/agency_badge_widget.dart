@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // ← DiagnosticPropertiesBuilder এর জন্য
 import '../../../core/constants/app_colors.dart';
 
 class AgencyBadgeWidget extends StatelessWidget {
-
-  const AgencyBadgeWidget({
-    required this.agencyName, required this.commissionRate, super.key,
-    this.isVerified = false,
-    this.onTap,
-  });
   final String agencyName;
   final double commissionRate;
   final bool isVerified;
   final VoidCallback? onTap;
+
+  const AgencyBadgeWidget({
+    Key? key,
+    required this.agencyName,
+    required this.commissionRate,
+    this.isVerified = false,
+    this.onTap,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -21,12 +24,12 @@ class AgencyBadgeWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: <>[Color(0xFF9C27B0), Color(0xFF7B1FA2)],
+            colors: [Color(0xFF9C27B0), Color(0xFF7B1FA2)],
           ),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: <>[
+          boxShadow: [
             BoxShadow(
-              color: Colors.purple.withValues(alpha: 0.3),
+              color: Colors.purple.withOpacity(0.3),
               blurRadius: 8,
               spreadRadius: 1,
             ),
@@ -34,7 +37,7 @@ class AgencyBadgeWidget extends StatelessWidget {
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             const Icon(
               Icons.business,
               color: Colors.white,
@@ -49,7 +52,7 @@ class AgencyBadgeWidget extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            if (isVerified) ...<>[
+            if (isVerified) ...[
               const SizedBox(width: 4),
               const Icon(
                 Icons.verified,
@@ -61,7 +64,7 @@ class AgencyBadgeWidget extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               margin: const EdgeInsets.only(left: 4),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(

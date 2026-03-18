@@ -1,59 +1,11 @@
+import 'package:flutter/material.dart';  // Color এর জন্য
+
 enum TaskType { daily, weekly, monthly, special, event }
 enum TaskCategory { activity, donation, war, chat, gift, game }
 enum TaskDifficulty { easy, medium, hard, expert, legendary }
 enum TaskStatus { locked, available, inProgress, completed, claimed }
 
 class ClanTaskModel {
-
-  ClanTaskModel({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.type,
-    required this.category,
-    required this.difficulty,
-    required this.xpReward,
-    required this.coinReward,
-    required this.requirements, required this.progress, required this.target, required this.status, this.gemReward,
-    this.badgeReward,
-    this.startDate,
-    this.endDate,
-    this.isRepeatable = false,
-    this.repeatCooldown,
-    this.requiredLevel,
-    this.requiredTasks,
-    this.metadata = const <String, dynamic>{},
-  });
-
-  factory ClanTaskModel.fromJson(Map<String, dynamic> json) {
-    return ClanTaskModel(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      type: TaskType.values[json['type']],
-      category: TaskCategory.values[json['category']],
-      difficulty: TaskDifficulty.values[json['difficulty']],
-      xpReward: json['xpReward'],
-      coinReward: json['coinReward'],
-      gemReward: json['gemReward'],
-      badgeReward: json['badgeReward'],
-      requirements: json['requirements'] ?? <String, dynamic>{},
-      progress: json['progress'] ?? 0,
-      target: json['target'],
-      status: TaskStatus.values[json['status']],
-      startDate: json['startDate'] != null
-          ? DateTime.parse(json['startDate'])
-          : null,
-      endDate: json['endDate'] != null
-          ? DateTime.parse(json['endDate'])
-          : null,
-      isRepeatable: json['isRepeatable'] ?? false,
-      repeatCooldown: json['repeatCooldown'],
-      requiredLevel: json['requiredLevel'],
-      requiredTasks: json['requiredTasks']?.cast<String>(),
-      metadata: json['metadata'] ?? <String, dynamic>{},
-    );
-  }
   final String id;
   final String title;
   final String description;
@@ -76,39 +28,95 @@ class ClanTaskModel {
   final List<String>? requiredTasks;
   final Map<String, dynamic> metadata;
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'id': id,
-    'title': title,
-    'description': description,
-    'type': type.index,
-    'category': category.index,
-    'difficulty': difficulty.index,
-    'xpReward': xpReward,
-    'coinReward': coinReward,
-    'gemReward': gemReward,
-    'badgeReward': badgeReward,
-    'requirements': requirements,
-    'progress': progress,
-    'target': target,
-    'status': status.index,
-    'startDate': startDate?.toIso8601String(),
-    'endDate': endDate?.toIso8601String(),
-    'isRepeatable': isRepeatable,
-    'repeatCooldown': repeatCooldown,
-    'requiredLevel': requiredLevel,
-    'requiredTasks': requiredTasks,
-    'metadata': metadata,
-  };
+  ClanTaskModel({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.type,
+    required this.category,
+    required this.difficulty,
+    required this.xpReward,
+    required this.coinReward,
+    required this.requirements,
+    required this.progress,
+    required this.target,
+    required this.status,
+    this.gemReward,
+    this.badgeReward,
+    this.startDate,
+    this.endDate,
+    this.isRepeatable = false,
+    this.repeatCooldown,
+    this.requiredLevel,
+    this.requiredTasks,
+    this.metadata = const {},
+  });
+
+  factory ClanTaskModel.fromJson(Map<String, dynamic> json) {
+    return ClanTaskModel(
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      type: TaskType.values[json['type'] ?? 0],
+      category: TaskCategory.values[json['category'] ?? 0],
+      difficulty: TaskDifficulty.values[json['difficulty'] ?? 0],
+      xpReward: json['xpReward'] ?? 0,
+      coinReward: json['coinReward'] ?? 0,
+      gemReward: json['gemReward'],
+      badgeReward: json['badgeReward'],
+      requirements: json['requirements'] ?? {},
+      progress: json['progress'] ?? 0,
+      target: json['target'] ?? 1,
+      status: TaskStatus.values[json['status'] ?? 0],
+      startDate: json['startDate'] != null
+          ? DateTime.parse(json['startDate'])
+          : null,
+      endDate: json['endDate'] != null
+          ? DateTime.parse(json['endDate'])
+          : null,
+      isRepeatable: json['isRepeatable'] ?? false,
+      repeatCooldown: json['repeatCooldown'],
+      requiredLevel: json['requiredLevel'],
+      requiredTasks: json['requiredTasks']?.cast<String>(),
+      metadata: json['metadata'] ?? {},
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'type': type.index,
+      'category': category.index,
+      'difficulty': difficulty.index,
+      'xpReward': xpReward,
+      'coinReward': coinReward,
+      'gemReward': gemReward,
+      'badgeReward': badgeReward,
+      'requirements': requirements,
+      'progress': progress,
+      'target': target,
+      'status': status.index,
+      'startDate': startDate?.toIso8601String(),
+      'endDate': endDate?.toIso8601String(),
+      'isRepeatable': isRepeatable,
+      'repeatCooldown': repeatCooldown,
+      'requiredLevel': requiredLevel,
+      'requiredTasks': requiredTasks,
+      'metadata': metadata,
+    };
+  }
 
   // Computed properties
   double get progressPercentage => progress / target;
-  
+
   bool get isCompleted => progress >= target;
-  
+
   bool get isClaimable => isCompleted && status == TaskStatus.completed;
-  
+
   bool get isExpired => endDate != null && DateTime.now().isAfter(endDate!);
-  
+
   bool get isAvailable {
     if (status != TaskStatus.locked) return false;
     if (isExpired) return false;
@@ -118,9 +126,9 @@ class ClanTaskModel {
 
   String get timeRemaining {
     if (endDate == null) return 'No time limit';
-    
+
     final Duration remaining = endDate!.difference(DateTime.now());
-    
+
     if (remaining.inDays > 0) {
       return '${remaining.inDays}d ${remaining.inHours % 24}h';
     } else if (remaining.inHours > 0) {
@@ -167,10 +175,10 @@ class ClanTaskModel {
   // Update progress
   ClanTaskModel updateProgress(int newProgress) {
     final int updatedProgress = progress + newProgress;
-    final TaskStatus newStatus = updatedProgress >= target 
-        ? TaskStatus.completed 
+    final TaskStatus newStatus = updatedProgress >= target
+        ? TaskStatus.completed
         : TaskStatus.inProgress;
-    
+
     return copyWith(
       progress: updatedProgress.clamp(0, target),
       status: newStatus,
@@ -180,7 +188,7 @@ class ClanTaskModel {
   // Claim task
   ClanTaskModel claim() {
     if (!isClaimable) return this;
-    
+
     return copyWith(
       status: TaskStatus.claimed,
     );
@@ -189,7 +197,7 @@ class ClanTaskModel {
   // Reset for repeatable tasks
   ClanTaskModel reset() {
     if (!isRepeatable) return this;
-    
+
     return copyWith(
       progress: 0,
       status: TaskStatus.available,
@@ -247,6 +255,12 @@ class ClanTaskModel {
 }
 
 class ClanTaskProgress {
+  final String taskId;
+  final String userId;
+  final int progress;
+  final DateTime lastUpdated;
+  final DateTime? completedAt;
+  final DateTime? claimedAt;
 
   ClanTaskProgress({
     required this.taskId,
@@ -259,10 +273,12 @@ class ClanTaskProgress {
 
   factory ClanTaskProgress.fromJson(Map<String, dynamic> json) {
     return ClanTaskProgress(
-      taskId: json['taskId'],
-      userId: json['userId'],
-      progress: json['progress'],
-      lastUpdated: DateTime.parse(json['lastUpdated']),
+      taskId: json['taskId'] ?? '',
+      userId: json['userId'] ?? '',
+      progress: json['progress'] ?? 0,
+      lastUpdated: json['lastUpdated'] != null
+          ? DateTime.parse(json['lastUpdated'])
+          : DateTime.now(),
       completedAt: json['completedAt'] != null
           ? DateTime.parse(json['completedAt'])
           : null,
@@ -271,21 +287,17 @@ class ClanTaskProgress {
           : null,
     );
   }
-  final String taskId;
-  final String userId;
-  final int progress;
-  final DateTime lastUpdated;
-  final DateTime? completedAt;
-  final DateTime? claimedAt;
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'taskId': taskId,
-    'userId': userId,
-    'progress': progress,
-    'lastUpdated': lastUpdated.toIso8601String(),
-    'completedAt': completedAt?.toIso8601String(),
-    'claimedAt': claimedAt?.toIso8601String(),
-  };
+  Map<String, dynamic> toJson() {
+    return {
+      'taskId': taskId,
+      'userId': userId,
+      'progress': progress,
+      'lastUpdated': lastUpdated.toIso8601String(),
+      'completedAt': completedAt?.toIso8601String(),
+      'claimedAt': claimedAt?.toIso8601String(),
+    };
+  }
 
   bool get isCompleted => progress >= 100;
   bool get isClaimed => claimedAt != null;

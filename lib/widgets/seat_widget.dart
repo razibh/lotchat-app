@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../core/models/seat_model.dart';
+import '../core/models/user_models.dart'; // UserTier এর জন্য core/models/enums.dart এর পরিবর্তে
 import 'animation/pulse_animation.dart';
 import 'badge_widget.dart';
 
 class SeatWidget extends StatelessWidget {
-
   const SeatWidget({
-    required this.seat, super.key,
+    super.key,
+    required this.seat,
     this.isCurrentUser = false,
     this.onTap,
     this.onLongPress,
   });
+
   final SeatModel seat;
   final bool isCurrentUser;
   final VoidCallback? onTap;
@@ -28,7 +31,7 @@ class SeatWidget extends StatelessWidget {
   Widget _buildEmptySeat() {
     return GestureDetector(
       onTap: onTap,
-      child: DecoratedBox(
+      child: Container(
         decoration: BoxDecoration(
           color: Colors.grey.shade800.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
@@ -38,7 +41,7 @@ class SeatWidget extends StatelessWidget {
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
+          children: [
             Icon(
               Icons.mic_off,
               color: Colors.grey.shade500,
@@ -64,7 +67,7 @@ class SeatWidget extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       onLongPress: onLongPress,
-      child: DecoratedBox(
+      child: Container(
         decoration: BoxDecoration(
           gradient: _getSeatGradient(),
           borderRadius: BorderRadius.circular(12),
@@ -73,34 +76,34 @@ class SeatWidget extends StatelessWidget {
             width: isCurrentUser ? 3 : 2,
           ),
           boxShadow: isSpeaking
-              ? <>[
-                  BoxShadow(
-                    color: Colors.green.withValues(alpha: 0.5),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                  ),
-                ]
+              ? [
+            BoxShadow(
+              color: Colors.green.withValues(alpha: 0.5),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ]
               : null,
         ),
         child: Stack(
-          children: <>[
+          children: [
             // Avatar and Info
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: <>[
+              children: [
                 // Avatar
                 Stack(
-                  children: <>[
+                  children: [
                     CircleAvatar(
                       radius: 24,
                       backgroundImage: seat.userAvatar != null
                           ? NetworkImage(seat.userAvatar!)
                           : null,
-                      child: seat.userAvatar == null
+                      child: seat.userAvatar == null && seat.userName != null
                           ? Text(
-                              seat.userName![0].toUpperCase(),
-                              style: const TextStyle(fontSize: 20),
-                            )
+                        seat.userName![0].toUpperCase(),
+                        style: const TextStyle(fontSize: 20),
+                      )
                           : null,
                     ),
                     if (isSpeaking)
@@ -211,7 +214,7 @@ class SeatWidget extends StatelessWidget {
       return LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: <>[
+        colors: [
           Colors.green.shade700,
           Colors.green.shade500,
         ],
@@ -222,7 +225,7 @@ class SeatWidget extends StatelessWidget {
       return LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: <>[
+        colors: [
           Colors.blue.shade700,
           Colors.blue.shade500,
         ],
@@ -232,7 +235,7 @@ class SeatWidget extends StatelessWidget {
     return LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: <>[
+      colors: [
         Colors.purple.shade700,
         Colors.purple.shade500,
       ],
@@ -250,6 +253,7 @@ class SeatWidget extends StatelessWidget {
   }
 
   String _getDisplayName() {
+    if (seat.userName == null) return 'User';
     if (seat.userName!.length > 8) {
       return '${seat.userName!.substring(0, 6)}...';
     }
@@ -267,13 +271,14 @@ class SeatWidget extends StatelessWidget {
 }
 
 class SeatsGrid extends StatelessWidget {
-
   const SeatsGrid({
-    required this.seats, super.key,
+    super.key,
+    required this.seats,
     this.currentUserId,
     this.onSeatTap,
     this.onSeatLongPress,
   });
+
   final List<SeatModel> seats;
   final String? currentUserId;
   final Function(int)? onSeatTap;
@@ -307,8 +312,8 @@ class SeatsGrid extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<>('seats', seats));
-    properties.add(StringProperty('currentUserId', currentUserId));
+    properties.add(IterableProperty<SeatModel>('seats', seats));
+    properties.add(StringProperty('currentUserId', currentUserId, defaultValue: null));
     properties.add(ObjectFlagProperty<Function(int)?>.has('onSeatTap', onSeatTap));
     properties.add(ObjectFlagProperty<Function(int)?>.has('onSeatLongPress', onSeatLongPress));
   }

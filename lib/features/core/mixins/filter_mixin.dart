@@ -4,8 +4,8 @@ typedef FilterPredicate<T> = bool Function(T item, Map<String, dynamic> filters)
 typedef FilterOptionsBuilder = Map<String, List<dynamic>> Function();
 
 mixin FilterMixin<T> on State {
-  Map<String, dynamic> _filters = <String, dynamic>{};
-  List<T> _filteredItems = <Object?>[];
+  Map<String, dynamic> _filters = {};
+  List<T> _filteredItems = [];
   bool _isFiltering = false;
 
   Map<String, dynamic> get filters => _filters;
@@ -86,7 +86,7 @@ mixin FilterMixin<T> on State {
     VoidCallback? onTap,
   }) {
     final bool isSelected = _filters[filterKey] == filterValue;
-    
+
     return FilterChip(
       label: Text(label),
       selected: isSelected,
@@ -116,13 +116,13 @@ mixin FilterMixin<T> on State {
     String? valueSuffix,
   }) {
     final double currentValue = getFilterAs<double>(filterKey) ?? min;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <>[
+          children: [
             Text(label),
             Text('${currentValue.toStringAsFixed(1)}$valueSuffix'),
           ],
@@ -149,10 +149,10 @@ mixin FilterMixin<T> on State {
   }) {
     final double currentMin = getFilterAs<double>(minKey) ?? min;
     final double currentMax = getFilterAs<double>(maxKey) ?? max;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         Text(label),
         RangeSlider(
           values: RangeValues(currentMin, currentMax),
@@ -160,7 +160,7 @@ mixin FilterMixin<T> on State {
           max: max,
           divisions: divisions,
           onChanged: (RangeValues values) {
-            updateFilters(<String, dynamic>{
+            updateFilters({
               minKey: values.start,
               maxKey: values.end,
             });
@@ -168,7 +168,7 @@ mixin FilterMixin<T> on State {
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <>[
+          children: [
             Text('Min: ${currentMin.toStringAsFixed(0)}'),
             Text('Max: ${currentMax.toStringAsFixed(0)}'),
           ],
@@ -200,7 +200,7 @@ mixin FilterMixin<T> on State {
       title: Text(label),
       value: value,
       groupValue: groupValue,
-      onChanged: (selected) => updateFilter(filterKey, selected),
+      onChanged: (T? selected) => updateFilter(filterKey, selected),
     );
   }
 
@@ -208,14 +208,14 @@ mixin FilterMixin<T> on State {
   Widget buildFilterDropdown({
     required String label,
     required String filterKey,
-    required List<DropdownMenuItem> items,
+    required List<DropdownMenuItem<dynamic>> items,
     dynamic value,
   }) {
-    return DropdownButtonFormField(
+    return DropdownButtonFormField<dynamic>(
       decoration: InputDecoration(labelText: label),
-      initialValue: getFilter(filterKey, defaultValue: value),
+      value: getFilter(filterKey, defaultValue: value),
       items: items,
-      onChanged: (value) => updateFilter(filterKey, value),
+      onChanged: (dynamic value) => updateFilter(filterKey, value),
     );
   }
 
@@ -257,11 +257,11 @@ mixin FilterMixin<T> on State {
           return Container(
             padding: const EdgeInsets.all(16),
             child: Column(
-              children: <>[
+              children: [
                 // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <>[
+                  children: [
                     Text(
                       title,
                       style: const TextStyle(
@@ -276,7 +276,7 @@ mixin FilterMixin<T> on State {
                   ],
                 ),
                 const Divider(),
-                
+
                 // Filter content
                 Expanded(
                   child: SingleChildScrollView(
@@ -285,10 +285,10 @@ mixin FilterMixin<T> on State {
                   ),
                 ),
                 const Divider(),
-                
+
                 // Footer buttons
                 Row(
-                  children: <>[
+                  children: [
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {

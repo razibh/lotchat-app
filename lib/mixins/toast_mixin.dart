@@ -61,4 +61,45 @@ mixin ToastMixin {
       fontSize: 14.0,
     );
   }
+
+  // Show toast at top
+  void showTopToast(String message, {Color backgroundColor = Colors.black}) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.TOP,
+      backgroundColor: backgroundColor,
+      textColor: Colors.white,
+      fontSize: 14.0,
+    );
+  }
+
+  // Show center toast
+  void showCenterToast(String message, {Color backgroundColor = Colors.black}) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.CENTER,
+      backgroundColor: backgroundColor,
+      textColor: Colors.white,
+      fontSize: 14.0,
+    );
+  }
+
+  // Show long duration toast
+  void showLongToast(String message, {Color backgroundColor = Colors.black}) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: backgroundColor,
+      textColor: Colors.white,
+      fontSize: 14.0,
+    );
+  }
+
+  // Cancel all toasts
+  void cancelAllToasts() {
+    Fluttertoast.cancel();
+  }
 }

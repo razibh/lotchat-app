@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../core/constants/color_constants.dart';
 import '../../widgets/animation/fade_animation.dart';
-import '../../widgets/common/custom_button.dart';
 
 class GamesHomeScreen extends StatelessWidget {
   const GamesHomeScreen({super.key});
@@ -13,6 +13,7 @@ class GamesHomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Games'),
         backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
       body: GridView.count(
         padding: const EdgeInsets.all(16),
@@ -20,76 +21,76 @@ class GamesHomeScreen extends StatelessWidget {
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
         childAspectRatio: 0.9,
-        children: <>[
+        children: [
           _buildGameCard(
             context,
             'Roulette',
             '🎰',
             Colors.red,
-            () => Navigator.pushNamed(context, '/game/roulette'),
+                () => Navigator.pushNamed(context, '/game/roulette'),
           ),
           _buildGameCard(
             context,
             '3 Patti',
             '🃏',
             Colors.green,
-            () => Navigator.pushNamed(context, '/game/three-patti'),
+                () => Navigator.pushNamed(context, '/game/three-patti'),
           ),
           _buildGameCard(
             context,
             'Ludo',
             '🎲',
             Colors.blue,
-            () => Navigator.pushNamed(context, '/game/ludo'),
+                () => Navigator.pushNamed(context, '/game/ludo'),
           ),
           _buildGameCard(
             context,
             'Carrom',
             '🎯',
             Colors.orange,
-            () => Navigator.pushNamed(context, '/game/carrom'),
+                () => Navigator.pushNamed(context, '/game/carrom'),
           ),
           _buildGameCard(
             context,
             'Greedy Cat',
             '🐱',
             Colors.purple,
-            () => Navigator.pushNamed(context, '/game/greedy-cat'),
+                () => Navigator.pushNamed(context, '/game/greedy-cat'),
           ),
           _buildGameCard(
             context,
             'Werewolf',
             '🐺',
             Colors.brown,
-            () => Navigator.pushNamed(context, '/game/werewolf'),
+                () => Navigator.pushNamed(context, '/game/werewolf'),
           ),
           _buildGameCard(
             context,
             'Trivia',
             '❓',
             Colors.teal,
-            () => Navigator.pushNamed(context, '/game/trivia'),
+                () => Navigator.pushNamed(context, '/game/trivia'),
           ),
           _buildGameCard(
             context,
             'Pictionary',
             '🎨',
             Colors.pink,
-            () => Navigator.pushNamed(context, '/game/pictionary'),
+                () => Navigator.pushNamed(context, '/game/pictionary'),
           ),
           _buildGameCard(
             context,
             'Chess',
             '♟️',
             Colors.indigo,
-            () => Navigator.pushNamed(context, '/game/chess'),
+                () => Navigator.pushNamed(context, '/game/chess'),
           ),
           _buildGameCard(
             context,
             'Truth or Dare',
             '🎭',
             Colors.amber,
-            () => Navigator.pushNamed(context, '/game/truth-or-dare'),
+                () => Navigator.pushNamed(context, '/game/truth-or-dare'),
           ),
         ],
       ),
@@ -97,26 +98,26 @@ class GamesHomeScreen extends StatelessWidget {
   }
 
   Widget _buildGameCard(
-    BuildContext context,
-    String title,
-    String emoji,
-    Color color,
-    VoidCallback onTap,
-  ) {
+      BuildContext context,
+      String title,
+      String emoji,
+      Color color,
+      VoidCallback onTap,
+      ) {
     return FadeAnimation(
       child: GestureDetector(
         onTap: onTap,
-        child: DecoratedBox(
+        child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: <>[color, color.withValues(alpha: 0.7)],
+              colors: [color, color.withOpacity(0.7)],
             ),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: <>[
+            boxShadow: [
               BoxShadow(
-                color: color.withValues(alpha: 0.3),
+                color: color.withOpacity(0.3),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),
@@ -124,7 +125,7 @@ class GamesHomeScreen extends StatelessWidget {
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: <>[
+            children: [
               Text(
                 emoji,
                 style: const TextStyle(fontSize: 50),

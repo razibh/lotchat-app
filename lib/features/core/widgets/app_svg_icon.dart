@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 
 class AppSvgIcon extends StatelessWidget {
-
-  const AppSvgIcon({
-    required this.assetName, super.key,
-    this.width,
-    this.height,
-    this.color,
-    this.fit = BoxFit.contain,
-    this.onTap,
-  });
   final String assetName;
   final double? width;
   final double? height;
   final Color? color;
   final BoxFit fit;
   final VoidCallback? onTap;
+
+  const AppSvgIcon({
+    required this.assetName,
+    this.width,
+    this.height,
+    this.color,
+    this.fit = BoxFit.contain,
+    this.onTap,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +28,7 @@ class AppSvgIcon extends StatelessWidget {
         assetName,
         width: width,
         height: height,
-        color: color,
+        colorFilter: color != null ? ColorFilter.mode(color!, BlendMode.srcIn) : null,
         fit: fit,
       ),
     );
@@ -45,17 +47,20 @@ class AppSvgIcon extends StatelessWidget {
 }
 
 class AppSvgIconButton extends StatelessWidget {
-
-  const AppSvgIconButton({
-    required this.assetName, required this.size, required this.onPressed, super.key,
-    this.color,
-    this.tooltip,
-  });
   final String assetName;
   final double size;
   final Color? color;
   final VoidCallback onPressed;
   final String? tooltip;
+
+  const AppSvgIconButton({
+    required this.assetName,
+    required this.size,
+    required this.onPressed,
+    this.color,
+    this.tooltip,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +69,7 @@ class AppSvgIconButton extends StatelessWidget {
         assetName,
         width: size,
         height: size,
-        color: color,
+        colorFilter: color != null ? ColorFilter.mode(color!, BlendMode.srcIn) : null,
       ),
       onPressed: onPressed,
       tooltip: tooltip,
@@ -83,18 +88,20 @@ class AppSvgIconButton extends StatelessWidget {
 }
 
 class AnimatedSvgIcon extends StatefulWidget {
-
-  const AnimatedSvgIcon({
-    required this.assetName, required this.size, super.key,
-    this.color,
-    this.duration = const Duration(milliseconds: 200),
-    this.onTap,
-  });
   final String assetName;
   final double size;
   final Color? color;
   final Duration duration;
   final VoidCallback? onTap;
+
+  const AnimatedSvgIcon({
+    required this.assetName,
+    required this.size,
+    this.color,
+    this.duration = const Duration(milliseconds: 200),
+    this.onTap,
+    super.key,
+  });
 
   @override
   State<AnimatedSvgIcon> createState() => _AnimatedSvgIconState();
@@ -110,7 +117,7 @@ class AnimatedSvgIcon extends StatefulWidget {
   }
 }
 
-class _AnimatedSvgIconState extends State<AnimatedSvgIcon> 
+class _AnimatedSvgIconState extends State<AnimatedSvgIcon>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -122,7 +129,7 @@ class _AnimatedSvgIconState extends State<AnimatedSvgIcon>
       vsync: this,
       duration: widget.duration,
     );
-    
+
     _animation = Tween<double>(begin: 1, end: 0.8).animate(
       CurvedAnimation(
         parent: _controller,
@@ -165,7 +172,7 @@ class _AnimatedSvgIconState extends State<AnimatedSvgIcon>
               widget.assetName,
               width: widget.size,
               height: widget.size,
-              color: widget.color,
+              colorFilter: widget.color != null ? ColorFilter.mode(widget.color!, BlendMode.srcIn) : null,
             ),
           );
         },
@@ -175,14 +182,6 @@ class _AnimatedSvgIconState extends State<AnimatedSvgIcon>
 }
 
 class SvgIconWithLabel extends StatelessWidget {
-
-  const SvgIconWithLabel({
-    required this.assetName, required this.label, super.key,
-    this.iconSize = 24,
-    this.fontSize = 12,
-    this.color,
-    this.onTap,
-  });
   final String assetName;
   final String label;
   final double iconSize;
@@ -190,18 +189,28 @@ class SvgIconWithLabel extends StatelessWidget {
   final Color? color;
   final VoidCallback? onTap;
 
+  const SvgIconWithLabel({
+    required this.assetName,
+    required this.label,
+    this.iconSize = 24,
+    this.fontSize = 12,
+    this.color,
+    this.onTap,
+    super.key,
+  });
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
+        children: [
           SvgPicture.asset(
             assetName,
             width: iconSize,
             height: iconSize,
-            color: color,
+            colorFilter: color != null ? ColorFilter.mode(color!, BlendMode.srcIn) : null,
           ),
           const SizedBox(height: 4),
           Text(

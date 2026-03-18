@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/gradient_background.dart';
 import '../../core/widgets/neumorphic_button.dart';
 
 class WerewolfGame extends StatefulWidget {
-
-  const WerewolfGame({
-    required this.gameId, super.key,
-    this.gameData,
-  });
   final String gameId;
   final Map<String, dynamic>? gameData;
+
+  const WerewolfGame({
+    required this.gameId,
+    this.gameData,
+    super.key,
+  });
 
   @override
   State<WerewolfGame> createState() => _WerewolfGameState();
@@ -26,10 +29,10 @@ class WerewolfGame extends StatefulWidget {
 class _WerewolfGameState extends State<WerewolfGame> {
   GamePhase currentPhase = GamePhase.night;
   String playerRole = 'Villager';
-  List<Player> players = <Player>[];
+  List<Player> players = [];
   bool isAlive = true;
   int nightCount = 0;
-  
+
   @override
   void initState() {
     super.initState();
@@ -38,7 +41,7 @@ class _WerewolfGameState extends State<WerewolfGame> {
 
   void _initializeGame() {
     // Simulate game initialization
-    players = <Player>[
+    players = [
       Player(name: 'You', role: 'Villager', isAlive: true, isWerewolf: false),
       Player(name: 'Player 2', role: 'Werewolf', isAlive: true, isWerewolf: true),
       Player(name: 'Player 3', role: 'Seer', isAlive: true, isWerewolf: false),
@@ -48,9 +51,9 @@ class _WerewolfGameState extends State<WerewolfGame> {
       Player(name: 'Player 7', role: 'Werewolf', isAlive: true, isWerewolf: true),
       Player(name: 'Player 8', role: 'Villager', isAlive: true, isWerewolf: false),
     ];
-    
+
     // Set player role randomly
-    playerRole = <String>['Villager', 'Werewolf', 'Seer', 'Witch'][DateTime.now().millisecond % 4];
+    playerRole = ['Villager', 'Werewolf', 'Seer', 'Witch'][DateTime.now().millisecond % 4];
   }
 
   void _nextPhase() {
@@ -69,19 +72,19 @@ class _WerewolfGameState extends State<WerewolfGame> {
 
   void _simulateNightKill() {
     // Simulate a random player being killed at night
-    final List<Player> alivePlayers = players.where((Player p) => p.isAlive).toList();
+    final alivePlayers = players.where((p) => p.isAlive).toList();
     if (alivePlayers.length > 1) {
-      final int killedIndex = DateTime.now().millisecond % alivePlayers.length;
-      final Player killedPlayer = alivePlayers[killedIndex];
-      
+      final killedIndex = DateTime.now().millisecond % alivePlayers.length;
+      final killedPlayer = alivePlayers[killedIndex];
+
       if (killedPlayer.name == 'You') {
         setState(() {
           isAlive = false;
         });
       }
-      
+
       setState(() {
-        final int playerIndex = players.indexWhere((Player p) => p.name == killedPlayer.name);
+        final playerIndex = players.indexWhere((p) => p.name == killedPlayer.name);
         if (playerIndex != -1) {
           players[playerIndex] = players[playerIndex].copyWith(isAlive: false);
         }
@@ -95,7 +98,7 @@ class _WerewolfGameState extends State<WerewolfGame> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildGameStatus(),
               _buildPlayerInfo(),
@@ -116,7 +119,7 @@ class _WerewolfGameState extends State<WerewolfGame> {
       padding: const EdgeInsets.all(16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -124,9 +127,9 @@ class _WerewolfGameState extends State<WerewolfGame> {
           Text(
             'Werewolf',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.white),
@@ -140,30 +143,33 @@ class _WerewolfGameState extends State<WerewolfGame> {
   Widget _buildGameStatus() {
     Color phaseColor;
     String phaseText;
-    
+
     switch (currentPhase) {
       case GamePhase.night:
         phaseColor = Colors.deepPurple;
         phaseText = '🌙 Night ${nightCount + 1}';
+        break;
       case GamePhase.discussion:
         phaseColor = Colors.orange;
         phaseText = '💬 Discussion';
+        break;
       case GamePhase.voting:
         phaseColor = Colors.red;
         phaseText = '🗳️ Voting';
+        break;
     }
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: phaseColor.withValues(alpha: 0.3),
+        color: phaseColor.withOpacity(0.3),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: phaseColor),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           Text(
             phaseText,
             style: const TextStyle(color: Colors.white, fontSize: 16),
@@ -185,21 +191,21 @@ class _WerewolfGameState extends State<WerewolfGame> {
   }
 
   Widget _buildPlayerInfo() {
-    final int aliveCount = players.where((Player p) => p.isAlive).length;
-    final int werewolfCount = players.where((Player p) => p.isWerewolf && p.isAlive).length;
-    
+    final aliveCount = players.where((p) => p.isAlive).length;
+    final werewolfCount = players.where((p) => p.isWerewolf && p.isAlive).length;
+
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: <>[
+        children: [
           Column(
-            children: <>[
+            children: [
               const Text('Your Role', style: TextStyle(color: Colors.white70)),
               const SizedBox(height: 4),
               Container(
@@ -216,7 +222,7 @@ class _WerewolfGameState extends State<WerewolfGame> {
             ],
           ),
           Column(
-            children: <>[
+            children: [
               const Text('Alive', style: TextStyle(color: Colors.white70)),
               Text(
                 '$aliveCount/${players.length}',
@@ -225,7 +231,7 @@ class _WerewolfGameState extends State<WerewolfGame> {
             ],
           ),
           Column(
-            children: <>[
+            children: [
               const Text('Werewolves', style: TextStyle(color: Colors.white70)),
               Text(
                 '$werewolfCount',
@@ -255,31 +261,31 @@ class _WerewolfGameState extends State<WerewolfGame> {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: players.length,
-      itemBuilder: (BuildContext context, int index) {
-        final Player player = players[index];
+      itemBuilder: (context, index) {
+        final player = players[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: player.isAlive 
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.red.withValues(alpha: 0.1),
+            color: player.isAlive
+                ? Colors.white.withOpacity(0.1)
+                : Colors.red.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: player.name == 'You' 
-                  ? AppColors.accentPurple 
+              color: player.name == 'You'
+                  ? AppColors.accentPurple
                   : Colors.transparent,
               width: 2,
             ),
           ),
           child: Row(
-            children: <>[
+            children: [
               Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _getRoleColor(player.role).withValues(alpha: 0.3),
+                  color: _getRoleColor(player.role).withOpacity(0.3),
                 ),
                 child: Center(
                   child: Text(
@@ -292,7 +298,7 @@ class _WerewolfGameState extends State<WerewolfGame> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     Text(
                       player.name,
                       style: const TextStyle(
@@ -333,29 +339,32 @@ class _WerewolfGameState extends State<WerewolfGame> {
   Widget _buildPhaseInfo() {
     String phaseDescription;
     IconData phaseIcon;
-    
+
     switch (currentPhase) {
       case GamePhase.night:
         phaseDescription = 'Werewolves choose a victim';
         phaseIcon = Icons.nightlight_round;
+        break;
       case GamePhase.discussion:
         phaseDescription = 'Discuss and find the werewolves';
         phaseIcon = Icons.chat;
+        break;
       case GamePhase.voting:
         phaseDescription = 'Vote for who to eliminate';
         phaseIcon = Icons.how_to_vote;
+        break;
     }
-    
+
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: <>[
+        children: [
           Icon(phaseIcon, color: Colors.white70, size: 20),
           const SizedBox(width: 8),
           Text(
@@ -371,7 +380,7 @@ class _WerewolfGameState extends State<WerewolfGame> {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Row(
-        children: <>[
+        children: [
           Expanded(
             child: NeumorphicButton(
               onPressed: isAlive ? _nextPhase : null,
@@ -396,7 +405,7 @@ class _WerewolfGameState extends State<WerewolfGame> {
 
   String _getButtonText() {
     if (!isAlive) return 'You are dead';
-    
+
     switch (currentPhase) {
       case GamePhase.night:
         return 'End Night';
@@ -425,6 +434,10 @@ enum GamePhase {
 }
 
 class Player {
+  final String name;
+  final String role;
+  final bool isAlive;
+  final bool isWerewolf;
 
   Player({
     required this.name,
@@ -432,10 +445,6 @@ class Player {
     required this.isAlive,
     required this.isWerewolf,
   });
-  final String name;
-  final String role;
-  final bool isAlive;
-  final bool isWerewolf;
 
   Player copyWith({
     String? name,

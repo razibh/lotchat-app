@@ -1,78 +1,81 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
+  // Private constructor to prevent instantiation
+  AppColors._();
+
   // Primary Colors
   static const Color primary = Color(0xFF8B5CF6); // Purple
   static const Color secondary = Color(0xFFEC4899); // Pink
   static const Color accent = Color(0xFF3B82F6); // Blue
-  
+
   // Background Colors
   static const Color background = Color(0xFFF5F5F5);
   static const Color surface = Colors.white;
   static const Color surfaceDark = Color(0xFF1a1a2e);
   static const Color cardLight = Colors.white;
   static const Color cardDark = Color(0xFF16213e);
-  
+
   // Text Colors
   static const Color textPrimary = Color(0xFF1F2937);
   static const Color textSecondary = Color(0xFF6B7280);
   static const Color textHint = Color(0xFF9CA3AF);
   static const Color textLight = Colors.white;
-  
+
   // Status Colors
   static const Color success = Color(0xFF10B981); // Green
   static const Color error = Color(0xFFEF4444); // Red
   static const Color warning = Color(0xFFF59E0B); // Orange
   static const Color info = Color(0xFF3B82F6); // Blue
-  
+
   // Online Status
   static const Color online = Color(0xFF10B981);
   static const Color offline = Color(0xFF9CA3AF);
   static const Color away = Color(0xFFF59E0B);
   static const Color busy = Color(0xFFEF4444);
-  
+
   // Tier Colors
   static const Color bronze = Color(0xFFCD7F32);
   static const Color silver = Color(0xFFC0C0C0);
   static const Color gold = Color(0xFFFFD700);
   static const Color platinum = Color(0xFFE5E4E2);
   static const Color diamond = Color(0xFFB9F2FF);
-  
+
   // VIP Colors
   static const Color vip = Color(0xFF8B5CF6);
   static const Color svip = Color(0xFFEC4899);
-  
+
   // Gradient Colors
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[primary, secondary],
+    colors: [primary, secondary],
   );
-  
+
   static const LinearGradient darkGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: <>[Color(0xFF1a1a2e), Color(0xFF16213e)],
+    colors: [Color(0xFF1a1a2e), Color(0xFF16213e)],
   );
-  
+
   static const LinearGradient vipGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[vip, secondary],
+    colors: [vip, secondary],
   );
-  
+
   static const LinearGradient svipGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[secondary, accent],
+    colors: [secondary, accent],
   );
-  
+
   static const LinearGradient goldGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <>[gold, Color(0xFFFFA500)],
+    colors: [gold, Color(0xFFFFA500)],
   );
-  
+
   // Opacity Helpers
   static Color withOpacity(Color color, double opacity) {
     return color.withValues(alpha: opacity);
@@ -149,7 +152,8 @@ class AppTheme {
       labelStyle: const TextStyle(color: AppColors.textSecondary),
       hintStyle: const TextStyle(color: AppColors.textHint),
     ),
-    cardTheme: CardTheme(
+    // 🟢 Fixed: CardTheme -> CardThemeData
+    cardTheme: CardThemeData(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: AppColors.cardLight,
@@ -169,7 +173,8 @@ class AppTheme {
       type: BottomNavigationBarType.fixed,
       elevation: 8,
     ),
-    tabBarTheme: const TabBarTheme(
+    // 🟢 Fixed: TabBarTheme -> TabBarThemeData
+    tabBarTheme: const TabBarThemeData(
       labelColor: AppColors.primary,
       unselectedLabelColor: AppColors.textHint,
       indicatorColor: AppColors.primary,
@@ -255,7 +260,8 @@ class AppTheme {
       labelStyle: const TextStyle(color: Colors.white54),
       hintStyle: const TextStyle(color: Colors.white38),
     ),
-    cardTheme: CardTheme(
+    // 🟢 Fixed: CardTheme -> CardThemeData
+    cardTheme: CardThemeData(
       color: AppColors.cardDark,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -275,7 +281,8 @@ class AppTheme {
       type: BottomNavigationBarType.fixed,
       elevation: 8,
     ),
-    tabBarTheme: const TabBarTheme(
+    // 🟢 Fixed: TabBarTheme -> TabBarThemeData
+    tabBarTheme: const TabBarThemeData(
       labelColor: Colors.white,
       unselectedLabelColor: Colors.white54,
       indicatorColor: AppColors.primary,

@@ -1,8 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/di/service_locator.dart';
-import '../../core/services/clan_service.dart';
+import '../clan/services/clan_service.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/models/clan_model.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../widgets/animation/fade_animation.dart';
@@ -16,22 +18,22 @@ class ClanLeaderboardScreen extends StatefulWidget {
   State<ClanLeaderboardScreen> createState() => _ClanLeaderboardScreenState();
 }
 
-class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen> 
+class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
     with LoadingMixin, ToastMixin {
-  
+
   final ClanService _clanService = ServiceLocator().get<ClanService>();
   final AuthService _authService = ServiceLocator().get<AuthService>();
-  
-  List<ClanLeaderboardEntry> _clans = <ClanLeaderboardEntry>[];
-  List<ClanMemberLeaderboardEntry> _members = <ClanMemberLeaderboardEntry>[];
+
+  List<ClanLeaderboardEntry> _clans = [];
+  List<ClanMemberLeaderboardEntry> _members = [];
   String _selectedTab = 'Clans';
   String _selectedPeriod = 'All Time';
-  final bool _isLoading = true;
+  bool _isLoading = true;
   String? _userClanId;
 
-  final List<String> _tabs = <String>['Clans', 'Members'];
-  final List<String> _periods = <String>['Daily', 'Weekly', 'Monthly', 'All Time'];
-  final List<String> _categories = <String>['Level', 'Activity', 'Wars', 'Donations'];
+  final List<String> _tabs = ['Clans', 'Members'];
+  final List<String> _periods = ['Daily', 'Weekly', 'Monthly', 'All Time'];
+  final List<String> _categories = ['Level', 'Activity', 'Wars', 'Donations'];
 
   @override
   void initState() {
@@ -43,22 +45,31 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
   Future<void> _getUserClan() async {
     final User? user = _authService.getCurrentUser();
     if (user != null) {
+      // Firestore থেকে ইউজারের clanId নিন
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      final clanId = userDoc.data()?['clanId'] as String?;
+
       setState(() {
-        _userClanId = user.clanId;
+        _userClanId = clanId;
       });
     }
   }
 
   Future<void> _loadLeaderboard() async {
-    await runWithLoading(() async {
-      await Future.delayed(const Duration(seconds: 1));
-      
-      if (_selectedTab == 'Clans') {
-        _loadClanLeaderboard();
-      } else {
-        _loadMemberLeaderboard();
-      }
-    });
+    setState(() => _isLoading = true);
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (_selectedTab == 'Clans') {
+      _loadClanLeaderboard();
+    } else {
+      _loadMemberLeaderboard();
+    }
+
+    setState(() => _isLoading = false);
   }
 
   void _loadClanLeaderboard() {
@@ -98,7 +109,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
   }
 
   String _getClanName(int index) {
-    final List<String> names = <String>['Dragon', 'Phoenix', 'Wolf', 'Tiger', 'Lion', 'Eagle', 'Shark', 'Bear', 'Falcon', 'Cobra'];
+    final List<String> names = ['Dragon', 'Phoenix', 'Wolf', 'Tiger', 'Lion', 'Eagle', 'Shark', 'Bear', 'Falcon', 'Cobra'];
     return names[index % names.length];
   }
 
@@ -137,7 +148,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: _getRankColor(rank).withValues(alpha: 0.2),
+          color: _getRankColor(rank).withOpacity(0.2),
           shape: BoxShape.circle,
         ),
         child: Icon(
@@ -170,16 +181,16 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
 
   Widget _buildChangeIndicator(int change) {
     if (change == 0) return const SizedBox.shrink();
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: change > 0 ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+        color: change > 0 ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
+        children: [
           Icon(
             change > 0 ? Icons.arrow_upward : Icons.arrow_downward,
             color: change > 0 ? Colors.green : Colors.red,
@@ -205,10 +216,11 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
       appBar: AppBar(
         title: const Text('Clan Leaderboard'),
         backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Column(
-            children: <>[
+            children: [
               // Tab Bar
               Container(
                 height: 50,
@@ -264,7 +276,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                             _loadLeaderboard();
                           });
                         },
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        backgroundColor: Colors.white.withOpacity(0.2),
                         selectedColor: Colors.white,
                         labelStyle: TextStyle(
                           color: _selectedPeriod == period ? Colors.deepPurple : Colors.white,
@@ -277,7 +289,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
             ],
           ),
         ),
-        actions: <>[
+        actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: _showInfoDialog,
@@ -287,8 +299,8 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _selectedTab == 'Clans'
-              ? _buildClanLeaderboard()
-              : _buildMemberLeaderboard(),
+          ? _buildClanLeaderboard()
+          : _buildMemberLeaderboard(),
     );
   }
 
@@ -302,7 +314,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
     }
 
     return Column(
-      children: <>[
+      children: [
         // Top 3 Podium
         if (_clans.length >= 3)
           Container(
@@ -310,7 +322,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
             padding: const EdgeInsets.all(16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: <>[
+              children: [
                 // 2nd Place
                 Expanded(
                   child: _buildPodiumItem(
@@ -346,13 +358,13 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
             itemCount: _clans.length,
             itemBuilder: (BuildContext context, int index) {
               final ClanLeaderboardEntry clan = _clans[index];
-              
+
               return FadeAnimation(
                 delay: Duration(milliseconds: index * 50),
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
-                    color: clan.isUserClan ? Colors.deepPurple.withValues(alpha: 0.1) : null,
+                    color: clan.isUserClan ? Colors.deepPurple.withOpacity(0.1) : null,
                     borderRadius: BorderRadius.circular(12),
                     border: clan.isUserClan
                         ? Border.all(color: Colors.deepPurple, width: 2)
@@ -361,7 +373,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                   child: ListTile(
                     leading: _buildRankBadge(clan.rank),
                     title: Row(
-                      children: <>[
+                      children: [
                         Expanded(
                           child: Text(
                             clan.clanName,
@@ -390,9 +402,9 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <>[
+                      children: [
                         Row(
-                          children: <>[
+                          children: [
                             Icon(Icons.people, size: 12, color: Colors.grey.shade600),
                             const SizedBox(width: 2),
                             Text('${clan.members} members'),
@@ -404,15 +416,15 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                         ),
                         const SizedBox(height: 4),
                         Row(
-                          children: <>[
+                          children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withValues(alpha: 0.1),
+                                color: Colors.blue.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Row(
-                                children: <>[
+                                children: [
                                   const Icon(Icons.flash_on, size: 10, color: Colors.blue),
                                   const SizedBox(width: 2),
                                   Text(
@@ -426,11 +438,11 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
+                                color: Colors.green.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Row(
-                                children: <>[
+                                children: [
                                   const Icon(Icons.monetization_on, size: 10, color: Colors.green),
                                   const SizedBox(width: 2),
                                   Text(
@@ -447,10 +459,10 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,
-                      children: <>[
+                      children: [
                         Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: <>[
+                          children: [
                             const Icon(Icons.star, color: Colors.amber, size: 16),
                             const SizedBox(width: 2),
                             Text(
@@ -474,7 +486,22 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                             clan: ClanModel(
                               id: clan.clanId,
                               name: clan.clanName,
-                              // Add other required fields
+                              description: '',
+                              leaderId: '',
+                              members: [],
+                              level: clan.level,
+                              xp: clan.activityPoints,
+                              xpToNextLevel: 1000,
+                              clanCoins: clan.donations,
+                              memberCount: clan.members,
+                              maxMembers: 50,
+                              joinType: ClanJoinType.open,
+                              createdAt: DateTime.now(),
+                              warWins: clan.warWins,
+                              warLosses: 0,
+                              warDraws: 0,
+                              isActive: true,
+                              settings: {},
                             ),
                           ),
                         ),
@@ -504,13 +531,13 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
       itemCount: _members.length,
       itemBuilder: (BuildContext context, int index) {
         final ClanMemberLeaderboardEntry member = _members[index];
-        
+
         return FadeAnimation(
           delay: Duration(milliseconds: index * 50),
           child: Container(
             margin: const EdgeInsets.only(bottom: 8),
             decoration: BoxDecoration(
-              color: member.isUser ? Colors.deepPurple.withValues(alpha: 0.1) : null,
+              color: member.isUser ? Colors.deepPurple.withOpacity(0.1) : null,
               borderRadius: BorderRadius.circular(12),
               border: member.isUser
                   ? Border.all(color: Colors.deepPurple, width: 2)
@@ -518,7 +545,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
             ),
             child: ListTile(
               leading: Stack(
-                children: <>[
+                children: [
                   CircleAvatar(
                     radius: 24,
                     backgroundImage: member.avatar != null
@@ -554,7 +581,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                 ],
               ),
               title: Row(
-                children: <>[
+                children: [
                   Expanded(
                     child: Text(
                       member.username,
@@ -583,7 +610,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <>[
+                children: [
                   Text(
                     member.clanName,
                     style: const TextStyle(
@@ -593,15 +620,15 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                   ),
                   const SizedBox(height: 4),
                   Row(
-                    children: <>[
+                    children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.1),
+                          color: Colors.blue.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
-                          children: <>[
+                          children: [
                             const Icon(Icons.flash_on, size: 10, color: Colors.blue),
                             const SizedBox(width: 2),
                             Text(
@@ -615,11 +642,11 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.1),
+                          color: Colors.green.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
-                          children: <>[
+                          children: [
                             const Icon(Icons.monetization_on, size: 10, color: Colors.green),
                             const SizedBox(width: 2),
                             Text(
@@ -633,11 +660,11 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.1),
+                          color: Colors.orange.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
-                          children: <>[
+                          children: [
                             const Icon(Icons.emoji_events, size: 10, color: Colors.orange),
                             const SizedBox(width: 2),
                             Text(
@@ -673,7 +700,22 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
               clan: ClanModel(
                 id: clan.clanId,
                 name: clan.clanName,
-                // Add other required fields
+                description: '',
+                leaderId: '',
+                members: [],
+                level: clan.level,
+                xp: clan.activityPoints,
+                xpToNextLevel: 1000,
+                clanCoins: clan.donations,
+                memberCount: clan.members,
+                maxMembers: 50,
+                joinType: ClanJoinType.open,
+                createdAt: DateTime.now(),
+                warWins: clan.warWins,
+                warLosses: 0,
+                warDraws: 0,
+                isActive: true,
+                settings: {},
               ),
             ),
           ),
@@ -683,13 +725,13 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
         margin: const EdgeInsets.symmetric(horizontal: 4),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
-          children: <>[
+          children: [
             // Clan Emblem
             Container(
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: _getRankColor(rank).withValues(alpha: 0.2),
+                color: _getRankColor(rank).withOpacity(0.2),
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: _getRankColor(rank),
@@ -697,17 +739,17 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
                 ),
                 image: clan.emblem != null
                     ? DecorationImage(
-                        image: NetworkImage(clan.emblem!),
-                        fit: BoxFit.cover,
-                      )
+                  image: NetworkImage(clan.emblem!),
+                  fit: BoxFit.cover,
+                )
                     : null,
               ),
               child: clan.emblem == null
                   ? Icon(
-                      Icons.groups,
-                      color: _getRankColor(rank),
-                      size: 30,
-                    )
+                Icons.groups,
+                color: _getRankColor(rank),
+                size: 30,
+              )
                   : null,
             ),
             const SizedBox(height: 8),
@@ -732,7 +774,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
               width: 60,
               height: height,
               decoration: BoxDecoration(
-                color: _getRankColor(rank).withValues(alpha: 0.3),
+                color: _getRankColor(rank).withOpacity(0.3),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(8),
                 ),
@@ -761,7 +803,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <>[
+          children: [
             Text('Rankings are based on:'),
             SizedBox(height: 8),
             Text('• Clan Level - Total XP earned'),
@@ -775,7 +817,7 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
             Text('• Monthly - 1st of each month'),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),
@@ -788,13 +830,6 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
 
 // Model Classes
 class ClanLeaderboardEntry {
-
-  ClanLeaderboardEntry({
-    required this.rank,
-    required this.clanId,
-    required this.clanName,
-    required this.level, required this.members, required this.activityPoints, required this.warWins, required this.donations, required this.isUserClan, required this.change, this.emblem,
-  });
   final int rank;
   final String clanId;
   final String clanName;
@@ -806,16 +841,23 @@ class ClanLeaderboardEntry {
   final int donations;
   final bool isUserClan;
   final int change;
+
+  ClanLeaderboardEntry({
+    required this.rank,
+    required this.clanId,
+    required this.clanName,
+    this.emblem,
+    required this.level,
+    required this.members,
+    required this.activityPoints,
+    required this.warWins,
+    required this.donations,
+    required this.isUserClan,
+    required this.change,
+  });
 }
 
 class ClanMemberLeaderboardEntry {
-
-  ClanMemberLeaderboardEntry({
-    required this.rank,
-    required this.userId,
-    required this.username,
-    required this.clanName, required this.activityPoints, required this.donations, required this.warPoints, required this.isUser, required this.change, this.avatar,
-  });
   final int rank;
   final String userId;
   final String username;
@@ -826,4 +868,17 @@ class ClanMemberLeaderboardEntry {
   final int warPoints;
   final bool isUser;
   final int change;
+
+  ClanMemberLeaderboardEntry({
+    required this.rank,
+    required this.userId,
+    required this.username,
+    this.avatar,
+    required this.clanName,
+    required this.activityPoints,
+    required this.donations,
+    required this.warPoints,
+    required this.isUser,
+    required this.change,
+  });
 }

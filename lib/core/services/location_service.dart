@@ -1,33 +1,49 @@
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart'; // 🟢 geocoding import
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/country_model.dart';
+import 'package:flutter/foundation.dart';
+import '../models/country_model.dart' as app;
 import '../di/service_locator.dart';
 import 'logger_service.dart';
 
 class LocationService {
+  // Singleton pattern
   factory LocationService() => _instance;
-  LocationService._internal();
+
+  // Private constructor
+  LocationService._internal() {
+    _initializeServices();
+  }
+
   static final LocationService _instance = LocationService._internal();
 
-  final LoggerService _logger = ServiceLocator().get<LoggerService>();
-  
+  late final LoggerService _logger;
+
   Position? _currentPosition;
   String? _currentCountry;
   String? _currentCity;
   bool _isServiceEnabled = false;
   LocationPermission? _permission;
 
+  void _initializeServices() {
+    try {
+      _logger = ServiceLocator.instance.get<LoggerService>();
+    } catch (e) {
+      debugPrint('Error initializing services: $e');
+    }
+  }
+
   // Initialize
   Future<bool> initialize() async {
     try {
       _isServiceEnabled = await Geolocator.isLocationServiceEnabled();
       _permission = await Geolocator.checkPermission();
-      
-      _logger.info('Location service initialized');
+
+      _logger?.info('Location service initialized');
       return true;
     } catch (e) {
-      _logger.error('Failed to initialize location service', error: e);
+      _logger?.error('Failed to initialize location service', error: e);
       return false;
     }
   }
@@ -36,17 +52,17 @@ class LocationService {
   Future<bool> requestPermission() async {
     try {
       _permission = await Geolocator.requestPermission();
-      
+
       if (_permission == LocationPermission.whileInUse ||
           _permission == LocationPermission.always) {
-        _logger.info('Location permission granted');
+        _logger?.info('Location permission granted');
         return true;
       }
-      
-      _logger.warning('Location permission denied');
+
+      _logger?.warning('Location permission denied');
       return false;
     } catch (e) {
-      _logger.error('Failed to request location permission', error: e);
+      _logger?.error('Failed to request location permission', error: e);
       return false;
     }
   }
@@ -62,7 +78,7 @@ class LocationService {
       if (!permission) return null;
 
       if (!_isServiceEnabled) {
-        _logger.warning('Location services are disabled');
+        _logger?.warning('Location services are disabled');
         return null;
       }
 
@@ -70,14 +86,14 @@ class LocationService {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      _logger.info('Current location: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}');
-      
-      // Get address from coordinates
+      _logger?.info('Current location: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}');
+
+      // Get address from coordinates using geocoding package
       await _getAddressFromCoordinates();
-      
+
       return _currentPosition;
     } catch (e) {
-      _logger.error('Failed to get current location', error: e);
+      _logger?.error('Failed to get current location', error: e);
       return null;
     }
   }
@@ -91,31 +107,32 @@ class LocationService {
     }
 
     return _permission == LocationPermission.whileInUse ||
-           _permission == LocationPermission.always;
+        _permission == LocationPermission.always;
   }
 
-  // Get address from coordinates
+  // 🟢 Get address from coordinates using geocoding
   Future<void> _getAddressFromCoordinates() async {
     if (_currentPosition == null) return;
 
     try {
-      final placemarks = await Geolocator.placemarkFromCoordinates(
+      // placemarkFromCoordinates এখন geocoding package থেকে আসে [citation:2][citation:8]
+      final List<Placemark> placemarks = await placemarkFromCoordinates(
         _currentPosition!.latitude,
         _currentPosition!.longitude,
       );
 
       if (placemarks.isNotEmpty) {
-        final placemark = placemarks.first;
+        final Placemark placemark = placemarks.first;
         _currentCountry = placemark.country;
         _currentCity = placemark.locality;
-        
-        _logger.info('Current country: $_currentCountry, city: $_currentCity');
-        
+
+        _logger?.info('Current country: $_currentCountry, city: $_currentCity');
+
         // Save to preferences
         await _saveLocation();
       }
     } catch (e) {
-      _logger.error('Failed to get address from coordinates', error: e);
+      _logger?.error('Failed to get address from coordinates', error: e);
     }
   }
 
@@ -128,7 +145,7 @@ class LocationService {
       await prefs.setDouble('last_lat', _currentPosition?.latitude ?? 0);
       await prefs.setDouble('last_lng', _currentPosition?.longitude ?? 0);
     } catch (e) {
-      _logger.error('Failed to save location', error: e);
+      _logger?.error('Failed to save location', error: e);
     }
   }
 
@@ -138,24 +155,26 @@ class LocationService {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       _currentCountry = prefs.getString('last_country');
       _currentCity = prefs.getString('last_city');
-      
+
       final double? lat = prefs.getDouble('last_lat');
       final double? lng = prefs.getDouble('last_lng');
-      
+
       if (lat != null && lng != null) {
         _currentPosition = Position(
           latitude: lat,
           longitude: lng,
           timestamp: DateTime.now(),
-          accuracy: 0,
           altitude: 0,
+          accuracy: 0,
+          altitudeAccuracy: 0,
           heading: 0,
+          headingAccuracy: 0,
           speed: 0,
           speedAccuracy: 0,
         );
       }
     } catch (e) {
-      _logger.error('Failed to load last location', error: e);
+      _logger?.error('Failed to load last location', error: e);
     }
   }
 
@@ -167,12 +186,16 @@ class LocationService {
 
     if (_currentCountry != null) {
       // Match country name to country code
-      final List<CountryModel> countries = CountryModel.getCountries();
-      final CountryModel country = countries.firstWhere(
-        (CountryModel c) => c.name == _currentCountry,
-        orElse: () => countries.first,
-      );
-      return country.code;
+      final List<app.CountryModel> countries = app.CountryModel.getCountries();
+      try {
+        final app.CountryModel country = countries.firstWhere(
+              (app.CountryModel c) => c.name == _currentCountry,
+        );
+        return country.code;
+      } catch (e) {
+        // If country not found, return default
+        return 'BD';
+      }
     }
 
     return null;
@@ -185,9 +208,9 @@ class LocationService {
 
   // Calculate distance between two points
   double calculateDistance(
-    double lat1, double lon1,
-    double lat2, double lon2,
-  ) {
+      double lat1, double lon1,
+      double lat2, double lon2,
+      ) {
     return Geolocator.distanceBetween(lat1, lon1, lat2, lon2);
   }
 
@@ -199,14 +222,11 @@ class LocationService {
 
   // Get nearby users (would need Firestore integration)
   Future<List<Map<String, dynamic>>> getNearbyUsers(
-    double radiusInMeters,
-    {int limit = 50,}
-  ) async {
-    if (_currentPosition == null) return <Map<String, dynamic>>[];
-
-    // This would query Firestore with geohash
-    // Implementation depends on how you store locations
-    return <Map<String, dynamic>>[];
+      double radiusInMeters, {
+        int limit = 50,
+      }) async {
+    if (_currentPosition == null) return [];
+    return [];
   }
 
   // Stream location updates
@@ -214,7 +234,7 @@ class LocationService {
     return Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // Update every 10 meters
+        distanceFilter: 10,
       ),
     ).map((position) {
       _currentPosition = position;
@@ -224,9 +244,7 @@ class LocationService {
   }
 
   // Stop location updates
-  void stopLocationUpdates() {
-    // Stream will be closed when subscription is cancelled
-  }
+  void stopLocationUpdates() {}
 
   // Open location settings
   Future<void> openLocationSettings() async {
@@ -238,18 +256,10 @@ class LocationService {
     await Geolocator.openAppSettings();
   }
 
-  // Get current position
+  // Getters
   Position? get currentPosition => _currentPosition;
-  
-  // Get current country
   String? get currentCountry => _currentCountry;
-  
-  // Get current city
   String? get currentCity => _currentCity;
-  
-  // Check if location services are enabled
   bool get isLocationEnabled => _isServiceEnabled;
-  
-  // Check permission status
   LocationPermission? get permissionStatus => _permission;
 }

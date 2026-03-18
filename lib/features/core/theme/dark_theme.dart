@@ -7,13 +7,13 @@ class DarkTheme {
   static const Color backgroundColor = Color(0xFF1a1a2e);
   static const Color surfaceColor = Color(0xFF16213e);
   static const Color cardColor = Color(0xFF1E293B);
-  
+
   static ThemeData get theme {
     return ThemeData(
       brightness: Brightness.dark,
       primaryColor: primaryColor,
       scaffoldBackgroundColor: backgroundColor,
-      
+
       // AppBar Theme
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -26,7 +26,7 @@ class DarkTheme {
         ),
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      
+
       // Text Theme
       textTheme: const TextTheme(
         displayLarge: TextStyle(
@@ -67,7 +67,7 @@ class DarkTheme {
           color: Colors.white38,
         ),
       ),
-      
+
       // Button Themes
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -79,7 +79,7 @@ class DarkTheme {
           ),
         ),
       ),
-      
+
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.white,
@@ -90,13 +90,13 @@ class DarkTheme {
           ),
         ),
       ),
-      
+
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryColor,
         ),
       ),
-      
+
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
@@ -115,23 +115,23 @@ class DarkTheme {
           borderSide: const BorderSide(color: Colors.red),
         ),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.1),
+        fillColor: Colors.white.withOpacity(0.1),
         hintStyle: const TextStyle(color: Colors.white38),
         labelStyle: const TextStyle(color: Colors.white54),
       ),
-      
-      // Card Theme
-      cardTheme: CardTheme(
+
+      // Card Theme - Fixed: CardThemeData ব্যবহার করে
+      cardTheme: CardThemeData(
         color: cardColor,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
       ),
-      
+
       // Chip Theme
       chipTheme: ChipThemeData(
-        backgroundColor: Colors.white.withValues(alpha: 0.1),
+        backgroundColor: Colors.white.withOpacity(0.1),
         selectedColor: primaryColor,
         labelStyle: const TextStyle(color: Colors.white),
         secondaryLabelStyle: const TextStyle(color: Colors.white),
@@ -140,7 +140,7 @@ class DarkTheme {
           borderRadius: BorderRadius.circular(16),
         ),
       ),
-      
+
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: surfaceColor,
@@ -149,20 +149,20 @@ class DarkTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
-      
-      // Tab Bar Theme
-      tabBarTheme: const TabBarTheme(
+
+      // Tab Bar Theme - Fixed: TabBarThemeData ব্যবহার করে
+      tabBarTheme: TabBarThemeData(
         labelColor: Colors.white,
         unselectedLabelColor: Colors.white54,
         indicatorColor: primaryColor,
       ),
-      
+
       // Divider Theme
       dividerTheme: DividerThemeData(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         thickness: 1,
       ),
-      
+
       // Color Scheme
       colorScheme: const ColorScheme.dark(
         primary: primaryColor,

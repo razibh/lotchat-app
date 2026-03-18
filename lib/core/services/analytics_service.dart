@@ -1,8 +1,9 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_analytics/observer.dart';
+import 'package:flutter/foundation.dart'; // 🟢 debugPrint এর জন্য
 
 import '../di/service_locator.dart';
-import '../models/user_model.dart';
+import '../models/user_models.dart' as app; // 🟢 সঠিক import, alias ব্যবহার
 import 'logger_service.dart';
 
 class AnalyticsService {
@@ -11,27 +12,51 @@ class AnalyticsService {
   static final AnalyticsService _instance = AnalyticsService._internal();
 
   final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
-  final LoggerService _logger = ServiceLocator().get<LoggerService>();
+  late final LoggerService _logger; // 🟢 late যোগ করুন
 
   // Initialize
   Future<void> initialize() async {
-    await _analytics.setAnalyticsCollectionEnabled(true);
-    _logger.info('Analytics service initialized');
+    try {
+      _logger = ServiceLocator.instance.get<LoggerService>(); // 🟢 instance ব্যবহার
+      await _analytics.setAnalyticsCollectionEnabled(true);
+      _logger.info('Analytics service initialized');
+    } catch (e) {
+      debugPrint('Error initializing analytics: $e'); // 🟢 fallback print
+    }
   }
 
-  // Track screen view
-  Future<void> trackScreen(String screenName, {String? screenClass}) async {
+  // // Track screen view
+  // Future<void> trackScreen(String screenName, {String? screenClass}) async {
+  //   try {
+  //     await _analytics.logScreenView(
+  //       screenName: screenName,
+  //       screenClass: screenClass ?? screenName,
+  //     );
+  //     _logger?.debug('Screen tracked: $screenName'); // 🟢 null safety
+  //   } catch (e) {
+  //     _logger?.error('Failed to track screen: $screenName', error: e);
+  //   }
+  // }
+// Track screen view
+  Future<void> trackScreen(String screenName, {String? screenClass, Map<String, dynamic>? parameters}) async {
     try {
       await _analytics.logScreenView(
         screenName: screenName,
         screenClass: screenClass ?? screenName,
       );
-      _logger.debug('Screen tracked: $screenName');
+      _logger?.debug('Screen tracked: $screenName');
+
+      // Track with parameters if provided
+      if (parameters != null) {
+        await trackEvent('screen_view', parameters: {
+          'screen_name': screenName,
+          ...parameters,
+        });
+      }
     } catch (e) {
-      _logger.error('Failed to track screen: $screenName', error: e);
+      _logger?.error('Failed to track screen: $screenName', error: e);
     }
   }
-
   // Track event
   Future<void> trackEvent(String eventName, {Map<String, dynamic>? parameters}) async {
     try {
@@ -39,20 +64,20 @@ class AnalyticsService {
         name: eventName,
         parameters: parameters,
       );
-      _logger.debug('Event tracked: $eventName');
+      _logger?.debug('Event tracked: $eventName');
     } catch (e) {
-      _logger.error('Failed to track event: $eventName', error: e);
+      _logger?.error('Failed to track event: $eventName', error: e);
     }
   }
 
   // Track user login
   Future<void> trackLogin(String method) async {
-    await trackEvent('login', parameters: <String, dynamic>{'method': method});
+    await trackEvent('login', parameters: {'method': method});
   }
 
   // Track sign up
   Future<void> trackSignUp(String method) async {
-    await trackEvent('sign_up', parameters: <String, dynamic>{'method': method});
+    await trackEvent('sign_up', parameters: {'method': method});
   }
 
   // Track user logout
@@ -64,32 +89,32 @@ class AnalyticsService {
   Future<void> setUserId(String? userId) async {
     await _analytics.setUserId(id: userId);
     if (userId != null) {
-      _logger.info('Analytics user ID set: $userId');
+      _logger?.info('Analytics user ID set: $userId');
     }
   }
 
-  // Set user properties
-  Future<void> setUserProperties(UserModel user) async {
+  // Set user properties - 🟢 app.User ব্যবহার
+  Future<void> setUserProperties(app.User user) async {
     try {
       await _analytics.setUserProperty(
         name: 'tier',
-        value: user.tier.toString(),
+        value: user.tier?.toString() ?? 'normal',
       );
       await _analytics.setUserProperty(
         name: 'country',
-        value: user.country,
+        value: user.countryId,
       );
       await _analytics.setUserProperty(
         name: 'role',
-        value: user.role.toString(),
+        value: user.role.toString().split('.').last,
       );
       await _analytics.setUserProperty(
         name: 'coins_balance',
         value: user.coins.toString(),
       );
-      _logger.debug('User properties set');
+      _logger?.debug('User properties set');
     } catch (e) {
-      _logger.error('Failed to set user properties', error: e);
+      _logger?.error('Failed to set user properties', error: e);
     }
   }
 
@@ -101,13 +126,13 @@ class AnalyticsService {
     required String receiverId,
     String? roomId,
   }) async {
-    await trackEvent('gift_sent', parameters: <String, dynamic>{
+    await trackEvent('gift_sent', parameters: {
       'gift_id': giftId,
       'gift_name': giftName,
       'price': price,
       'receiver_id': receiverId,
       'room_id': roomId,
-    },);
+    });
   }
 
   // Track game played
@@ -117,12 +142,12 @@ class AnalyticsService {
     required bool won,
     int? winAmount,
   }) async {
-    await trackEvent('game_played', parameters: <String, dynamic>{
+    await trackEvent('game_played', parameters: {
       'game_name': gameName,
       'bet_amount': betAmount,
       'won': won,
       'win_amount': winAmount,
-    },);
+    });
   }
 
   // Track call started
@@ -131,11 +156,11 @@ class AnalyticsService {
     required String targetId,
     bool isGroupCall = false,
   }) async {
-    await trackEvent('call_started', parameters: <String, dynamic>{
+    await trackEvent('call_started', parameters: {
       'call_type': callType,
       'target_id': targetId,
       'is_group_call': isGroupCall,
-    },);
+    });
   }
 
   // Track call ended
@@ -143,10 +168,10 @@ class AnalyticsService {
     required String callType,
     required int duration,
   }) async {
-    await trackEvent('call_ended', parameters: <String, dynamic>{
+    await trackEvent('call_ended', parameters: {
       'call_type': callType,
       'duration': duration,
-    },);
+    });
   }
 
   // Track room created
@@ -155,16 +180,16 @@ class AnalyticsService {
     required String roomName,
     required String category,
   }) async {
-    await trackEvent('room_created', parameters: <String, dynamic>{
+    await trackEvent('room_created', parameters: {
       'room_id': roomId,
       'room_name': roomName,
       'category': category,
-    },);
+    });
   }
 
   // Track room joined
   Future<void> trackRoomJoined(String roomId) async {
-    await trackEvent('room_joined', parameters: <String, dynamic>{'room_id': roomId});
+    await trackEvent('room_joined', parameters: {'room_id': roomId});
   }
 
   // Track purchase
@@ -174,34 +199,34 @@ class AnalyticsService {
     required double price,
     required String currency,
   }) async {
-    await trackEvent('purchase', parameters: <String, dynamic>{
+    await trackEvent('purchase', parameters: {
       'product_id': productId,
       'product_name': productName,
       'price': price,
       'currency': currency,
-    },);
+    });
   }
 
   // Track level up
   Future<void> trackLevelUp(int newLevel) async {
-    await trackEvent('level_up', parameters: <String, dynamic>{'new_level': newLevel});
+    await trackEvent('level_up', parameters: {'new_level': newLevel});
   }
 
   // Track achievement unlocked
   Future<void> trackAchievementUnlocked(String achievementId) async {
-    await trackEvent('achievement_unlocked', parameters: <String, dynamic>{
+    await trackEvent('achievement_unlocked', parameters: {
       'achievement_id': achievementId,
-    },);
+    });
   }
 
   // Track friend added
   Future<void> trackFriendAdded(String friendId) async {
-    await trackEvent('friend_added', parameters: <String, dynamic>{'friend_id': friendId});
+    await trackEvent('friend_added', parameters: {'friend_id': friendId});
   }
 
   // Track clan joined
   Future<void> trackClanJoined(String clanId) async {
-    await trackEvent('clan_joined', parameters: <String, dynamic>{'clan_id': clanId});
+    await trackEvent('clan_joined', parameters: {'clan_id': clanId});
   }
 
   // Track PK battle
@@ -210,11 +235,11 @@ class AnalyticsService {
     required bool won,
     required int score,
   }) async {
-    await trackEvent('pk_battle', parameters: <String, dynamic>{
+    await trackEvent('pk_battle', parameters: {
       'battle_id': battleId,
       'won': won,
       'score': score,
-    },);
+    });
   }
 
   // Track error
@@ -223,11 +248,11 @@ class AnalyticsService {
     required String screen,
     StackTrace? stackTrace,
   }) async {
-    await trackEvent('error', parameters: <String, dynamic>{
+    await trackEvent('error', parameters: {
       'error_message': errorMessage,
       'screen': screen,
       'stack_trace': stackTrace?.toString(),
-    },);
+    });
   }
 
   // Get analytics observer for navigation
@@ -238,6 +263,6 @@ class AnalyticsService {
   // Reset analytics (for logout)
   Future<void> reset() async {
     await setUserId(null);
-    _logger.info('Analytics reset');
+    _logger?.info('Analytics reset');
   }
 }

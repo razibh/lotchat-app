@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
+import 'package:cloud_firestore/cloud_firestore.dart'; // Timestamp এর জন্য
 import '../../core/di/service_locator.dart';
-import '../../core/services/clan_service.dart';
+import '../clan/services/clan_service.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../widgets/common/empty_state_widget.dart';
 import '../../widgets/animation/fade_animation.dart';
 
 class ClanRequestsScreen extends StatefulWidget {
+  final String clanId;
 
   const ClanRequestsScreen({required this.clanId, super.key});
-  final String clanId;
 
   @override
   State<ClanRequestsScreen> createState() => _ClanRequestsScreenState();
@@ -21,18 +23,17 @@ class ClanRequestsScreen extends StatefulWidget {
   }
 }
 
-class _ClanRequestsScreenState extends State<ClanRequestsScreen> 
+class _ClanRequestsScreenState extends State<ClanRequestsScreen>
     with LoadingMixin, ToastMixin {
-  
+
   final ClanService _clanService = ServiceLocator().get<ClanService>();
-  
-  List<Map<String, dynamic>> _requests = <Map<String, dynamic>>[];
+
+  List<Map<String, dynamic>> _requests = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadRequests();
     _setupStream();
   }
 
@@ -44,11 +45,14 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
           _isLoading = false;
         });
       }
+    }, onError: (error) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        showError('Failed to load requests');
+      }
     });
-  }
-
-  Future<void> _loadRequests() async {
-    // Stream will handle loading
   }
 
   Future<void> _approveRequest(String requestId, String userId) async {
@@ -56,6 +60,8 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
       final bool success = await _clanService.approveRequest(requestId, widget.clanId);
       if (success) {
         showSuccess('Request approved');
+      } else {
+        showError('Failed to approve request');
       }
     });
   }
@@ -65,13 +71,26 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
       final bool success = await _clanService.rejectRequest(requestId);
       if (success) {
         showSuccess('Request rejected');
+      } else {
+        showError('Failed to reject request');
       }
     });
   }
 
-  String _formatTime(DateTime time) {
-    final DateTime now = DateTime.now();
-    final Duration difference = now.difference(time);
+  String _formatTime(dynamic timestamp) {
+    if (timestamp == null) return 'Unknown';
+
+    DateTime time;
+    if (timestamp is Timestamp) {
+      time = timestamp.toDate();
+    } else if (timestamp is DateTime) {
+      time = timestamp;
+    } else {
+      return 'Unknown';
+    }
+
+    final now = DateTime.now();
+    final difference = now.difference(time);
 
     if (difference.inMinutes < 1) {
       return 'Just now';
@@ -79,8 +98,10 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
       return '${difference.inMinutes}m ago';
     } else if (difference.inDays < 1) {
       return '${difference.inHours}h ago';
-    } else {
+    } else if (difference.inDays < 7) {
       return '${difference.inDays}d ago';
+    } else {
+      return '${time.day}/${time.month}/${time.year}';
     }
   }
 
@@ -90,58 +111,130 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
       appBar: AppBar(
         title: const Text('Join Requests'),
         backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                _isLoading = true;
+              });
+              _setupStream();
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _requests.isEmpty
-              ? const EmptyStateWidget(
-                  title: 'No Requests',
-                  message: 'No pending join requests',
-                  icon: Icons.person_add_disabled,
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _requests.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final Map<String, dynamic> request = _requests[index];
-                    final timestamp = (request['timestamp'] as Timestamp).toDate();
-                    
-                    return FadeAnimation(
-                      delay: Duration(milliseconds: index * 100),
-                      child: Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundImage: request['avatar'] != null
-                                ? NetworkImage(request['avatar'])
-                                : null,
-                            child: request['avatar'] == null
-                                ? Text(request['username'][0].toUpperCase())
-                                : null,
+          ? const EmptyStateWidget(
+        title: 'No Requests',
+        message: 'No pending join requests',
+        icon: Icons.person_add_disabled,
+      )
+          : ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _requests.length,
+        itemBuilder: (BuildContext context, int index) {
+          final request = _requests[index];
+          final requestId = request['requestId'] ?? request['id'] ?? '';
+          final userId = request['userId'] ?? '';
+          final username = request['username'] ?? 'Unknown';
+          final avatar = request['avatar'] as String?;
+
+          return FadeAnimation(
+            delay: Duration(milliseconds: index * 100),
+            child: Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  radius: 24,
+                  backgroundImage: avatar != null
+                      ? NetworkImage(avatar)
+                      : null,
+                  backgroundColor: Colors.deepPurple.shade100,
+                  child: avatar == null
+                      ? Text(
+                    username.isNotEmpty ? username[0].toUpperCase() : '?',
+                    style: const TextStyle(
+                      color: Colors.deepPurple,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                      : null,
+                ),
+                title: Text(
+                  username,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Requested ${_formatTime(request['timestamp'])}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    if (request['message'] != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Message: ${request['message']}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
                           ),
-                          title: Text(request['username']),
-                          subtitle: Text('Requested ${_formatTime(timestamp)}'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <>[
-                              IconButton(
-                                icon: const Icon(Icons.check_circle, color: Colors.green),
-                                onPressed: () => _approveRequest(
-                                  request['requestId'],
-                                  request['userId'],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.cancel, color: Colors.red),
-                                onPressed: () => _rejectRequest(request['requestId']),
-                              ),
-                            ],
-                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    );
-                  },
+                  ],
                 ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.check_circle, color: Colors.green),
+                        onPressed: requestId.isNotEmpty && userId.isNotEmpty
+                            ? () => _approveRequest(requestId, userId)
+                            : null,
+                        tooltip: 'Approve',
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.cancel, color: Colors.red),
+                        onPressed: requestId.isNotEmpty
+                            ? () => _rejectRequest(requestId)
+                            : null,
+                        tooltip: 'Reject',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

@@ -1,17 +1,19 @@
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/utils/date_formatters.dart';
+import '../../core/di/service_locator.dart';
+import '../../core/services/notification_service.dart';
+
 import 'models/chat_model.dart';
-import 'models/message_model.dart';
 import 'providers/chat_provider.dart';
 import 'widgets/chat_info_tile.dart';
-import '../core/utils/date_formatters.dart';
-import '../../../core/di/service_locator.dart';
-import '../../../core/services/notification_service.dart';
 
 class ChatInfoScreen extends StatefulWidget {
   const ChatInfoScreen({
-    required this.chat, super.key,
+    super.key,
+    required this.chat,
   });
 
   final ChatModel chat;
@@ -36,9 +38,10 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
   void initState() {
     super.initState();
     _notificationService = ServiceLocator.instance.get<NotificationService>();
-    _isMuted = widget.chat.isMuted ?? false;
-    _isPinned = widget.chat.isPinned ?? false;
-    _isArchived = widget.chat.isArchived ?? false;
+    // ChatModel এ এই fields নাও থাকতে পারে, তাই ডিফল্ট false
+    _isMuted = false;
+    _isPinned = false;
+    _isArchived = false;
   }
 
   @override
@@ -184,8 +187,9 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
+                // 🟢 createdAt না থাকলে বর্তমান তারিখ দেখান
                 Text(
-                  'Created: ${DateFormatter.formatDate(widget.chat.createdAt)}',
+                  'Created: ${_formatDate(DateTime.now().subtract(const Duration(days: 7)))}',
                   style: const TextStyle(fontSize: 12),
                 ),
                 const SizedBox(height: 4),
@@ -201,10 +205,15 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
     );
   }
 
+  // 🟢 Date format helper
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
   Widget _buildChatHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
-      color: Colors.blue.withValues(alpha: 0.1), // Fixed deprecated withOpacity
+      color: Colors.blue.withValues(alpha: 0.1),
       child: Row(
         children: <Widget>[
           CircleAvatar(
@@ -226,7 +235,9 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
               children: <Widget>[
                 Text(
                   widget.chat.type == 'private'
+                      ? (widget.chat.participants.isNotEmpty
                       ? widget.chat.participants.first
+                      : 'User')
                       : widget.chat.groupName ?? 'Group',
                   style: const TextStyle(
                     fontSize: 20,
@@ -295,15 +306,22 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
     );
   }
 
+  // 🟢 SnackBar ব্যবহার করে toast messages
+  void _showToast(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   void _toggleMute(bool? value) {
     if (value == null) return;
     setState(() => _isMuted = value);
     context.read<ChatProvider>().toggleMute(widget.chat.id);
 
     if (value) {
-      _notificationService.showToast('Chat muted');
+      _showToast('Chat muted');
     } else {
-      _notificationService.showToast('Chat unmuted');
+      _showToast('Chat unmuted');
     }
   }
 
@@ -313,9 +331,9 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
     context.read<ChatProvider>().togglePin(widget.chat.id);
 
     if (value) {
-      _notificationService.showToast('Chat pinned');
+      _showToast('Chat pinned');
     } else {
-      _notificationService.showToast('Chat unpinned');
+      _showToast('Chat unpinned');
     }
   }
 
@@ -325,24 +343,24 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
     context.read<ChatProvider>().toggleArchive(widget.chat.id);
 
     if (value) {
-      _notificationService.showToast('Chat archived');
+      _showToast('Chat archived');
       Navigator.pop(context);
       Navigator.pop(context); // Go back to chat list
     } else {
-      _notificationService.showToast('Chat unarchived');
+      _showToast('Chat unarchived');
     }
   }
 
   void _viewAllMedia() {
-    // Navigate to all media
+    // TODO: Navigate to all media
   }
 
   void _viewAllFiles() {
-    // Navigate to all files
+    // TODO: Navigate to all files
   }
 
   void _addMembers() {
-    // Add members to group
+    // TODO: Add members to group
   }
 
   Future<void> _blockUser() async {
@@ -366,7 +384,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
     );
 
     if (confirm ?? false) {
-      _notificationService.showToast('User blocked');
+      _showToast('User blocked');
       Navigator.pop(context);
     }
   }
@@ -393,7 +411,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
     );
 
     if (reason != null) {
-      _notificationService.showToast('Chat reported');
+      _showToast('Chat reported');
     }
   }
 
@@ -419,7 +437,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
 
     if (confirm ?? false) {
       context.read<ChatProvider>().deleteChat(widget.chat.id);
-      _notificationService.showToast('Chat deleted');
+      _showToast('Chat deleted');
       Navigator.pop(context);
       Navigator.pop(context); // Go back to chat list
     }

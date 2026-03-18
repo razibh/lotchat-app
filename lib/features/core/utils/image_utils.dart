@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui';
+import 'dart:ui' as ui; // ui prefix ব্যবহার করে
+import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/services/logger_service.dart';
 
@@ -24,7 +27,7 @@ class ImageUtils {
         maxHeight: maxHeight,
         imageQuality: quality ?? 85,
       );
-      
+
       if (image != null) {
         return File(image.path);
       }
@@ -49,7 +52,7 @@ class ImageUtils {
         maxHeight: maxHeight,
         imageQuality: quality ?? 85,
       );
-      
+
       if (image != null) {
         return File(image.path);
       }
@@ -68,38 +71,38 @@ class ImageUtils {
   }) async {
     try {
       final ImagePicker picker = ImagePicker();
-      final images = await picker.pickMultiImage(
+      final List<XFile> images = await picker.pickMultiImage(
         maxWidth: maxWidth,
         maxHeight: maxHeight,
         imageQuality: quality ?? 85,
       );
-      
+
       return images.map((XFile image) => File(image.path)).toList();
     } catch (e) {
       _logger.error('Error picking multiple images', error: e);
-      return <File>[];
+      return [];
     }
   }
 
   // Compress image
   static Future<File?> compressImage(
-    File file, {
-    int quality = 85,
-    int? minWidth,
-    int? minHeight,
-  }) async {
+      File file, {
+        int quality = 85,
+        int? minWidth,
+        int? minHeight,
+      }) async {
     try {
       final dir = await getTemporaryDirectory();
       final String targetPath = '${dir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      
-      final result = await FlutterImageCompress.compressAndGetFile(
-        file.path,
+
+      final XFile? result = await FlutterImageCompress.compressAndGetFile(
+        file.absolute.path,
         targetPath,
         quality: quality,
-        minWidth: minWidth,
-        minHeight: minHeight,
+        minWidth: minWidth ?? 0,
+        minHeight: minHeight ?? 0,
       );
-      
+
       if (result != null) {
         return File(result.path);
       }
@@ -110,11 +113,32 @@ class ImageUtils {
     }
   }
 
-  // Get image dimensions
-  static Future<Size?> getImageDimensions(File file) async {
+  // Get image dimensions - FIXED VERSION with ui prefix
+  static Future<ui.Size?> getImageDimensions(File file) async {
     try {
-      final Image image = await decodeImageFromList(file.readAsBytesSync());
-      return Size(image.width.toDouble(), image.height.toDouble());
+      final Uint8List bytes = await file.readAsBytes();
+      final ui.Codec codec = await ui.instantiateImageCodec(bytes);
+      final ui.FrameInfo frameInfo = await codec.getNextFrame();
+      final ui.Image image = frameInfo.image;
+
+      return ui.Size(image.width.toDouble(), image.height.toDouble());
+    } catch (e) {
+      _logger.error('Error getting image dimensions', error: e);
+      return null;
+    }
+  }
+
+  // Alternative method using Completer
+  static Future<ui.Size?> getImageDimensionsWithCompleter(File file) async {
+    try {
+      final Uint8List bytes = await file.readAsBytes();
+      final Completer<ui.Size?> completer = Completer<ui.Size?>();
+
+      ui.decodeImageFromList(bytes, (ui.Image image) {
+        completer.complete(ui.Size(image.width.toDouble(), image.height.toDouble()));
+      });
+
+      return await completer.future;
     } catch (e) {
       _logger.error('Error getting image dimensions', error: e);
       return null;
@@ -123,23 +147,23 @@ class ImageUtils {
 
   // Create thumbnail
   static Future<File?> createThumbnail(
-    File file, {
-    int width = 200,
-    int height = 200,
-    int quality = 70,
-  }) async {
+      File file, {
+        int width = 200,
+        int height = 200,
+        int quality = 70,
+      }) async {
     try {
       final dir = await getTemporaryDirectory();
       final String targetPath = '${dir.path}/thumb_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      
-      final result = await FlutterImageCompress.compressAndGetFile(
-        file.path,
+
+      final XFile? result = await FlutterImageCompress.compressAndGetFile(
+        file.absolute.path,
         targetPath,
         minWidth: width,
         minHeight: height,
         quality: quality,
       );
-      
+
       if (result != null) {
         return File(result.path);
       }
@@ -152,23 +176,23 @@ class ImageUtils {
 
   // Resize image
   static Future<File?> resizeImage(
-    File file, {
-    required int width,
-    required int height,
-    int quality = 85,
-  }) async {
+      File file, {
+        required int width,
+        required int height,
+        int quality = 85,
+      }) async {
     try {
       final dir = await getTemporaryDirectory();
       final String targetPath = '${dir.path}/resized_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      
-      final result = await FlutterImageCompress.compressAndGetFile(
-        file.path,
+
+      final XFile? result = await FlutterImageCompress.compressAndGetFile(
+        file.absolute.path,
         targetPath,
-        width: width,
-        height: height,
+        minWidth: width,
+        minHeight: height,
         quality: quality,
       );
-      
+
       if (result != null) {
         return File(result.path);
       }
@@ -184,13 +208,13 @@ class ImageUtils {
     try {
       final dir = await getTemporaryDirectory();
       final String targetPath = '${dir.path}/rotated_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      
-      final result = await FlutterImageCompress.compressAndGetFile(
-        file.path,
+
+      final XFile? result = await FlutterImageCompress.compressAndGetFile(
+        file.absolute.path,
         targetPath,
         rotate: angle,
       );
-      
+
       if (result != null) {
         return File(result.path);
       }
@@ -217,7 +241,7 @@ class ImageUtils {
     try {
       final dir = await getTemporaryDirectory();
       final File file = File('${dir.path}/$fileName');
-      final bytes = base64Decode(base64String);
+      final Uint8List bytes = base64Decode(base64String);
       await file.writeAsBytes(bytes);
       return file;
     } catch (e) {
@@ -228,20 +252,22 @@ class ImageUtils {
 
   // Show image picker dialog
   static Future<File?> showImagePickerDialog(BuildContext context) async {
-    return showDialog<File?>(
+    final result = await showDialog<File?>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
         title: const Text('Choose Image'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             ListTile(
               leading: const Icon(Icons.photo_library),
               title: const Text('Gallery'),
               onTap: () async {
                 Navigator.pop(context);
                 final File? file = await pickImageFromGallery();
-                Navigator.pop(context, file);
+                if (context.mounted) {
+                  Navigator.pop(context, file);
+                }
               },
             ),
             ListTile(
@@ -250,12 +276,15 @@ class ImageUtils {
               onTap: () async {
                 Navigator.pop(context);
                 final File? file = await pickImageFromCamera();
-                Navigator.pop(context, file);
+                if (context.mounted) {
+                  Navigator.pop(context, file);
+                }
               },
             ),
           ],
         ),
       ),
     );
+    return result;
   }
 }

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 import '../../core/di/service_locator.dart';
-import '../../core/services/clan_service.dart';
+import '../clan/services/clan_service.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../mixins/dialog_mixin.dart';
-import '../../widgets/common/custom_button.dart';
 import '../../widgets/animation/fade_animation.dart';
 
 class ClanShopScreen extends StatefulWidget {
+  final String clanId;
 
   const ClanShopScreen({required this.clanId, super.key});
-  final String clanId;
 
   @override
   State<ClanShopScreen> createState() => _ClanShopScreenState();
@@ -22,16 +22,16 @@ class ClanShopScreen extends StatefulWidget {
   }
 }
 
-class _ClanShopScreenState extends State<ClanShopScreen> 
+class _ClanShopScreenState extends State<ClanShopScreen>
     with LoadingMixin, ToastMixin, DialogMixin {
-  
+
   final ClanService _clanService = ServiceLocator().get<ClanService>();
-  
+
   int _clanCoins = 1250;
   String _selectedCategory = 'All';
-  List<ClanShopItem> _items = <ClanShopItem>[];
+  List<ClanShopItem> _items = [];
 
-  final List<String> _categories = <String>['All', 'Badges', 'Frames', 'Effects', 'Gifts'];
+  final List<String> _categories = ['All', 'Badges', 'Frames', 'Effects', 'Gifts'];
 
   @override
   void initState() {
@@ -42,8 +42,8 @@ class _ClanShopScreenState extends State<ClanShopScreen>
   Future<void> _loadItems() async {
     await runWithLoading(() async {
       await Future.delayed(const Duration(seconds: 1));
-      
-      _items = <ClanShopItem>[
+
+      _items = [
         ClanShopItem(
           id: '1',
           name: 'Clan Warrior Badge',
@@ -60,7 +60,7 @@ class _ClanShopScreenState extends State<ClanShopScreen>
           description: 'Premium frame for your profile',
           price: 1000,
           category: 'Frames',
-          icon: Icons.frame_person,
+          icon: Icons.military_tech,
           color: Colors.amber,
           level: 3,
         ),
@@ -150,14 +150,38 @@ class _ClanShopScreenState extends State<ClanShopScreen>
     if (confirmed ?? false) {
       await runWithLoading(() async {
         await Future.delayed(const Duration(seconds: 1));
-        
+
         setState(() {
           _clanCoins -= item.price;
         });
-        
+
         showSuccess('Item purchased successfully!');
       });
     }
+  }
+
+  Widget _buildBuyButton(ClanShopItem item) {
+    final bool canAfford = _clanCoins >= item.price;
+
+    return SizedBox(
+      width: double.infinity,
+      height: 28,
+      child: ElevatedButton(
+        onPressed: canAfford ? () => _purchaseItem(item) : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: item.color,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: Colors.grey.shade300,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: const Text(
+          'Buy',
+          style: TextStyle(fontSize: 12),
+        ),
+      ),
+    );
   }
 
   @override
@@ -166,7 +190,8 @@ class _ClanShopScreenState extends State<ClanShopScreen>
       appBar: AppBar(
         title: const Text('Clan Shop'),
         backgroundColor: Colors.deepPurple,
-        actions: <>[
+        foregroundColor: Colors.white,
+        actions: [
           Container(
             margin: const EdgeInsets.all(8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -175,7 +200,7 @@ class _ClanShopScreenState extends State<ClanShopScreen>
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
-              children: <>[
+              children: [
                 const Icon(Icons.monetization_on, color: Colors.white, size: 16),
                 const SizedBox(width: 4),
                 Text(
@@ -207,7 +232,7 @@ class _ClanShopScreenState extends State<ClanShopScreen>
                         _selectedCategory = category;
                       });
                     },
-                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    backgroundColor: Colors.white.withOpacity(0.2),
                     selectedColor: Colors.white,
                     labelStyle: TextStyle(
                       color: _selectedCategory == category ? Colors.deepPurple : Colors.white,
@@ -222,143 +247,149 @@ class _ClanShopScreenState extends State<ClanShopScreen>
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.8,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.8,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        itemCount: _filteredItems.length,
+        itemBuilder: (BuildContext context, int index) {
+          final ClanShopItem item = _filteredItems[index];
+
+          return FadeAnimation(
+            delay: Duration(milliseconds: index * 100),
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              itemCount: _filteredItems.length,
-              itemBuilder: (BuildContext context, int index) {
-                final ClanShopItem item = _filteredItems[index];
-                final bool canAfford = _clanCoins >= item.price;
-                
-                return FadeAnimation(
-                  delay: Duration(milliseconds: index * 100),
-                  child: Card(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <>[
-                        // Item Image
-                        Expanded(
-                          flex: 3,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: item.color.withValues(alpha: 0.2),
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(12),
-                              ),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                item.icon,
-                                size: 50,
-                                color: item.color,
-                              ),
-                            ),
-                          ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Item Image
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: item.color.withOpacity(0.2),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
                         ),
-                        
-                        // Item Info
-                        Expanded(
-                          flex: 2,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <>[
-                                Text(
-                                  item.name,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                      ),
+                      child: Center(
+                        child: Icon(
+                          item.icon,
+                          size: 50,
+                          color: item.color,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Item Info
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            item.description,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 2,
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  item.description,
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: <>[
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.amber.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Row(
-                                        children: <>[
-                                          const Icon(
-                                            Icons.monetization_on,
-                                            size: 10,
-                                            color: Colors.amber,
-                                          ),
-                                          const SizedBox(width: 2),
-                                          Text(
-                                            '${item.price}',
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.monetization_on,
+                                      size: 10,
+                                      color: Colors.amber,
                                     ),
-                                    const Spacer(),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        'Lvl ${item.level}',
-                                        style: const TextStyle(
-                                          fontSize: 8,
-                                          color: Colors.blue,
-                                        ),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      '${item.price}',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 4),
-                                CustomButton(
-                                  text: 'Buy',
-                                  onPressed: canAfford ? () => _purchaseItem(item) : null,
-                                  color: item.color,
-                                  height: 28,
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 2,
                                 ),
-                              ],
-                            ),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'Lvl ${item.level}',
+                                  style: const TextStyle(
+                                    fontSize: 8,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          _buildBuyButton(item),
+                        ],
+                      ),
                     ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
+          );
+        },
+      ),
     );
   }
 }
 
 class ClanShopItem {
+  final String id;
+  final String name;
+  final String description;
+  final int price;
+  final String category;
+  final IconData icon;
+  final Color color;
+  final int level;
 
   ClanShopItem({
     required this.id,
@@ -370,12 +401,4 @@ class ClanShopItem {
     required this.color,
     required this.level,
   });
-  final String id;
-  final String name;
-  final String description;
-  final int price;
-  final String category;
-  final IconData icon;
-  final Color color;
-  final int level;
 }

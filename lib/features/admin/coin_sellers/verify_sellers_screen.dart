@@ -11,7 +11,7 @@ class VerifySellersScreen extends StatefulWidget {
 }
 
 class _VerifySellersScreenState extends State<VerifySellersScreen> {
-  List<PendingSeller> _sellers = <PendingSeller>[];
+  List<PendingSeller> _sellers = [];
 
   @override
   void initState() {
@@ -20,7 +20,7 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
   }
 
   void _loadSellers() {
-    _sellers = <PendingSeller>[
+    _sellers = [
       PendingSeller(
         id: 's1',
         businessName: 'Fast Coin BD',
@@ -29,7 +29,7 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
         country: 'Bangladesh',
         flag: '🇧🇩',
         discountRate: 15,
-        documents: <String>['NID', 'License'],
+        documents: ['NID', 'License'],
         submittedDate: '2024-03-10',
       ),
       PendingSeller(
@@ -40,7 +40,7 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
         country: 'India',
         flag: '🇮🇳',
         discountRate: 12,
-        documents: <String>['NID', 'License', 'Bank'],
+        documents: ['NID', 'License', 'Bank'],
         submittedDate: '2024-03-09',
       ),
       PendingSeller(
@@ -51,7 +51,7 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
         country: 'Pakistan',
         flag: '🇵🇰',
         discountRate: 18,
-        documents: <String>['NID', 'License', 'Tax'],
+        documents: ['NID', 'License', 'Tax'],
         submittedDate: '2024-03-08',
       ),
     ];
@@ -63,14 +63,14 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(20),
                   itemCount: _sellers.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final PendingSeller seller = _sellers[index];
+                  itemBuilder: (context, index) {
+                    final seller = _sellers[index];
                     return _buildSellerCard(seller);
                   },
                 ),
@@ -86,7 +86,7 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -104,7 +104,7 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.2),
+              color: Colors.orange.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -122,19 +122,19 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+        border: Border.all(color: Colors.orange.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: <>[
+        children: [
           Row(
-            children: <>[
+            children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.2),
+                  color: Colors.orange.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.store, color: Colors.orange),
@@ -143,7 +143,7 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     Text(
                       seller.businessName,
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -163,7 +163,7 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
           ),
           const SizedBox(height: 12),
           Row(
-            children: <>[
+            children: [
               const Icon(Icons.email, color: Colors.white70, size: 14),
               const SizedBox(width: 4),
               Text(seller.email, style: const TextStyle(color: Colors.white70, fontSize: 12)),
@@ -171,26 +171,26 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
           ),
           const SizedBox(height: 8),
           Row(
-            children: <>[
+            children: [
               const Icon(Icons.percent, color: Colors.white70, size: 14),
               const SizedBox(width: 4),
-              Text('${seller.discountRate}% discount', 
-                style: const TextStyle(color: Colors.white70, fontSize: 12),),
+              Text('${seller.discountRate}% discount',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
             ],
           ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
-            children: seller.documents.map((String doc) {
+            children: seller.documents.map((doc) {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.2),
+                  color: Colors.green.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: <>[
+                  children: [
                     const Icon(Icons.check_circle, color: Colors.green, size: 12),
                     const SizedBox(width: 4),
                     Text(doc, style: const TextStyle(color: Colors.green, fontSize: 10)),
@@ -201,7 +201,7 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
           ),
           const SizedBox(height: 16),
           Row(
-            children: <>[
+            children: [
               Expanded(
                 child: _buildActionButton('Approve', Colors.green, () {
                   _showApproveDialog(seller);
@@ -232,9 +232,9 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
+          color: color.withOpacity(0.2),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.5)),
+          border: Border.all(color: color.withOpacity(0.5)),
         ),
         child: Center(
           child: Text(
@@ -256,7 +256,7 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
           'Approve ${seller.businessName}?',
           style: const TextStyle(color: Colors.white70),
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
@@ -291,7 +291,7 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
           'Reject ${seller.businessName}?',
           style: const TextStyle(color: Colors.white70),
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
@@ -326,7 +326,7 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
           padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: <>[
+            children: [
               const Text(
                 'Seller Details',
                 style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
@@ -355,7 +355,7 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <>[
+        children: [
           Text('$label:', style: const TextStyle(color: Colors.white70)),
           Text(value, style: const TextStyle(color: Colors.white)),
         ],
@@ -365,6 +365,15 @@ class _VerifySellersScreenState extends State<VerifySellersScreen> {
 }
 
 class PendingSeller {
+  final String id;
+  final String businessName;
+  final String owner;
+  final String email;
+  final String country;
+  final String flag;
+  final int discountRate;
+  final List<String> documents;
+  final String submittedDate;
 
   PendingSeller({
     required this.id,
@@ -377,13 +386,4 @@ class PendingSeller {
     required this.documents,
     required this.submittedDate,
   });
-  final String id;
-  final String businessName;
-  final String owner;
-  final String email;
-  final String country;
-  final String flag;
-  final int discountRate;
-  final List<String> documents;
-  final String submittedDate;
 }

@@ -1,12 +1,44 @@
+import 'package:flutter/material.dart'; // Color এর জন্য এই ইম্পোর্ট যোগ করুন
+
 // Seller Models
 enum SellerStatus { active, inactive, suspended }
 enum SellerVerificationStatus { pending, verified, rejected }
 enum TransferStatus { pending, completed, failed, refunded }
-enum PurchaseStatus { pending, completed, cancelled }
+enum PurchaseStatus { pending, completed, cancelled, failed } // failed যোগ করা হলো
+enum TransactionType { sale, purchase, commission, withdrawal }
+enum TransactionStatus { pending, completed, failed, cancelled }
+enum SellerTier { bronze, silver, gold, platinum, diamond }
 
 class CoinSeller {
+  final String id;
+  final String userId;
+  final String businessName;
+  final String ownerName;
+  final String email;
+  final String phone;
+  final String countryId;
+  final DateTime registrationDate;
+  final SellerStatus status;
+  final SellerVerificationStatus verificationStatus;
 
-  CoinSeller({
+  // Coin Inventory
+  final double coinBalance;
+  final double lockedCoins;
+  final double totalSold;
+  final double totalRevenue;
+
+  // Pricing
+  final double discountRate;
+  final Map<String, double> customPackages;
+
+  // Stats
+  final int totalCustomers;
+  final double rating;
+  final int completedTransactions;
+  final int pendingTransactions;
+  final DateTime? lastTransactionDate;
+
+  const CoinSeller({
     required this.id,
     required this.userId,
     required this.businessName,
@@ -29,51 +61,36 @@ class CoinSeller {
     required this.pendingTransactions,
     this.lastTransactionDate,
   });
-  final String id;
-  final String userId;
-  final String businessName;
-  final String ownerName;
-  final String email;
-  final String phone;
-  final String countryId;
-  final DateTime registrationDate;
-  final SellerStatus status;
-  final SellerVerificationStatus verificationStatus;
-  
-  // Coin Inventory
-  final double coinBalance;
-  final double lockedCoins;
-  final double totalSold;
-  final double totalRevenue;
-  
-  // Pricing
-  final double discountRate; // কত ডিসকাউন্ট দেয় (5% to 30%)
-  final Map<String, double> customPackages; // packageId -> price
-  
-  // Stats
-  final int totalCustomers;
-  final double rating;
-  final int completedTransactions;
-  final int pendingTransactions;
-  final DateTime? lastTransactionDate;
 
-  // Helper methods
+  // Helper methods - গেটার হিসেবে ডিফাইন করুন
   double get availableCoins => coinBalance - lockedCoins;
-  
+
   bool get isVerified => verificationStatus == SellerVerificationStatus.verified;
-  
+
   bool get isActive => status == SellerStatus.active;
-  
+
   double calculatePrice(int coins) {
-    var originalPrice = coins * 1.0; // 1 coin = 1 taka base price
+    var originalPrice = coins * 1.0;
     var discount = originalPrice * discountRate / 100;
     return originalPrice - discount;
   }
 }
 
 class CoinTransfer {
+  final String id;
+  final String sellerId;
+  final String receiverId;
+  final String receiverName;
+  final int coins;
+  final double amount;
+  final double costPrice;
+  final double sellerProfit;
+  final DateTime transferDate;
+  final TransferStatus status;
+  final String? note;
+  final String? transactionId;
 
-  CoinTransfer({
+  const CoinTransfer({
     required this.id,
     required this.sellerId,
     required this.receiverId,
@@ -87,34 +104,12 @@ class CoinTransfer {
     this.note,
     this.transactionId,
   });
-  final String id;
-  final String sellerId;
-  final String receiverId; // user ID who receives coins
-  final String receiverName;
-  final int coins;
-  final double amount; // amount paid by receiver
-  final double costPrice; // সেলারের কেনা দাম
-  final double sellerProfit;
-  final DateTime transferDate;
-  final TransferStatus status;
-  final String? note;
-  final String? transactionId;
 
-  double get profitMargin => (sellerProfit / costPrice) * 100;
+  // গেটার
+  double get profitMargin => costPrice > 0 ? (sellerProfit / costPrice) * 100 : 0;
 }
 
 class BulkCoinPurchase {
-
-  BulkCoinPurchase({
-    required this.id,
-    required this.sellerId,
-    required this.coins,
-    required this.costPrice,
-    required this.pricePerCoin,
-    required this.supplier,
-    required this.purchaseDate, required this.status, this.supplierContact,
-    this.invoiceUrl,
-  });
   final String id;
   final String sellerId;
   final int coins;
@@ -125,36 +120,60 @@ class BulkCoinPurchase {
   final DateTime purchaseDate;
   final PurchaseStatus status;
   final String? invoiceUrl;
+
+  const BulkCoinPurchase({
+    required this.id,
+    required this.sellerId,
+    required this.coins,
+    required this.costPrice,
+    required this.pricePerCoin,
+    required this.supplier,
+    required this.purchaseDate,
+    required this.status,
+    this.supplierContact,
+    this.invoiceUrl,
+  });
 }
 
 class CoinPackage {
-
-  CoinPackage({
-    required this.id,
-    required this.name,
-    required this.coins,
-    required this.regularPrice,
-    required this.discountRate, this.sellerPrice,
-    this.isPopular = false,
-    this.badge,
-  });
   final String id;
   final String name;
   final int coins;
   final double regularPrice;
-  final double? sellerPrice; // সেলারের দেওয়া দাম (ডিসকাউন্টেড)
+  final double? sellerPrice;
   final double discountRate;
   final bool isPopular;
   final String? badge;
 
+  const CoinPackage({
+    required this.id,
+    required this.name,
+    required this.coins,
+    required this.regularPrice,
+    required this.discountRate,
+    this.sellerPrice,
+    this.isPopular = false,
+    this.badge,
+  });
+
+  // গেটার
   double get currentPrice => sellerPrice ?? (regularPrice * (100 - discountRate) / 100);
-  
+
   double get savings => regularPrice - currentPrice;
 }
 
 class SellerTransaction {
+  final String id;
+  final String sellerId;
+  final TransactionType type;
+  final double amount;
+  final int coins;
+  final String counterparty;
+  final DateTime date;
+  final TransactionStatus status;
+  final String? description;
 
-  SellerTransaction({
+  const SellerTransaction({
     required this.id,
     required this.sellerId,
     required this.type,
@@ -165,42 +184,9 @@ class SellerTransaction {
     required this.status,
     this.description,
   });
-  final String id;
-  final String sellerId;
-  final TransactionType type;
-  final double amount;
-  final int coins;
-  final String counterparty; // buyer or supplier
-  final DateTime date;
-  final TransactionStatus status;
-  final String? description;
-}
-
-enum TransactionType {
-  sale, // কয়েন বিক্রি
-  purchase, // বাল্ক কয়েন কেনা
-  commission, // কমিশন
-  withdrawal, // টাকা তুলা
-}
-
-enum TransactionStatus {
-  pending,
-  completed,
-  failed,
-  cancelled,
 }
 
 class SellerBadge {
-
-  SellerBadge({
-    required this.sellerId,
-    required this.businessName,
-    required this.discountRate,
-    required this.totalSold,
-    required this.rating,
-    required this.isVerified,
-    required this.tier,
-  });
   final String sellerId;
   final String businessName;
   final double discountRate;
@@ -209,6 +195,17 @@ class SellerBadge {
   final bool isVerified;
   final SellerTier tier;
 
+  const SellerBadge({
+    required this.sellerId,
+    required this.businessName,
+    required this.discountRate,
+    required this.totalSold,
+    required this.rating,
+    required this.isVerified,
+    required this.tier,
+  });
+
+  // গেটার
   Color get tierColor {
     switch (tier) {
       case SellerTier.bronze:
@@ -240,17 +237,17 @@ class SellerBadge {
   }
 }
 
-enum SellerTier {
-  bronze,
-  silver,
-  gold,
-  platinum,
-  diamond,
-}
-
 class SellerReview {
+  final String id;
+  final String sellerId;
+  final String userId;
+  final String userName;
+  final double rating;
+  final String comment;
+  final DateTime date;
+  final int coinsPurchased;
 
-  SellerReview({
+  const SellerReview({
     required this.id,
     required this.sellerId,
     required this.userId,
@@ -260,33 +257,25 @@ class SellerReview {
     required this.date,
     required this.coinsPurchased,
   });
-  final String id;
-  final String sellerId;
-  final String userId;
-  final String userName;
-  final double rating;
-  final String comment;
-  final DateTime date;
-  final int coinsPurchased;
 }
 
 // API Request/Response Models
 class TransferCoinRequest {
-
-  TransferCoinRequest({
-    required this.sellerId,
-    required this.receiverId,
-    required this.coins,
-    required this.amount,
-    required this.paymentMethod,
-  });
   final String sellerId;
   final String receiverId;
   final int coins;
   final double amount;
   final String paymentMethod;
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
+  const TransferCoinRequest({
+    required this.sellerId,
+    required this.receiverId,
+    required this.coins,
+    required this.amount,
+    required this.paymentMethod,
+  });
+
+  Map<String, dynamic> toJson() => {
     'sellerId': sellerId,
     'receiverId': receiverId,
     'coins': coins,
@@ -296,6 +285,10 @@ class TransferCoinRequest {
 }
 
 class TransferCoinResponse {
+  final bool success;
+  final String? transactionId;
+  final String? message;
+  final CoinTransfer? transfer;
 
   TransferCoinResponse({
     required this.success,
@@ -305,43 +298,50 @@ class TransferCoinResponse {
   });
 
   factory TransferCoinResponse.fromJson(Map<String, dynamic> json) {
+    TransferStatus? transferStatus;
+    if (json['transfer'] != null && json['transfer']['status'] != null) {
+      try {
+        transferStatus = TransferStatus.values.firstWhere(
+              (e) => e.toString() == 'TransferStatus.${json['transfer']['status']}',
+        );
+      } catch (e) {
+        transferStatus = TransferStatus.pending;
+      }
+    }
+
     return TransferCoinResponse(
       success: json['success'] ?? false,
       transactionId: json['transactionId'],
       message: json['message'],
-      transfer: json['transfer'] != null 
+      transfer: json['transfer'] != null
           ? CoinTransfer(
-              id: json['transfer']['id'],
-              sellerId: json['transfer']['sellerId'],
-              receiverId: json['transfer']['receiverId'],
-              receiverName: json['transfer']['receiverName'],
-              coins: json['transfer']['coins'],
-              amount: json['transfer']['amount'].toDouble(),
-              costPrice: json['transfer']['costPrice'].toDouble(),
-              sellerProfit: json['transfer']['sellerProfit'].toDouble(),
-              transferDate: DateTime.parse(json['transfer']['transferDate']),
-              status: TransferStatus.values.firstWhere(
-                (e) => e.toString() == 'TransferStatus.${json['transfer']['status']}',
-              ),
-              transactionId: json['transfer']['transactionId'],
-            )
+        id: json['transfer']['id'] ?? '',
+        sellerId: json['transfer']['sellerId'] ?? '',
+        receiverId: json['transfer']['receiverId'] ?? '',
+        receiverName: json['transfer']['receiverName'] ?? '',
+        coins: json['transfer']['coins'] ?? 0,
+        amount: (json['transfer']['amount'] ?? 0).toDouble(),
+        costPrice: (json['transfer']['costPrice'] ?? 0).toDouble(),
+        sellerProfit: (json['transfer']['sellerProfit'] ?? 0).toDouble(),
+        transferDate: json['transfer']['transferDate'] != null
+            ? DateTime.parse(json['transfer']['transferDate'])
+            : DateTime.now(),
+        status: transferStatus ?? TransferStatus.pending,
+        transactionId: json['transfer']['transactionId'],
+      )
           : null,
     );
   }
-  final bool success;
-  final String? transactionId;
-  final String? message;
-  final CoinTransfer? transfer;
 }
 
 // Extension for coin calculations
 extension CoinCalculator on int {
   double get officialPrice => this * 1.0;
-  
-  double get sellerPriceWithDiscount(double discountRate) {
+
+  double sellerPriceWithDiscount(double discountRate) {
     return this * 1.0 * (100 - discountRate) / 100;
   }
-  
+
   double calculateProfit(double costPricePerCoin, double sellingPricePerCoin) {
     return this * (sellingPricePerCoin - costPricePerCoin);
   }

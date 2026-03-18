@@ -1,22 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';  // DiagnosticPropertiesBuilder এর জন্য
 import 'package:audioplayers/audioplayers.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/services/call_service.dart';
 import '../../../core/services/notification_service.dart';
-import '../../../core/models/user_model.dart';
+import '../../../core/models/user_models.dart' as app;  // ← alias ব্যবহার
 import '../../../widgets/animation/pulse_animation.dart';
 import 'call_screen.dart';
 
-class IncomingCallScreen extends StatefulWidget {
+// CallType enum
+enum CallType {
+  audio,
+  video,
+}
 
-  const IncomingCallScreen({
-    required this.callerId, required this.callerName, required this.callType, super.key,
-    this.callerAvatar,
-  });
+class IncomingCallScreen extends StatefulWidget {
   final String callerId;
   final String callerName;
   final String? callerAvatar;
   final CallType callType;
+
+  const IncomingCallScreen({
+    required this.callerId,
+    required this.callerName,
+    required this.callType,
+    super.key,
+    this.callerAvatar,
+  });
 
   @override
   State<IncomingCallScreen> createState() => _IncomingCallScreenState();
@@ -34,8 +44,8 @@ class IncomingCallScreen extends StatefulWidget {
 class _IncomingCallScreenState extends State<IncomingCallScreen> {
   final CallService _callService = ServiceLocator().get<CallService>();
   final NotificationService _notificationService = ServiceLocator().get<NotificationService>();
-  final _audioPlayer = AudioPlayer();
-  final bool _isRinging = true;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isRinging = true;
 
   @override
   void initState() {
@@ -55,26 +65,32 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
 
   Future<void> _acceptCall() async {
     await _stopRinging();
-    
+
     // Initialize call service
     await _callService.initialize();
-    
+
     // Join the call
     await _callService.joinCall(_callService.currentChannelId!);
-    
+
+    // Create user object
+    final user = app.User(
+      id: widget.callerId,
+      username: widget.callerName,
+      email: '',
+      name: widget.callerName,
+      role: app.UserRole.user,
+      countryId: '',
+      createdAt: DateTime.now(),
+      photoURL: widget.callerAvatar,
+    );
+
     // Navigate to call screen
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (BuildContext context) => CallScreen(
-          user: UserModel(
-            uid: widget.callerId,
-            username: widget.callerName,
-            photoURL: widget.callerAvatar,
-            // Add other required fields
-          ),
+        builder: (context) => CallScreen(
+          user: user,
           isVideoCall: widget.callType == CallType.video,
-          isOutgoing: false,
         ),
       ),
     );
@@ -82,10 +98,10 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
 
   Future<void> _rejectCall() async {
     await _stopRinging();
-    
+
     // Send rejection via socket
     // _socketService.emit('call-rejected', {'callerId': widget.callerId});
-    
+
     Navigator.pop(context);
   }
 
@@ -95,16 +111,16 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
       backgroundColor: Colors.black87,
       body: SafeArea(
         child: Column(
-          children: <>[
+          children: [
             const Spacer(flex: 2),
-            
+
             // Caller Info
             Column(
-              children: <>[
+              children: [
                 // Avatar with pulse animation
                 PulseAnimation(
                   animate: _isRinging,
-                  child: DecoratedBox(
+                  child: Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
@@ -119,9 +135,9 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                           : null,
                       child: widget.callerAvatar == null
                           ? Text(
-                              widget.callerName[0].toUpperCase(),
-                              style: const TextStyle(fontSize: 40),
-                            )
+                        widget.callerName[0].toUpperCase(),
+                        style: const TextStyle(fontSize: 40),
+                      )
                           : null,
                     ),
                   ),
@@ -145,9 +161,9 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                 ),
               ],
             ),
-            
+
             const Spacer(),
-            
+
             // Call Status
             const Text(
               'Incoming call...',
@@ -156,13 +172,13 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                 fontSize: 14,
               ),
             ),
-            
+
             const SizedBox(height: 40),
-            
+
             // Action Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <>[
+              children: [
                 // Decline Button
                 _buildActionButton(
                   icon: Icons.call_end,
@@ -170,7 +186,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                   color: Colors.red,
                   onTap: _rejectCall,
                 ),
-                
+
                 // Accept Button
                 _buildActionButton(
                   icon: widget.callType == CallType.video
@@ -182,7 +198,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 40),
           ],
         ),
@@ -199,12 +215,12 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Column(
-        children: <>[
+        children: [
           Container(
             width: 70,
             height: 70,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
+              color: color.withOpacity(0.2),
               shape: BoxShape.circle,
               border: Border.all(color: color, width: 2),
             ),

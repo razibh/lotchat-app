@@ -11,9 +11,9 @@ class TransactionHistoryScreen extends StatefulWidget {
 
 class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   String _selectedFilter = 'All';
-  final List<String> _filters = <String>['All', 'Recharge', 'Withdraw', 'Game', 'Reward'];
-  
-  List<Transaction> _transactions = <Transaction>[];
+  final List<String> _filters = ['All', 'Recharge', 'Withdraw', 'Game', 'Reward'];
+
+  List<Transaction> _transactions = [];
 
   @override
   void initState() {
@@ -23,7 +23,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
 
   void _loadTransactions() {
     // Simulate loading transactions
-    _transactions = <Transaction>[
+    _transactions = [
       Transaction(
         id: 'TXN001',
         type: 'Recharge',
@@ -94,7 +94,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            children: <>[
+            children: [
               _buildHeader(),
               _buildFilterChips(),
               Expanded(
@@ -111,7 +111,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -120,9 +120,13 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
           Text(
             'Transaction History',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ) ?? const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -139,7 +143,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         itemBuilder: (BuildContext context, int index) {
           final String filter = _filters[index];
           final bool isSelected = _selectedFilter == filter;
-          
+
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
@@ -165,12 +169,12 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
 
   Widget _buildTransactionList() {
     final List<Transaction> transactions = _filteredTransactions;
-    
+
     if (transactions.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <>[
+          children: [
             Icon(
               Icons.history,
               size: 80,
@@ -201,10 +205,10 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
 
   Widget _buildTransactionTile(Transaction transaction) {
     final bool isCredit = transaction.amount > 0;
-    final MaterialColor amountColor = isCredit ? Colors.green : Colors.red;
+    final Color amountColor = isCredit ? Colors.green : Colors.red;
     final IconData iconData = _getTransactionIcon(transaction.type);
     final Color iconColor = _getTransactionColor(transaction.type);
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -213,7 +217,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -226,9 +230,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Row(
-                  children: <>[
+                  children: [
                     Expanded(
                       child: Text(
                         transaction.description ?? transaction.type,
@@ -259,7 +263,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   _formatDate(transaction.date),
                   style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
-                if (transaction.method != null) ...<>[
+                if (transaction.method != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     'via ${transaction.method}',
@@ -272,7 +276,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: <>[
+            children: [
               Text(
                 '${isCredit ? '+' : ''}৳${transaction.amount.abs().toStringAsFixed(2)}',
                 style: TextStyle(
@@ -356,6 +360,13 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
 }
 
 class Transaction {
+  final String id;
+  final String type;
+  final double amount;
+  final DateTime date;
+  final String status;
+  final String? method;
+  final String? description;
 
   Transaction({
     required this.id,
@@ -366,11 +377,4 @@ class Transaction {
     this.method,
     this.description,
   });
-  final String id;
-  final String type;
-  final double amount;
-  final DateTime date;
-  final String status;
-  final String? method;
-  final String? description;
 }

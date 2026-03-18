@@ -15,13 +15,13 @@ class SellerManagement extends StatefulWidget {
   State<SellerManagement> createState() => _SellerManagementState();
 }
 
-class _SellerManagementState extends State<SellerManagement> 
+class _SellerManagementState extends State<SellerManagement>
     with LoadingMixin, ToastMixin, DialogMixin {
-  
+
   final AdminService _adminService = ServiceLocator().get<AdminService>();
   final PaymentService _paymentService = ServiceLocator().get<PaymentService>();
-  
-  List<Map<String, dynamic>> _sellers = <Map<String, dynamic>>[];
+
+  List<Map<String, dynamic>> _sellers = [];
   bool _isLoading = true;
 
   @override
@@ -34,7 +34,7 @@ class _SellerManagementState extends State<SellerManagement>
     await runWithLoading(() async {
       try {
         // Mock data
-        _sellers = List.generate(5, (int index) => <String, dynamic>{
+        _sellers = List.generate(5, (index) => {
           'id': 'seller_$index',
           'name': 'Seller ${index + 1}',
           'email': 'seller$index@example.com',
@@ -43,7 +43,7 @@ class _SellerManagementState extends State<SellerManagement>
           'commissionRate': 0.1 + (index * 0.02),
           'isActive': index % 2 == 0,
           'createdAt': DateTime.now().subtract(Duration(days: index * 30)),
-        },);
+        });
       } catch (e) {
         showError('Failed to load sellers: $e');
       } finally {
@@ -129,7 +129,7 @@ class _SellerManagementState extends State<SellerManagement>
   Future<void> _toggleStatus(Map<String, dynamic> seller) async {
     await runWithLoading(() async {
       try {
-        final bool newStatus = !seller['isActive'];
+        final bool newStatus = !(seller['isActive'] as bool);
         // Update seller status
         showSuccess('Seller ${newStatus ? 'activated' : 'deactivated'}');
         _loadSellers();
@@ -145,7 +145,7 @@ class _SellerManagementState extends State<SellerManagement>
       appBar: AppBar(
         title: const Text('Seller Management'),
         backgroundColor: Colors.green,
-        actions: <>[
+        actions: [
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: _createSeller,
@@ -155,30 +155,32 @@ class _SellerManagementState extends State<SellerManagement>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _sellers.length,
-              itemBuilder: (BuildContext context, int index) {
-                final Map<String, dynamic> seller = _sellers[index];
-                return _buildSellerCard(seller);
-              },
-            ),
+        padding: const EdgeInsets.all(16),
+        itemCount: _sellers.length,
+        itemBuilder: (context, index) {
+          final seller = _sellers[index];
+          return _buildSellerCard(seller);
+        },
+      ),
     );
   }
 
   Widget _buildSellerCard(Map<String, dynamic> seller) {
+    final bool isActive = seller['isActive'] as bool;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: <>[
+          children: [
             // Header
             Row(
-              children: <>[
+              children: [
                 CircleAvatar(
-                  backgroundColor: seller['isActive'] ? Colors.green : Colors.grey,
+                  backgroundColor: isActive ? Colors.green : Colors.grey,
                   child: Text(
-                    seller['name'][0].toUpperCase(),
+                    (seller['name'] as String)[0].toUpperCase(),
                     style: const TextStyle(color: Colors.white),
                   ),
                 ),
@@ -186,16 +188,16 @@ class _SellerManagementState extends State<SellerManagement>
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <>[
+                    children: [
                       Text(
-                        seller['name'],
+                        seller['name'] as String,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        seller['email'],
+                        seller['email'] as String,
                         style: const TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                     ],
@@ -204,11 +206,11 @@ class _SellerManagementState extends State<SellerManagement>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: seller['isActive'] ? Colors.green : Colors.red,
+                    color: isActive ? Colors.green : Colors.red,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    seller['isActive'] ? 'Active' : 'Inactive',
+                    isActive ? 'Active' : 'Inactive',
                     style: const TextStyle(color: Colors.white, fontSize: 10),
                   ),
                 ),
@@ -218,7 +220,7 @@ class _SellerManagementState extends State<SellerManagement>
 
             // Stats
             Row(
-              children: <>[
+              children: [
                 Expanded(
                   child: _buildStatItem(
                     'Coin Balance',
@@ -237,18 +239,18 @@ class _SellerManagementState extends State<SellerManagement>
             ),
             const SizedBox(height: 8),
             Row(
-              children: <>[
+              children: [
                 Expanded(
                   child: _buildStatItem(
                     'Commission',
-                    '${(seller['commissionRate'] * 100).toInt()}%',
+                    '${((seller['commissionRate'] as double) * 100).toInt()}%',
                     Icons.percent,
                   ),
                 ),
                 Expanded(
                   child: _buildStatItem(
                     'Joined',
-                    _formatDate(seller['createdAt']),
+                    _formatDate(seller['createdAt'] as DateTime),
                     Icons.calendar_today,
                   ),
                 ),
@@ -258,7 +260,7 @@ class _SellerManagementState extends State<SellerManagement>
 
             // Actions
             Row(
-              children: <>[
+              children: [
                 Expanded(
                   child: _buildActionButton(
                     icon: Icons.add_card,
@@ -270,9 +272,9 @@ class _SellerManagementState extends State<SellerManagement>
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildActionButton(
-                    icon: seller['isActive'] ? Icons.pause : Icons.play_arrow,
-                    label: seller['isActive'] ? 'Deactivate' : 'Activate',
-                    color: seller['isActive'] ? Colors.orange : Colors.green,
+                    icon: isActive ? Icons.pause : Icons.play_arrow,
+                    label: isActive ? 'Deactivate' : 'Activate',
+                    color: isActive ? Colors.orange : Colors.green,
                     onTap: () => _toggleStatus(seller),
                   ),
                 ),
@@ -295,12 +297,12 @@ class _SellerManagementState extends State<SellerManagement>
 
   Widget _buildStatItem(String label, String value, IconData icon) {
     return Row(
-      children: <>[
+      children: [
         Icon(icon, size: 16, color: Colors.grey),
         const SizedBox(width: 4),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <>[
+          children: [
             Text(
               label,
               style: const TextStyle(fontSize: 10, color: Colors.grey),
@@ -326,11 +328,11 @@ class _SellerManagementState extends State<SellerManagement>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
+          color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Column(
-          children: <>[
+          children: [
             Icon(icon, color: color, size: 16),
             const SizedBox(height: 4),
             Text(
@@ -357,7 +359,7 @@ class _SellerManagementState extends State<SellerManagement>
           child: ListView.builder(
             shrinkWrap: true,
             itemCount: 5,
-            itemBuilder: (BuildContext context, int index) {
+            itemBuilder: (context, index) {
               return ListTile(
                 leading: const Icon(Icons.sell, color: Colors.green),
                 title: Text('Sale #${index + 1}'),
@@ -367,7 +369,7 @@ class _SellerManagementState extends State<SellerManagement>
             },
           ),
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),

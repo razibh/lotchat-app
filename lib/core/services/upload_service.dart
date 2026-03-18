@@ -2,12 +2,26 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
+import 'package:flutter/foundation.dart'; // 🟢 debugPrint এর জন্য
+
 import '../di/service_locator.dart';
 import 'logger_service.dart';
 
 class UploadService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
-  final LoggerService _logger = ServiceLocator().get<LoggerService>();
+  late final LoggerService _logger;
+
+  UploadService() {
+    _initializeServices();
+  }
+
+  void _initializeServices() {
+    try {
+      _logger = ServiceLocator.instance.get<LoggerService>();
+    } catch (e) {
+      debugPrint('Error initializing services: $e');
+    }
+  }
 
   // Upload file
   Future<String?> uploadFile({
@@ -27,23 +41,22 @@ class UploadService {
       final String storagePath = '$folder/$finalFileName';
 
       final Reference ref = _storage.ref().child(storagePath);
-      
+
       // Upload with metadata
-      final UploadTask uploadTask = ref.putFile(
-        file,
-        SettableMetadata(
-          customMetadata: metadata,
-          contentType: _getContentType(ext),
-        ),
+      final SettableMetadata settableMetadata = SettableMetadata(
+        customMetadata: metadata,
+        contentType: _getContentType(ext),
       );
+
+      final UploadTask uploadTask = ref.putFile(file, settableMetadata);
 
       final TaskSnapshot snapshot = await uploadTask;
       final String downloadUrl = await snapshot.ref.getDownloadURL();
 
-      _logger.info('File uploaded successfully: $storagePath');
+      _logger?.info('File uploaded successfully: $storagePath');
       return downloadUrl;
     } catch (e) {
-      _logger.error('Failed to upload file', error: e);
+      _logger?.error('Failed to upload file', error: e);
       return null;
     }
   }
@@ -58,7 +71,7 @@ class UploadService {
       filePath: image.path,
       folder: folder,
       fileName: fileName,
-      metadata: <String, String>{'type': 'image'},
+      metadata: {'type': 'image'},
     );
   }
 
@@ -71,7 +84,7 @@ class UploadService {
       image: image,
       folder: folder,
       fileName: '${DateTime.now().millisecondsSinceEpoch}_${images.indexOf(image)}',
-    ),).toList();
+    )).toList();
 
     return Future.wait(futures);
   }
@@ -86,7 +99,7 @@ class UploadService {
       filePath: video.path,
       folder: folder,
       fileName: fileName,
-      metadata: <String, String>{'type': 'video'},
+      metadata: {'type': 'video'},
     );
   }
 
@@ -100,7 +113,7 @@ class UploadService {
       filePath: audio.path,
       folder: folder,
       fileName: fileName,
-      metadata: <String, String>{'type': 'audio'},
+      metadata: {'type': 'audio'},
     );
   }
 
@@ -140,7 +153,7 @@ class UploadService {
       filePath: animation.path,
       folder: 'gifts/$giftId/animations',
       fileName: fileName,
-      metadata: <String, String>{'type': 'animation'},
+      metadata: {'type': 'animation'},
     );
   }
 
@@ -151,12 +164,12 @@ class UploadService {
   }) async {
     final bool isVideo = media.path.endsWith('.mp4') || media.path.endsWith('.mov');
     final String fileName = '${isVideo ? 'video' : 'image'}_${DateTime.now().millisecondsSinceEpoch}${path.extension(media.path)}';
-    
+
     return uploadFile(
       filePath: media.path,
       folder: 'posts/$postId/media',
       fileName: fileName,
-      metadata: <String, String>{'type': isVideo ? 'video' : 'image'},
+      metadata: {'type': isVideo ? 'video' : 'image'},
     );
   }
 
@@ -167,7 +180,7 @@ class UploadService {
     required String messageId,
   }) async {
     final String fileName = '${DateTime.now().millisecondsSinceEpoch}_${path.basename(file.path)}';
-    
+
     return uploadFile(
       filePath: file.path,
       folder: 'chats/$chatId/$messageId',
@@ -180,10 +193,10 @@ class UploadService {
     try {
       final Reference ref = _storage.refFromURL(url);
       await ref.delete();
-      _logger.info('File deleted successfully');
+      _logger?.info('File deleted successfully');
       return true;
     } catch (e) {
-      _logger.error('Failed to delete file', error: e);
+      _logger?.error('Failed to delete file', error: e);
       return false;
     }
   }
@@ -194,7 +207,7 @@ class UploadService {
       final Reference ref = _storage.refFromURL(url);
       return await ref.getMetadata();
     } catch (e) {
-      _logger.error('Failed to get file metadata', error: e);
+      _logger?.error('Failed to get file metadata', error: e);
       return null;
     }
   }
@@ -205,7 +218,7 @@ class UploadService {
       final Reference ref = _storage.ref().child(path);
       return await ref.getDownloadURL();
     } catch (e) {
-      _logger.error('Failed to get download URL', error: e);
+      _logger?.error('Failed to get download URL', error: e);
       return null;
     }
   }
@@ -217,8 +230,8 @@ class UploadService {
       final ListResult result = await ref.listAll();
       return result.items;
     } catch (e) {
-      _logger.error('Failed to list files', error: e);
-      return <>[];
+      _logger?.error('Failed to list files', error: e);
+      return [];
     }
   }
 
@@ -236,10 +249,13 @@ class UploadService {
   Future<bool> updateFileMetadata(String url, Map<String, String> metadata) async {
     try {
       final Reference ref = _storage.refFromURL(url);
-      await ref.updateMetadata(SettableMetadata(customMetadata: metadata));
+      final SettableMetadata settableMetadata = SettableMetadata(
+        customMetadata: metadata,
+      );
+      await ref.updateMetadata(settableMetadata);
       return true;
     } catch (e) {
-      _logger.error('Failed to update file metadata', error: e);
+      _logger?.error('Failed to update file metadata', error: e);
       return false;
     }
   }
@@ -293,11 +309,11 @@ class UploadService {
         final FullMetadata metadata = await file.getMetadata();
         if (metadata.timeCreated != null && metadata.timeCreated!.isBefore(cutoff)) {
           await file.delete();
-          _logger.info('Deleted old file: ${file.name}');
+          _logger?.info('Deleted old file: ${file.name}');
         }
       }
     } catch (e) {
-      _logger.error('Failed to cleanup old files', error: e);
+      _logger?.error('Failed to cleanup old files', error: e);
     }
   }
 }

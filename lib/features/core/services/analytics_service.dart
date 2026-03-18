@@ -2,7 +2,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_analytics/observer.dart';
 
 import '../../../core/di/service_locator.dart';
-import '../../../core/models/user_model.dart';
+import '../../../core/models/user_models.dart';
 import '../../../core/services/logger_service.dart';
 
 class AnalyticsService {
@@ -33,7 +33,7 @@ class AnalyticsService {
   }
 
   // Track event
-  Future<void> trackEvent(String eventName, {Map<String, dynamic>? parameters}) async {
+  Future<void> trackEvent(String eventName, {Map<String, Object?>? parameters}) async {
     try {
       await _analytics.logEvent(
         name: eventName,
@@ -47,12 +47,12 @@ class AnalyticsService {
 
   // Track user login
   Future<void> trackLogin(String method) async {
-    await trackEvent('login', parameters: <String, dynamic>{'method': method});
+    await trackEvent('login', parameters: {'method': method});
   }
 
   // Track sign up
   Future<void> trackSignUp(String method) async {
-    await trackEvent('sign_up', parameters: <String, dynamic>{'method': method});
+    await trackEvent('sign_up', parameters: {'method': method});
   }
 
   // Track user logout
@@ -69,7 +69,7 @@ class AnalyticsService {
   }
 
   // Set user properties
-  Future<void> setUserProperties(UserModel user) async {
+  Future<void> setUserProperties(User user) async {
     try {
       await _analytics.setUserProperty(
         name: 'tier',
@@ -77,7 +77,7 @@ class AnalyticsService {
       );
       await _analytics.setUserProperty(
         name: 'country',
-        value: user.country,
+        value: user.countryId,
       );
       await _analytics.setUserProperty(
         name: 'role',
@@ -101,13 +101,13 @@ class AnalyticsService {
     required String receiverId,
     String? roomId,
   }) async {
-    await trackEvent('gift_sent', parameters: <String, dynamic>{
+    await trackEvent('gift_sent', parameters: {
       'gift_id': giftId,
       'gift_name': giftName,
       'price': price,
       'receiver_id': receiverId,
-      'room_id': roomId,
-    },);
+      if (roomId != null) 'room_id': roomId,
+    });
   }
 
   // Track game played
@@ -117,12 +117,12 @@ class AnalyticsService {
     required bool won,
     int? winAmount,
   }) async {
-    await trackEvent('game_played', parameters: <String, dynamic>{
+    await trackEvent('game_played', parameters: {
       'game_name': gameName,
       'bet_amount': betAmount,
       'won': won,
-      'win_amount': winAmount,
-    },);
+      if (winAmount != null) 'win_amount': winAmount,
+    });
   }
 
   // Track call started
@@ -131,11 +131,11 @@ class AnalyticsService {
     required String targetId,
     bool isGroupCall = false,
   }) async {
-    await trackEvent('call_started', parameters: <String, dynamic>{
+    await trackEvent('call_started', parameters: {
       'call_type': callType,
       'target_id': targetId,
       'is_group_call': isGroupCall,
-    },);
+    });
   }
 
   // Track call ended
@@ -143,10 +143,10 @@ class AnalyticsService {
     required String callType,
     required int duration,
   }) async {
-    await trackEvent('call_ended', parameters: <String, dynamic>{
+    await trackEvent('call_ended', parameters: {
       'call_type': callType,
       'duration': duration,
-    },);
+    });
   }
 
   // Track room created
@@ -155,16 +155,16 @@ class AnalyticsService {
     required String roomName,
     required String category,
   }) async {
-    await trackEvent('room_created', parameters: <String, dynamic>{
+    await trackEvent('room_created', parameters: {
       'room_id': roomId,
       'room_name': roomName,
       'category': category,
-    },);
+    });
   }
 
   // Track room joined
   Future<void> trackRoomJoined(String roomId) async {
-    await trackEvent('room_joined', parameters: <String, dynamic>{'room_id': roomId});
+    await trackEvent('room_joined', parameters: {'room_id': roomId});
   }
 
   // Track purchase
@@ -174,34 +174,34 @@ class AnalyticsService {
     required double price,
     required String currency,
   }) async {
-    await trackEvent('purchase', parameters: <String, dynamic>{
+    await trackEvent('purchase', parameters: {
       'product_id': productId,
       'product_name': productName,
       'price': price,
       'currency': currency,
-    },);
+    });
   }
 
   // Track level up
   Future<void> trackLevelUp(int newLevel) async {
-    await trackEvent('level_up', parameters: <String, dynamic>{'new_level': newLevel});
+    await trackEvent('level_up', parameters: {'new_level': newLevel});
   }
 
   // Track achievement unlocked
   Future<void> trackAchievementUnlocked(String achievementId) async {
-    await trackEvent('achievement_unlocked', parameters: <String, dynamic>{
+    await trackEvent('achievement_unlocked', parameters: {
       'achievement_id': achievementId,
-    },);
+    });
   }
 
   // Track friend added
   Future<void> trackFriendAdded(String friendId) async {
-    await trackEvent('friend_added', parameters: <String, dynamic>{'friend_id': friendId});
+    await trackEvent('friend_added', parameters: {'friend_id': friendId});
   }
 
   // Track clan joined
   Future<void> trackClanJoined(String clanId) async {
-    await trackEvent('clan_joined', parameters: <String, dynamic>{'clan_id': clanId});
+    await trackEvent('clan_joined', parameters: {'clan_id': clanId});
   }
 
   // Track PK battle
@@ -210,11 +210,11 @@ class AnalyticsService {
     required bool won,
     required int score,
   }) async {
-    await trackEvent('pk_battle', parameters: <String, dynamic>{
+    await trackEvent('pk_battle', parameters: {
       'battle_id': battleId,
       'won': won,
       'score': score,
-    },);
+    });
   }
 
   // Track error
@@ -223,11 +223,11 @@ class AnalyticsService {
     required String screen,
     StackTrace? stackTrace,
   }) async {
-    await trackEvent('error', parameters: <String, dynamic>{
+    await trackEvent('error', parameters: {
       'error_message': errorMessage,
       'screen': screen,
-      'stack_trace': stackTrace?.toString(),
-    },);
+      if (stackTrace != null) 'stack_trace': stackTrace.toString(),
+    });
   }
 
   // Get analytics observer for navigation

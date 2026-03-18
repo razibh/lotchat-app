@@ -1,22 +1,16 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../../core/di/service_locator.dart';
-import '../../core/services/pk_service.dart';
-import '../../core/services/socket_service.dart';
-import '../../core/services/auth_service.dart';
-import '../../mixins/loading_mixin.dart';
-import '../../mixins/toast_mixin.dart';
-import '../../widgets/animation/fade_animation.dart';
-import '../../widgets/common/custom_button.dart';
-import '../room/room_screen.dart';
+import 'package:flutter/foundation.dart';
+import '../../core/models/room_model.dart';
 
 class PKBattleScreen extends StatefulWidget {
-
-  const PKBattleScreen({
-    required this.roomId, required this.opponentRoomId, super.key,
-  });
   final String roomId;
   final String opponentRoomId;
+
+  const PKBattleScreen({
+    super.key,
+    required this.roomId,
+    required this.opponentRoomId,
+  });
 
   @override
   State<PKBattleScreen> createState() => _PKBattleScreenState();
@@ -29,150 +23,78 @@ class PKBattleScreen extends StatefulWidget {
   }
 }
 
-class _PKBattleScreenState extends State<PKBattleScreen> 
-    with LoadingMixin, ToastMixin {
-  
-  final _pkService = ServiceLocator().get<PkService>();
-  final SocketService _socketService = ServiceLocator().get<SocketService>();
-  final AuthService _authService = ServiceLocator().get<AuthService>();
-  
-  PKBattle? _battle;
-  int _ourScore = 0;
+class _PKBattleScreenState extends State<PKBattleScreen> {
+  int _myScore = 0;
   int _opponentScore = 0;
-  int _timeLeft = 300; // 5 minutes in seconds
-  List<Map<String, dynamic>> _topGifters = <Map<String, dynamic>>[];
-  String? _currentUserId;
+  bool _isBattleActive = true;
+  String _battleStatus = 'ongoing'; // ongoing, completed, cancelled
 
   @override
   void initState() {
     super.initState();
-    _getCurrentUser();
-    _setupBattle();
-    _startTimer();
-    _setupSocketListeners();
+    _initializeBattle();
   }
 
-  Future<void> _getCurrentUser() async {
-    final User? user = _authService.getCurrentUser();
+  void _initializeBattle() {
+    // Initialize battle logic here
+    debugPrint('PK Battle started between ${widget.roomId} and ${widget.opponentRoomId}');
+  }
+
+  void _updateScore(bool isMyScore) {
     setState(() {
-      _currentUserId = user?.uid;
-    });
-  }
-
-  Future<void> _setupBattle() async {
-    await runWithLoading(() async {
-      _battle = await _pkService.startBattle(
-        roomId: widget.roomId,
-        opponentRoomId: widget.opponentRoomId,
-      );
-      
-      if (_battle != null) {
-        _socketService.emit('join-pk', <String, String>{'battleId': _battle!.id});
+      if (isMyScore) {
+        _myScore++;
+      } else {
+        _opponentScore++;
       }
     });
   }
 
-  void _setupSocketListeners() {
-    _socketService.on('pk-score-update', (data) {
-      setState(() {
-        if (data['roomId'] == widget.roomId) {
-          _ourScore = data['score'];
-        } else {
-          _opponentScore = data['score'];
-        }
-      });
+  void _endBattle() {
+    setState(() {
+      _isBattleActive = false;
+      _battleStatus = 'completed';
     });
 
-    _socketService.on('pk-top-gifters', (data) {
-      setState(() {
-        _topGifters = List<Map<String, dynamic>>.from(data['gifters']);
-      });
-    });
-
-    _socketService.on('pk-battle-end', _showBattleEndDialog);
+    // Show battle results
+    _showBattleResults();
   }
 
-  void _startTimer() {
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted && _timeLeft > 0) {
-        setState(() {
-          _timeLeft--;
-        });
-        _startTimer();
-      } else if (_timeLeft == 0) {
-        _endBattle();
-      }
-    });
-  }
-
-  Future<void> _endBattle() async {
-    await _pkService.endBattle(_battle!.id);
-    _showBattleEndDialog(<String, dynamic>{
-      'winner': _ourScore > _opponentScore ? 'our' : 'opponent',
-      'ourScore': _ourScore,
-      'opponentScore': _opponentScore,
-    });
-  }
-
-  void _showBattleEndDialog(Map<String, dynamic> data) {
-    final won = data['winner'] == 'our';
-    
+  void _showBattleResults() {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(won ? '🎉 Victory!' : '😢 Defeat'),
+      builder: (context) => AlertDialog(
+        title: const Text('Battle Results'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
-            Text(
-              won
-                  ? 'Your team won the PK battle!'
-                  : 'Better luck next time!',
-              style: const TextStyle(fontSize: 16),
-            ),
+          children: [
+            Text('Your Score: $_myScore'),
+            Text('Opponent Score: $_opponentScore'),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: <>[
-                Column(
-                  children: <>[
-                    const Text('Your Team'),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${data['ourScore']}',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-                const Text('VS', style: TextStyle(fontWeight: FontWeight.bold)),
-                Column(
-                  children: <>[
-                    const Text('Opponent'),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${data['opponentScore']}',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            Text(
+              _myScore > _opponentScore
+                  ? '🎉 You Won! 🎉'
+                  : _myScore < _opponentScore
+                  ? '😢 You Lost!'
+                  : '🤝 It\'s a Draw!',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: _myScore > _opponentScore
+                    ? Colors.green
+                    : _myScore < _opponentScore
+                    ? Colors.red
+                    : Colors.orange,
+              ),
             ),
           ],
         ),
-        actions: <>[
+        actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Go back
             },
             child: const Text('Close'),
           ),
@@ -181,170 +103,165 @@ class _PKBattleScreenState extends State<PKBattleScreen>
     );
   }
 
-  String _formatTime(int seconds) {
-    final int minutes = seconds ~/ 60;
-    final int secs = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('PK Battle'),
-        backgroundColor: Colors.red,
-        actions: <>[
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+        backgroundColor: Colors.deepPurple,
+        elevation: 0,
+        actions: [
+          if (_isBattleActive)
+            IconButton(
+              icon: const Icon(Icons.stop),
+              onPressed: _endBattle,
             ),
-            child: Text(
-              _formatTime(_timeLeft),
-              style: const TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
         ],
       ),
-      body: DecoratedBox(
-        decoration: BoxDecoration(
+      body: Container(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: <>[Colors.red.shade900, Colors.red.shade700],
+            colors: [Colors.deepPurple, Colors.purple],
           ),
         ),
         child: SafeArea(
           child: Column(
-            children: <>[
-              // Score Board
+            children: [
+              // Battle Status
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Row(
-                  children: <>[
-                    // Our Room
-                    Expanded(
-                      child: Column(
-                        children: <>[
-                          const CircleAvatar(
-                            radius: 30,
-                            backgroundColor: Colors.white,
-                            child: Icon(Icons.meeting_room, color: Colors.red, size: 30),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: _isBattleActive ? Colors.green : Colors.red,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Your Room',
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                          const SizedBox(height: 4),
+                          const SizedBox(width: 8),
                           Text(
-                            '$_ourScore',
+                            _battleStatus.toUpperCase(),
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 32,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    
-                    // VS
-                    const Column(
-                      children: <>[
-                        Text(
-                          'VS',
-                          style: TextStyle(
+                  ],
+                ),
+              ),
+
+              // Score Board
+              Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // My Score
+                    Column(
+                      children: [
+                        const CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Colors.blue,
+                          child: Icon(
+                            Icons.person,
+                            size: 30,
                             color: Colors.white,
-                            fontSize: 24,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'You',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$_myScore',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          'BATTLE',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          ),
-                        ),
                       ],
                     ),
-                    
-                    // Opponent Room
-                    Expanded(
-                      child: Column(
-                        children: <>[
-                          const CircleAvatar(
-                            radius: 30,
-                            backgroundColor: Colors.white,
-                            child: Icon(Icons.meeting_room, color: Colors.blue, size: 30),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Opponent',
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '$_opponentScore',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
 
-              // Progress Bar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Stack(
-                  children: <>[
+                    // VS
                     Container(
-                      height: 20,
+                      width: 50,
+                      height: 50,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.red.withOpacity(0.3),
+                        shape: BoxShape.circle,
                       ),
-                    ),
-                    Row(
-                      children: <>[
-                        Expanded(
-                          flex: _ourScore,
-                          child: Container(
-                            height: 20,
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: <>[Colors.green, Colors.lightGreen],
-                              ),
-                              borderRadius: BorderRadius.horizontal(
-                                left: Radius.circular(10),
-                              ),
-                            ),
+                      child: const Center(
+                        child: Text(
+                          'VS',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Expanded(
-                          flex: _opponentScore,
-                          child: Container(
-                            height: 20,
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: <>[Colors.red, Colors.orange],
-                              ),
-                              borderRadius: BorderRadius.horizontal(
-                                right: Radius.circular(10),
-                              ),
-                            ),
+                      ),
+                    ),
+
+                    // Opponent Score
+                    Column(
+                      children: [
+                        const CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Colors.red,
+                          child: Icon(
+                            Icons.person_outline,
+                            size: 30,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Room ${widget.opponentRoomId.substring(0, 4)}...',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$_opponentScore',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
@@ -352,155 +269,92 @@ class _PKBattleScreenState extends State<PKBattleScreen>
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
 
-              // Top Gifters
+              // Battle Arena
               Expanded(
-                child: Container(
-                  margin: const EdgeInsets.all(20),
+                child: GridView.count(
+                  crossAxisCount: 2,
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <>[
-                      const Text(
-                        'Top Supporters',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: _topGifters.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            final Map<String, dynamic> gifter = _topGifters[index];
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: <>[
-                                  CircleAvatar(
-                                    radius: 16,
-                                    backgroundImage: gifter['avatar'] != null
-                                        ? NetworkImage(gifter['avatar'])
-                                        : null,
-                                    child: gifter['avatar'] == null
-                                        ? Text(gifter['name'][0].toUpperCase())
-                                        : null,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: <>[
-                                        Text(
-                                          gifter['name'],
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${gifter['gifts']} gifts',
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 10,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.amber.withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Row(
-                                      children: <>[
-                                        const Icon(
-                                          Icons.star,
-                                          color: Colors.amber,
-                                          size: 12,
-                                        ),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          '#${index + 1}',
-                                          style: const TextStyle(
-                                            color: Colors.amber,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  children: [
+                    _buildBattleCard(
+                      'Gift Battle',
+                      Icons.card_giftcard,
+                          () => _updateScore(true),
+                    ),
+                    _buildBattleCard(
+                      'Chat Battle',
+                      Icons.chat,
+                          () => _updateScore(true),
+                    ),
+                    _buildBattleCard(
+                      'Game Battle',
+                      Icons.games,
+                          () => _updateScore(true),
+                    ),
+                    _buildBattleCard(
+                      'Voice Battle',
+                      Icons.mic,
+                          () => _updateScore(true),
+                    ),
+                  ],
                 ),
               ),
 
-              // Join Battle Button
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: CustomButton(
-                  text: 'Join Battle',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (BuildContext context) => RoomScreen(
-                          room: RoomModel(id: widget.roomId, name: 'Battle Room'),
-                        ),
-                      ),
-                    );
-                  },
-                  color: Colors.red,
+              // Battle Timer (if active)
+              if (_isBattleActive)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: const LinearProgressIndicator(
+                    value: 0.7,
+                    backgroundColor: Colors.white24,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                  ),
                 ),
-              ),
             ],
           ),
         ),
       ),
     );
   }
-}
 
-class PKBattle {
+  Widget _buildBattleCard(String title, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: _isBattleActive ? onTap : null,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(_isBattleActive ? 0.15 : 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withOpacity(_isBattleActive ? 0.3 : 0.1),
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 40,
+              color: Colors.white.withOpacity(_isBattleActive ? 1 : 0.5),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: TextStyle(
+                color: Colors.white.withOpacity(_isBattleActive ? 1 : 0.5),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-  PKBattle({
-    required this.id,
-    required this.room1Id,
-    required this.room2Id,
-    required this.room1Score,
-    required this.room2Score,
-    required this.startTime,
-    required this.endTime,
-  });
-  final String id;
-  final String room1Id;
-  final String room2Id;
-  final int room1Score;
-  final int room2Score;
-  final DateTime startTime;
-  final DateTime endTime;
+  @override
+  void dispose() {
+    super.dispose();
+  }
 }

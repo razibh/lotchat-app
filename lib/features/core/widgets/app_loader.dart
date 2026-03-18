@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 
 class AppLoader extends StatelessWidget {
-
-  const AppLoader({
-    super.key,
-    this.size = 40,
-    this.color,
-    this.message,
-  });
   final double size;
   final Color? color;
   final String? message;
+
+  const AppLoader({
+    this.size = 40,
+    this.color,
+    this.message,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: <>[
+        children: [
           SizedBox(
             width: size,
             height: size,
@@ -27,7 +28,7 @@ class AppLoader extends StatelessWidget {
               ),
             ),
           ),
-          if (message != null) ...<>[
+          if (message != null) ...[
             const SizedBox(height: 16),
             Text(
               message!,
@@ -49,13 +50,13 @@ class AppLoader extends StatelessWidget {
 }
 
 class FullScreenLoader extends StatelessWidget {
-
-  const FullScreenLoader({super.key, this.message});
   final String? message;
+
+  const FullScreenLoader({this.message, super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
+    return Container(
       color: Colors.black54,
       child: Center(
         child: Container(
@@ -66,9 +67,9 @@ class FullScreenLoader extends StatelessWidget {
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: <>[
+            children: [
               const CircularProgressIndicator(),
-              if (message != null) ...<>[
+              if (message != null) ...[
                 const SizedBox(height: 16),
                 Text(message!),
               ],

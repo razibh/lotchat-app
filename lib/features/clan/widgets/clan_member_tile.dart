@@ -1,19 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/clan_member_model.dart';
-import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/date_formatters.dart';  // এই import টা আছে কি?
 
 class ClanMemberTile extends StatelessWidget {
-
-  const ClanMemberTile({
-    required this.member, super.key,
-    this.isCurrentUser = false,
-    this.onTap,
-    this.onMessage,
-    this.onPromote,
-    this.onDemote,
-    this.onKick,
-    this.showActions = true,
-  });
   final ClanMemberModel member;
   final bool isCurrentUser;
   final VoidCallback? onTap;
@@ -22,6 +12,18 @@ class ClanMemberTile extends StatelessWidget {
   final VoidCallback? onDemote;
   final VoidCallback? onKick;
   final bool showActions;
+
+  const ClanMemberTile({
+    required this.member,
+    super.key,
+    this.isCurrentUser = false,
+    this.onTap,
+    this.onMessage,
+    this.onPromote,
+    this.onDemote,
+    this.onKick,
+    this.showActions = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +35,7 @@ class ClanMemberTile extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
-            children: <>[
+            children: [
               // Avatar with status
               _buildAvatar(),
               const SizedBox(width: 12),
@@ -42,9 +44,9 @@ class ClanMemberTile extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <>[
+                  children: [
                     Row(
-                      children: <>[
+                      children: [
                         Expanded(
                           child: Text(
                             member.displayNameOrUsername,
@@ -61,7 +63,7 @@ class ClanMemberTile extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.1),
+                              color: Colors.blue.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: const Text(
@@ -88,7 +90,7 @@ class ClanMemberTile extends StatelessWidget {
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: <>[
+                        children: [
                           Text(
                             member.roleIcon,
                             style: const TextStyle(fontSize: 12),
@@ -109,7 +111,7 @@ class ClanMemberTile extends StatelessWidget {
 
                     // Activity Stats
                     Row(
-                      children: <>[
+                      children: [
                         _buildStatItem(
                           icon: Icons.flash_on,
                           value: '${member.activityPoints}',
@@ -133,7 +135,7 @@ class ClanMemberTile extends StatelessWidget {
 
                     // Join Date
                     Text(
-                      'Joined ${DateFormatter.formatDate(member.joinedAt)}',
+                      'Joined ${_formatDate(member.joinedAt)}',  // Formatters এর পরিবর্তে লোকাল মেথড ব্যবহার
                       style: const TextStyle(
                         fontSize: 10,
                         color: Colors.grey,
@@ -145,41 +147,52 @@ class ClanMemberTile extends StatelessWidget {
 
               // Actions
               if (showActions && !isCurrentUser)
-                PopupMenuButton(
+                PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert),
-                  itemBuilder: (BuildContext context) => <>[
-                    const PopupMenuItem(
-                      value: 'message',
-                      child: Text('Message'),
-                    ),
-                    if (member.role != ClanRole.leader) ...<>[
+                  itemBuilder: (context) {
+                    final items = <PopupMenuEntry<String>>[
                       const PopupMenuItem(
-                        value: 'promote',
-                        child: Text('Promote'),
+                        value: 'message',
+                        child: Text('Message'),
                       ),
-                      const PopupMenuItem(
-                        value: 'demote',
-                        child: Text('Demote'),
-                      ),
-                      const PopupMenuItem(
-                        value: 'kick',
-                        child: Text(
-                          'Kick Member',
-                          style: TextStyle(color: Colors.red),
+                    ];
+
+                    if (member.role != MemberClanRole.leader) {
+                      items.addAll([
+                        const PopupMenuItem(
+                          value: 'promote',
+                          child: Text('Promote'),
                         ),
-                      ),
-                    ],
-                  ],
-                  onSelected: (Object? value) {
+                        const PopupMenuItem(
+                          value: 'demote',
+                          child: Text('Demote'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'kick',
+                          child: Text(
+                            'Kick Member',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ]);
+                    }
+
+                    return items;
+                  },
+                  onSelected: (value) {
                     switch (value) {
                       case 'message':
                         onMessage?.call();
+                        break;
                       case 'promote':
                         onPromote?.call();
+                        break;
                       case 'demote':
                         onDemote?.call();
+                        break;
                       case 'kick':
                         onKick?.call();
+                        break;
                     }
                   },
                 ),
@@ -192,7 +205,7 @@ class ClanMemberTile extends StatelessWidget {
 
   Widget _buildAvatar() {
     return Stack(
-      children: <>[
+      children: [
         CircleAvatar(
           radius: 28,
           backgroundImage: member.avatar != null
@@ -201,37 +214,30 @@ class ClanMemberTile extends StatelessWidget {
           backgroundColor: Colors.grey.shade200,
           child: member.avatar == null
               ? Text(
-                  member.username[0].toUpperCase(),
-                  style: const TextStyle(fontSize: 20),
-                )
+            member.username[0].toUpperCase(),
+            style: const TextStyle(fontSize: 20),
+          )
               : null,
         ),
         if (member.isOnline)
-          Positioned(
+          const Positioned(
             bottom: 2,
             right: 2,
-            child: Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: Colors.green,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
+            child: CircleAvatar(
+              radius: 6,
+              backgroundColor: Colors.green,
             ),
           ),
-        if (member.status == MemberStatus.away)
+        if (member.status == MemberOnlineStatus.away ||
+            member.status == MemberOnlineStatus.busy)
           Positioned(
             bottom: 2,
             right: 2,
-            child: Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: Colors.orange,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
+            child: CircleAvatar(
+              radius: 6,
+              backgroundColor: member.status == MemberOnlineStatus.away
+                  ? Colors.orange
+                  : Colors.red,
             ),
           ),
       ],
@@ -244,7 +250,7 @@ class ClanMemberTile extends StatelessWidget {
     required Color color,
   }) {
     return Row(
-      children: <>[
+      children: [
         Icon(icon, size: 12, color: color),
         const SizedBox(width: 2),
         Text(
@@ -253,6 +259,30 @@ class ClanMemberTile extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  // ✅ নতুন মেথড যোগ করা হয়েছে
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      if (difference.inHours > 0) {
+        return '${difference.inHours}h ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes}m ago';
+      } else {
+        return 'Just now';
+      }
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else if (difference.inDays < 30) {
+      return '${(difference.inDays / 7).floor()} weeks ago';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
   }
 
   @override
@@ -269,21 +299,21 @@ class ClanMemberTile extends StatelessWidget {
   }
 }
 
-// Compact Member Tile for Lists
 class CompactMemberTile extends StatelessWidget {
-
-  const CompactMemberTile({
-    required this.member, super.key,
-    this.onTap,
-  });
   final ClanMemberModel member;
   final VoidCallback? onTap;
+
+  const CompactMemberTile({
+    required this.member,
+    super.key,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       leading: Stack(
-        children: <>[
+        children: [
           CircleAvatar(
             radius: 20,
             backgroundImage: member.avatar != null
@@ -294,23 +324,19 @@ class CompactMemberTile extends StatelessWidget {
                 : null,
           ),
           if (member.isOnline)
-            Positioned(
+            const Positioned(
               bottom: 0,
               right: 0,
-              child: Container(
-                width: 10,
-                height: 10,
-                decoration: const BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                ),
+              child: CircleAvatar(
+                radius: 5,
+                backgroundColor: Colors.green,
               ),
             ),
         ],
       ),
       title: Text(member.displayNameOrUsername),
       subtitle: Row(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             decoration: BoxDecoration(

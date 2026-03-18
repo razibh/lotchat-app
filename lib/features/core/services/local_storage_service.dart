@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/services/logger_service.dart';
-import '../../../core/models/user_model.dart';
+import '../../../core/models/user_models.dart';
 
 class LocalStorageService {
   factory LocalStorageService() => _instance;
@@ -10,7 +10,7 @@ class LocalStorageService {
   static final LocalStorageService _instance = LocalStorageService._internal();
 
   final LoggerService _logger = ServiceLocator().get<LoggerService>();
-  
+
   late SharedPreferences _prefs;
   bool _isInitialized = false;
 
@@ -145,7 +145,7 @@ class LocalStorageService {
   }
 
   // ==================== USER DATA ====================
-  Future<bool> saveUser(UserModel user) async {
+  Future<bool> saveUser(User user) async { // UserModel এর পরিবর্তে User
     try {
       return await setObject('user', user.toJson());
     } catch (e) {
@@ -154,11 +154,11 @@ class LocalStorageService {
     }
   }
 
-  UserModel? getUser() {
+  User? getUser() { // UserModel এর পরিবর্তে User
     try {
       final Map<String, dynamic>? userData = getObject('user');
       if (userData != null) {
-        return UserModel.fromJson(userData);
+        return User.fromJson(userData);
       }
       return null;
     } catch (e) {
@@ -209,4 +209,7 @@ class LocalStorageService {
   Set<String> getKeys() {
     return _prefs.getKeys();
   }
+
+  // ==================== IS INITIALIZED ====================
+  bool get isInitialized => _isInitialized;
 }

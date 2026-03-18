@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 🟢 DiagnosticPropertiesBuilder এর জন্য
 import '../models/message_model.dart';
 
 class MessageReactions extends StatelessWidget {
-
   const MessageReactions({
-    required this.reactions, super.key,
+    super.key,
+    required this.reactions,
     this.onReaction,
   });
+
   final List<MessageReaction> reactions;
   final Function(String)? onReaction;
 
@@ -15,7 +17,7 @@ class MessageReactions extends StatelessWidget {
     if (reactions.isEmpty) return const SizedBox.shrink();
 
     // Group reactions
-    final Map<String, int> grouped = <String, int>{};
+    final Map<String, int> grouped = {};
     for (MessageReaction reaction in reactions) {
       grouped[reaction.reaction] = (grouped[reaction.reaction] ?? 0) + 1;
     }
@@ -25,7 +27,7 @@ class MessageReactions extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: <>[
+        boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 2,
@@ -35,13 +37,13 @@ class MessageReactions extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
+        children: [
           ...grouped.entries.map((MapEntry<String, int> entry) {
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: <>[
+                children: [
                   Text(entry.key),
                   if (entry.value > 1)
                     Text(
@@ -73,7 +75,7 @@ class MessageReactions extends StatelessWidget {
         content: Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: <String>[
+          children: [
             '👍', '❤️', '😂', '😮', '😢', '😡',
           ].map((String emoji) {
             return InkWell(
@@ -102,7 +104,8 @@ class MessageReactions extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<MessageReaction>('reactions', reactions));
+    // 🟢 IterableProperty সরিয়ে DiagnosticsProperty ব্যবহার করুন
+    properties.add(DiagnosticsProperty<List<MessageReaction>>('reactions', reactions));
     properties.add(ObjectFlagProperty<Function(String)?>.has('onReaction', onReaction));
   }
 }

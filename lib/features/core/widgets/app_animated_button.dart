@@ -1,23 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
 
 class AppAnimatedButton extends StatefulWidget {
-
-  const AppAnimatedButton({
-    required this.text, super.key,
-    this.onPressed,
-    this.icon,
-    this.color,
-    this.textColor,
-    this.height = 48,
-    this.width = double.infinity,
-    this.isLoading = false,
-    this.isFullWidth = true,
-    this.borderRadius = 8,
-    this.boxShadow,
-    this.animationDuration = const Duration(milliseconds: 200),
-    this.animationCurve = Curves.easeInOut,
-  });
   final String text;
   final VoidCallback? onPressed;
   final IconData? icon;
@@ -31,6 +16,23 @@ class AppAnimatedButton extends StatefulWidget {
   final List<BoxShadow>? boxShadow;
   final Duration animationDuration;
   final Curve animationCurve;
+
+  const AppAnimatedButton({
+    required this.text,
+    this.onPressed,
+    this.icon,
+    this.color,
+    this.textColor,
+    this.height = 48,
+    this.width = double.infinity,
+    this.isLoading = false,
+    this.isFullWidth = true,
+    this.borderRadius = 8,
+    this.boxShadow,
+    this.animationDuration = const Duration(milliseconds: 200),
+    this.animationCurve = Curves.easeInOut,
+    super.key,
+  });
 
   @override
   State<AppAnimatedButton> createState() => _AppAnimatedButtonState();
@@ -54,7 +56,7 @@ class AppAnimatedButton extends StatefulWidget {
   }
 }
 
-class _AppAnimatedButtonState extends State<AppAnimatedButton> 
+class _AppAnimatedButtonState extends State<AppAnimatedButton>
     with SingleTickerProviderStateMixin {
   bool _isPressed = false;
   late AnimationController _controller;
@@ -115,19 +117,19 @@ class _AppAnimatedButtonState extends State<AppAnimatedButton>
                 gradient: widget.color != null
                     ? null
                     : LinearGradient(
-                        colors: <>[
-                          Theme.of(context).primaryColor,
-                          Theme.of(context).primaryColor.withValues(alpha: 0.8),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).primaryColor.withOpacity(0.8),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 color: widget.color,
                 borderRadius: BorderRadius.circular(widget.borderRadius),
-                boxShadow: widget.boxShadow ?? <>[
+                boxShadow: widget.boxShadow ?? [
                   BoxShadow(
                     color: (widget.color ?? Theme.of(context).primaryColor)
-                        .withValues(alpha: 0.3),
+                        .withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -138,42 +140,42 @@ class _AppAnimatedButtonState extends State<AppAnimatedButton>
                 child: InkWell(
                   onTap: widget.onPressed,
                   borderRadius: BorderRadius.circular(widget.borderRadius),
-                  splashColor: Colors.white.withValues(alpha: 0.2),
+                  splashColor: Colors.white.withOpacity(0.2),
                   highlightColor: Colors.transparent,
                   child: Center(
                     child: widget.isLoading
                         ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                widget.textColor ?? Colors.white,
-                              ),
-                            ),
-                          )
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          widget.textColor ?? Colors.white,
+                        ),
+                      ),
+                    )
                         : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <>[
-                              if (widget.icon != null) ...<>[
-                                Icon(
-                                  widget.icon,
-                                  color: widget.textColor ?? Colors.white,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                              Text(
-                                widget.text,
-                                style: TextStyle(
-                                  color: widget.textColor ?? Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (widget.icon != null) ...[
+                          Icon(
+                            widget.icon,
+                            color: widget.textColor ?? Colors.white,
+                            size: 20,
                           ),
+                          const SizedBox(width: 8),
+                        ],
+                        Text(
+                          widget.text,
+                          style: TextStyle(
+                            color: widget.textColor ?? Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -186,21 +188,22 @@ class _AppAnimatedButtonState extends State<AppAnimatedButton>
 }
 
 class AnimatedIconButton extends StatefulWidget {
-
-  const AnimatedIconButton({
-    required this.icon, super.key,
-    this.onPressed,
-    this.color,
-    this.size = 24,
-    this.tooltip,
-    this.animationDuration = const Duration(milliseconds: 200),
-  });
   final IconData icon;
   final VoidCallback? onPressed;
   final Color? color;
   final double size;
   final String? tooltip;
   final Duration animationDuration;
+
+  const AnimatedIconButton({
+    required this.icon,
+    this.onPressed,
+    this.color,
+    this.size = 24,
+    this.tooltip,
+    this.animationDuration = const Duration(milliseconds: 200),
+    super.key,
+  });
 
   @override
   State<AnimatedIconButton> createState() => _AnimatedIconButtonState();
@@ -217,7 +220,7 @@ class AnimatedIconButton extends StatefulWidget {
   }
 }
 
-class _AnimatedIconButtonState extends State<AnimatedIconButton> 
+class _AnimatedIconButtonState extends State<AnimatedIconButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 

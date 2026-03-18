@@ -1,12 +1,26 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart'; // 🟢 debugPrint এর জন্য
+
 import '../di/service_locator.dart';
 import 'notification_service.dart';
 
 class ReferralService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final NotificationService _notificationService = ServiceLocator().get<NotificationService>();
+  late final NotificationService _notificationService;
+
+  ReferralService() {
+    _initializeServices();
+  }
+
+  void _initializeServices() {
+    try {
+      _notificationService = ServiceLocator.instance.get<NotificationService>();
+    } catch (e) {
+      debugPrint('Error initializing services: $e');
+    }
+  }
 
   // Generate referral code
   Future<String?> generateReferralCode() async {
@@ -33,18 +47,18 @@ class ReferralService {
       } while (exists);
 
       // Save code
-      await _firestore.collection('referral_codes').doc(code).set(<String, >{
+      await _firestore.collection('referral_codes').doc(code).set({
         'userId': user.uid,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      await _firestore.collection('users').doc(user.uid).update(<String, String>{
+      await _firestore.collection('users').doc(user.uid).update({
         'referralCode': code,
       });
 
       return code;
     } catch (e) {
-      print('Error generating referral code: $e');
+      debugPrint('Error generating referral code: $e');
       return null;
     }
   }
@@ -58,7 +72,7 @@ class ReferralService {
       }
       return null;
     } catch (e) {
-      print('Error getting referral code: $e');
+      debugPrint('Error getting referral code: $e');
       return null;
     }
   }
@@ -90,7 +104,7 @@ class ReferralService {
         // Update user
         transaction.update(
           _firestore.collection('users').doc(user.uid),
-          <String, >{
+          {
             'referredBy': referrerId,
             'referredAt': FieldValue.serverTimestamp(),
             'coins': FieldValue.increment(500), // Welcome bonus
@@ -100,7 +114,7 @@ class ReferralService {
         // Update referrer
         transaction.update(
           _firestore.collection('users').doc(referrerId),
-          <String, >{
+          {
             'totalReferrals': FieldValue.increment(1),
             'coins': FieldValue.increment(1000), // Referral bonus
           },
@@ -109,7 +123,7 @@ class ReferralService {
         // Record referral
         transaction.set(
           _firestore.collection('referrals').doc(),
-          <String, >{
+          {
             'referrerId': referrerId,
             'referredId': user.uid,
             'code': code,
@@ -123,13 +137,13 @@ class ReferralService {
           type: 'referral',
           title: 'New Referral! 🎉',
           body: 'Someone used your referral code. You earned 1000 coins!',
-          data: <String, >{'referredId': user.uid},
+          data: {'referredId': user.uid},
         );
 
         return true;
       });
     } catch (e) {
-      print('Error applying referral code: $e');
+      debugPrint('Error applying referral code: $e');
       return false;
     }
   }
@@ -147,7 +161,7 @@ class ReferralService {
           .get();
 
       // Get this month's referrals
-      final DateTime startOfMonth = DateTime(DateTime.now().year, DateTime.now().month);
+      final DateTime startOfMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
       final QuerySnapshot<Map<String, dynamic>> monthReferrals = await _firestore
           .collection('referrals')
           .where('referrerId', isEqualTo: user.uid)
@@ -169,7 +183,7 @@ class ReferralService {
       final int totalEarnings = referralsSnapshot.docs.length * 1000;
       const int bonusPerReferral = 1000;
 
-      return <String, dynamic>{
+      return {
         'code': code,
         'totalReferrals': referralsSnapshot.docs.length,
         'monthReferrals': monthReferrals.docs.length,
@@ -179,8 +193,8 @@ class ReferralService {
         'nextMilestone': _getNextMilestone(referralsSnapshot.docs.length),
       };
     } catch (e) {
-      print('Error getting referral stats: $e');
-      return <String, dynamic>{};
+      debugPrint('Error getting referral stats: $e');
+      return {};
     }
   }
 
@@ -195,26 +209,26 @@ class ReferralService {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .asyncMap((QuerySnapshot<Map<String, dynamic>> snapshot) async {
-          final List<Map<String, dynamic>> history = <Map<String, dynamic>>[];
-          
-          for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
-            final Map<String, dynamic> data = doc.data();
-            final DocumentSnapshot<Map<String, dynamic>> referredUser = await _firestore
-                .collection('users')
-                .doc(data['referredId'])
-                .get();
+      final List<Map<String, dynamic>> history = [];
 
-            history.add(<String, dynamic>{
-              'id': doc.id,
-              'referredName': referredUser.data()?['username'] ?? 'User',
-              'referredAvatar': referredUser.data()?['photoURL'],
-              'timestamp': (data['timestamp'] as Timestamp).toDate(),
-              'bonus': 1000,
-            });
-          }
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
+        final Map<String, dynamic> data = doc.data();
+        final DocumentSnapshot<Map<String, dynamic>> referredUser = await _firestore
+            .collection('users')
+            .doc(data['referredId'])
+            .get();
 
-          return history;
+        history.add({
+          'id': doc.id,
+          'referredName': referredUser.data()?['username'] ?? 'User',
+          'referredAvatar': referredUser.data()?['photoURL'],
+          'timestamp': (data['timestamp'] as Timestamp).toDate(),
+          'bonus': 1000,
         });
+      }
+
+      return history;
+    });
   }
 
   // Get referred by info
@@ -230,14 +244,14 @@ class ReferralService {
 
       final DocumentSnapshot<Map<String, dynamic>> referrerDoc = await _firestore.collection('users').doc(referredBy).get();
 
-      return <String, dynamic>{
+      return {
         'userId': referredBy,
         'name': referrerDoc.data()?['username'] ?? 'User',
         'avatar': referrerDoc.data()?['photoURL'],
-        'referredAt': userDoc.data()!['referredAt']?.toDate(),
+        'referredAt': (userDoc.data()!['referredAt'] as Timestamp?)?.toDate(),
       };
     } catch (e) {
-      print('Error getting referred by: $e');
+      debugPrint('Error getting referred by: $e');
       return null;
     }
   }
@@ -253,7 +267,7 @@ class ReferralService {
 
       return snapshot.docs.map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
         final Map<String, dynamic> data = doc.data();
-        return <String, dynamic>{
+        return {
           'userId': doc.id,
           'name': data['username'] ?? 'User',
           'avatar': data['photoURL'],
@@ -261,8 +275,8 @@ class ReferralService {
         };
       }).toList();
     } catch (e) {
-      print('Error getting referral leaderboard: $e');
-      return <Map<String, dynamic>>[];
+      debugPrint('Error getting referral leaderboard: $e');
+      return [];
     }
   }
 
@@ -270,7 +284,7 @@ class ReferralService {
   String _generateCode() {
     const String chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final int random = DateTime.now().millisecondsSinceEpoch;
-    var code = '';
+    String code = '';
     for (var i = 0; i < 8; i++) {
       code += chars[(random + i) % chars.length];
     }
@@ -279,19 +293,19 @@ class ReferralService {
 
   // Get next milestone
   Map<String, dynamic> _getNextMilestone(int current) {
-    const List<int> milestones = <int>[1, 5, 10, 25, 50, 100, 250, 500, 1000];
-    
+    const List<int> milestones = [1, 5, 10, 25, 50, 100, 250, 500, 1000];
+
     for (int milestone in milestones) {
       if (current < milestone) {
-        return <String, dynamic>{
+        return {
           'next': milestone,
           'remaining': milestone - current,
           'bonus': milestone * 1000,
         };
       }
     }
-    
-    return <String, dynamic>{
+
+    return {
       'next': 1000,
       'remaining': 1000 - current,
       'bonus': 1000000,
@@ -302,7 +316,7 @@ class ReferralService {
   Future<String?> getReferralLink() async {
     final String? code = await getReferralCode(_auth.currentUser?.uid ?? '');
     if (code == null) return null;
-    
+
     return 'https://lotchat.app/ref/$code';
   }
 

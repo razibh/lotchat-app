@@ -9,7 +9,7 @@ class CallPermissionDialog extends StatelessWidget {
       title: const Text('Permissions Required'),
       content: const Column(
         mainAxisSize: MainAxisSize.min,
-        children: <>[
+        children: [
           Icon(
             Icons.warning_amber,
             color: Colors.orange,
@@ -22,7 +22,7 @@ class CallPermissionDialog extends StatelessWidget {
           ),
         ],
       ),
-      actions: <>[
+      actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
           child: const Text('Cancel'),

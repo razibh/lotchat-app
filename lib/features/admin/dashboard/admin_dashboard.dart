@@ -17,7 +17,7 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   bool _isLoading = true;
-  Map<String, dynamic> _stats = <String, dynamic>{};
+  Map<String, dynamic> _stats = {};
 
   @override
   void initState() {
@@ -30,7 +30,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     await Future.delayed(const Duration(seconds: 1));
 
     setState(() {
-      _stats = <String, dynamic>{
+      _stats = {
         'totalCountries': 15,
         'totalCountryManagers': 12,
         'totalAgencies': 245,
@@ -63,13 +63,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildDashboard() {
     return Column(
-      children: <>[
+      children: [
         _buildHeader(),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
-              children: <>[
+              children: [
                 _buildWelcomeCard(),
                 const SizedBox(height: 20),
                 _buildMainStats(),
@@ -93,7 +93,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        children: <>[
+        children: [
           const CircleAvatar(
             radius: 25,
             backgroundColor: Colors.red,
@@ -103,7 +103,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   'Admin Dashboard',
                   style: TextStyle(
@@ -133,19 +133,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <>[
-            Colors.red.withValues(alpha: 0.3),
-            Colors.purple.withValues(alpha: 0.3),
+          colors: [
+            Colors.red.withOpacity(0.3),
+            Colors.purple.withOpacity(0.3),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
-        children: <>[
+        children: [
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <>[
+              children: [
                 Text(
                   'Welcome back, Admin!',
                   style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
@@ -161,11 +161,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.2),
+              color: Colors.green.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
-              children: <>[
+              children: [
                 Container(
                   width: 8,
                   height: 8,
@@ -195,7 +195,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       childAspectRatio: 2,
       crossAxisSpacing: 10,
       mainAxisSpacing: 10,
-      children: <>[
+      children: [
         _buildStatCard('Total Users', '${_stats['totalUsers']}', Icons.people, Colors.blue),
         _buildStatCard('Total Hosts', '${_stats['totalHosts']}', Icons.person, Colors.green),
         _buildStatCard('Agencies', '${_stats['totalAgencies']}', Icons.business, Colors.purple),
@@ -208,15 +208,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        children: <>[
+        children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
+              color: color.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 20),
@@ -226,7 +226,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
-              children: <>[
+              children: [
                 Text(
                   value,
                   style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -246,7 +246,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _buildQuickActions() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         const Text(
           'Quick Actions',
           style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -259,12 +259,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
           childAspectRatio: 2,
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
-          children: <>[
+          children: [
             _buildActionTile(
               'Country Managers',
               Icons.public,
               Colors.purple,
-              () {
+                  () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ManageCountryManagersScreen()),
@@ -275,7 +275,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               'Verify Agencies',
               Icons.business,
               Colors.blue,
-              () {
+                  () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const VerifyAgenciesScreen()),
@@ -286,7 +286,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               'Verify Sellers',
               Icons.store,
               Colors.orange,
-              () {
+                  () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const VerifySellersScreen()),
@@ -297,7 +297,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               'Regions',
               Icons.map,
               Colors.green,
-              () {
+                  () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const RegionManagementScreen()),
@@ -316,12 +316,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
+          color: color.withOpacity(0.2),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.5)),
+          border: Border.all(color: color.withOpacity(0.5)),
         ),
         child: Row(
-          children: <>[
+          children: [
             Icon(icon, color: color),
             const SizedBox(width: 8),
             Expanded(
@@ -340,14 +340,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        children: <>[
+        children: [
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <>[
+            children: [
               Text(
                 'Pending Approvals',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -386,11 +386,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildApprovalItem(String label, String count, IconData icon, Color color) {
     return Row(
-      children: <>[
+      children: [
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.2),
+            color: color.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: color, size: 14),
@@ -405,7 +405,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.2),
+            color: color.withOpacity(0.2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -422,18 +422,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <>[
-            Colors.green.withValues(alpha: 0.3),
-            Colors.blue.withValues(alpha: 0.3),
+          colors: [
+            Colors.green.withOpacity(0.3),
+            Colors.blue.withOpacity(0.3),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        children: <>[
+        children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <>[
+            children: [
               const Text(
                 'Revenue Overview',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -441,7 +441,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.2),
+                  color: Colors.green.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -454,7 +454,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <>[
+            children: [
               _buildRevenueItem('Total', '৳${_stats['totalRevenue']}'),
               _buildRevenueItem('Monthly', '৳${_stats['monthlyRevenue']}'),
             ],
@@ -466,7 +466,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildRevenueItem(String label, String amount) {
     return Column(
-      children: <>[
+      children: [
         Text(
           amount,
           style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -482,7 +482,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _buildRegionStats() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <>[
+      children: [
         const Text(
           'Top Regions',
           style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
@@ -501,11 +501,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        children: <>[
+        children: [
           Text(flag, style: const TextStyle(fontSize: 20)),
           const SizedBox(width: 12),
           Expanded(
@@ -517,7 +517,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.purple.withValues(alpha: 0.2),
+              color: Colors.purple.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -529,7 +529,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.2),
+              color: Colors.green.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(

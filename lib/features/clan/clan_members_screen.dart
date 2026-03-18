@@ -1,19 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/models/clan_model.dart';
-import '../../core/services/clan_service.dart';
+import '../clan/services/clan_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../mixins/dialog_mixin.dart';
 import '../profile/profile_screen.dart';
-import '../chat/chat_detail_screen.dart';
 
 class ClanMembersScreen extends StatefulWidget {
+  final ClanModel clan;
 
   const ClanMembersScreen({required this.clan, super.key});
-  final ClanModel clan;
 
   @override
   State<ClanMembersScreen> createState() => _ClanMembersScreenState();
@@ -25,12 +25,12 @@ class ClanMembersScreen extends StatefulWidget {
   }
 }
 
-class _ClanMembersScreenState extends State<ClanMembersScreen> 
+class _ClanMembersScreenState extends State<ClanMembersScreen>
     with LoadingMixin, ToastMixin, DialogMixin {
-  
+
   final ClanService _clanService = ServiceLocator().get<ClanService>();
   final AuthService _authService = ServiceLocator().get<AuthService>();
-  
+
   late ClanModel _clan;
   String? _currentUserId;
   String _searchQuery = '';
@@ -52,23 +52,20 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
 
   List<ClanMember> get _filteredMembers {
     var members = _clan.members;
-    
-    // Filter by role
+
     if (_selectedRole != 'All') {
       final role = _getRoleFromString(_selectedRole);
       members = members.where((m) => m.role == role).toList();
     }
-    
-    // Filter by search
+
     if (_searchQuery.isNotEmpty) {
-      members = members.where((m) => 
-        m.username.toLowerCase().contains(_searchQuery.toLowerCase()),
+      members = members.where((m) =>
+          m.username.toLowerCase().contains(_searchQuery.toLowerCase()),
       ).toList();
     }
-    
-    // Sort by role (leader first, then co-leader, etc.)
+
     members.sort((a, b) {
-      final roleOrder = <, int>{
+      final roleOrder = {
         ClanRole.leader: 0,
         ClanRole.coLeader: 1,
         ClanRole.elder: 2,
@@ -76,7 +73,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
       };
       return roleOrder[a.role]!.compareTo(roleOrder[b.role]!);
     });
-    
+
     return members;
   }
 
@@ -101,10 +98,9 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
         member.userId,
         newRole,
       );
-      
+
       if (success) {
         showSuccess('Role updated');
-        // Refresh clan
         final ClanModel? updatedClan = await _clanService.getClan(_clan.id);
         if (updatedClan != null) {
           setState(() {
@@ -127,7 +123,6 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
         final bool success = await _clanService.kickMember(_clan.id, member.userId);
         if (success) {
           showSuccess('${member.username} has been kicked');
-          // Refresh clan
           final ClanModel? updatedClan = await _clanService.getClan(_clan.id);
           if (updatedClan != null) {
             setState(() {
@@ -147,7 +142,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
       context: context,
       builder: (BuildContext context) => SafeArea(
         child: Wrap(
-          children: <>[
+          children: [
             ListTile(
               leading: const Icon(Icons.person),
               title: const Text('View Profile'),
@@ -161,24 +156,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.message),
-              title: const Text('Send Message'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (BuildContext context) => ChatDetailScreen(
-                      userId: member.userId,
-                      userName: member.username,
-                      userAvatar: member.avatar,
-                    ),
-                  ),
-                );
-              },
-            ),
-            if (canManageThis) ...<>[
+            if (canManageThis) ...[
               const Divider(),
               if (member.role != ClanRole.leader)
                 ListTile(
@@ -220,7 +198,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
         title: const Text('Promote Member'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             if (member.role == ClanRole.member)
               ListTile(
                 title: const Text('Elder'),
@@ -250,7 +228,7 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
         title: const Text('Demote Member'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <>[
+          children: [
             if (member.role == ClanRole.coLeader)
               ListTile(
                 title: const Text('Elder'),
@@ -307,11 +285,11 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
       appBar: AppBar(
         title: const Text('Clan Members'),
         backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Column(
-            children: <>[
-              // Search Bar
+            children: [
               Padding(
                 padding: const EdgeInsets.all(8),
                 child: TextField(
@@ -332,31 +310,30 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
                   ),
                 ),
               ),
-              
-              // Role Filter
+
               SizedBox(
                 height: 40,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  children: <String>['All', 'Leader', 'Co-Leader', 'Elder', 'Member']
+                  children: ['All', 'Leader', 'Co-Leader', 'Elder', 'Member']
                       .map((String role) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: FilterChip(
-                              label: Text(role),
-                              selected: _selectedRole == role,
-                              onSelected: (bool selected) {
-                                setState(() {
-                                  _selectedRole = role;
-                                });
-                              },
-                              backgroundColor: Colors.white.withValues(alpha: 0.2),
-                              selectedColor: Colors.white,
-                              labelStyle: TextStyle(
-                                color: _selectedRole == role ? Colors.deepPurple : Colors.white,
-                              ),
-                            ),
-                          ),)
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      label: Text(role),
+                      selected: _selectedRole == role,
+                      onSelected: (bool selected) {
+                        setState(() {
+                          _selectedRole = role;
+                        });
+                      },
+                      backgroundColor: Colors.white.withOpacity(0.2),
+                      selectedColor: Colors.white,
+                      labelStyle: TextStyle(
+                        color: _selectedRole == role ? Colors.deepPurple : Colors.white,
+                      ),
+                    ),
+                  ))
                       .toList(),
                 ),
               ),
@@ -367,133 +344,126 @@ class _ClanMembersScreenState extends State<ClanMembersScreen>
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: filteredMembers.length,
-              itemBuilder: (BuildContext context, int index) {
-                final member = filteredMembers[index];
-                final bool isSelf = member.userId == _currentUserId;
+        padding: const EdgeInsets.all(16),
+        itemCount: filteredMembers.length,
+        itemBuilder: (BuildContext context, int index) {
+          final member = filteredMembers[index];
+          final bool isSelf = member.userId == _currentUserId;
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: Stack(
-                      children: <>[
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundImage: member.avatar != null
-                              ? NetworkImage(member.avatar!)
-                              : null,
-                          child: member.avatar == null
-                              ? Text(member.username[0].toUpperCase())
-                              : null,
-                        ),
-                        if (member.isOnline)
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              width: 12,
-                              height: 12,
-                              decoration: const BoxDecoration(
-                                color: Colors.green,
-                                shape: BoxShape.circle,
-                                border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
-                              ),
-                            ),
-                          ),
-                      ],
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundImage: member.avatar != null
+                        ? NetworkImage(member.avatar!)
+                        : null,
+                    child: member.avatar == null
+                        ? Text(member.username[0].toUpperCase())
+                        : null,
+                  ),
+                  if (member.isOnline)
+                    const Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: CircleAvatar(
+                        radius: 6,
+                        backgroundColor: Colors.green,
+                      ),
                     ),
-                    title: Row(
-                      children: <>[
-                        Text(
-                          member.username,
+                ],
+              ),
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      member.username,
+                      style: TextStyle(
+                        fontWeight: isSelf ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  if (isSelf) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'You',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        _getRoleIcon(member.role),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _getRoleColor(member.role).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          member.role.toString().split('.').last,
                           style: TextStyle(
-                            fontWeight: isSelf ? FontWeight.bold : FontWeight.normal,
+                            color: _getRoleColor(member.role),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
                           ),
                         ),
-                        if (isSelf) ...<>[
-                          const SizedBox(width: 4),
-                          const Text(
-                            '(You)',
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <>[
-                        Row(
-                          children: <>[
-                            Text(
-                              _getRoleIcon(member.role),
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              member.role.toString().split('.').last,
-                              style: TextStyle(
-                                color: _getRoleColor(member.role),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: <>[
-                            const Icon(Icons.flash_on, size: 12, color: Colors.amber),
-                            const SizedBox(width: 2),
-                            Text('${member.activityPoints} activity'),
-                            const SizedBox(width: 12),
-                            const Icon(Icons.card_giftcard, size: 12, color: Colors.green),
-                            const SizedBox(width: 2),
-                            Text('${member.donations} donations'),
-                          ],
-                        ),
-                      ],
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <>[
-                        if (!isSelf)
-                          IconButton(
-                            icon: const Icon(Icons.message, color: Colors.blue),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (BuildContext context) => ChatDetailScreen(
-                                    userId: member.userId,
-                                    userName: member.username,
-                                    userAvatar: member.avatar,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        IconButton(
-                          icon: const Icon(Icons.more_vert),
-                          onPressed: () => _showMemberOptions(member),
-                        ),
-                      ],
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (BuildContext context) => ProfileScreen(userId: member.userId),
-                        ),
-                      );
-                    },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.flash_on, size: 12, color: Colors.amber.shade700),
+                      const SizedBox(width: 2),
+                      Text('${member.activityPoints}'),
+                      const SizedBox(width: 12),
+                      Icon(Icons.card_giftcard, size: 12, color: Colors.green.shade700),
+                      const SizedBox(width: 2),
+                      Text('${member.donations}'),
+                    ],
+                  ),
+                ],
+              ),
+              trailing: !isSelf
+                  ? IconButton(
+                icon: const Icon(Icons.more_vert),
+                onPressed: () => _showMemberOptions(member),
+              )
+                  : null,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (BuildContext context) => ProfileScreen(userId: member.userId),
                   ),
                 );
               },
             ),
+          );
+        },
+      ),
     );
   }
 }
