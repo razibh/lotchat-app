@@ -1,12 +1,15 @@
+import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive/hive.dart';
-import 'package:flutter/foundation.dart'; // 🟢 debugPrint এর জন্য
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/user_models.dart' as app; // 🟢 UserModel এর পরিবর্তে app.User
+import '../models/user_models.dart' as app;
 import '../models/gift_model.dart';
-import '../constants/shared_preference_keys.dart';
+import '../constants/shared_preference_keys.dart'; // ✅ এই import টা ঠিক করুন
+import '../di/service_locator.dart';
 
 class StorageService {
   factory StorageService() => _instance;
@@ -15,11 +18,13 @@ class StorageService {
 
   late SharedPreferences _prefs;
   late Box _hiveBox;
+  late SupabaseClient _supabase;
 
   // ==================== INITIALIZATION ====================
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     _hiveBox = await Hive.openBox('appBox');
+    _supabase = getService<SupabaseClient>();
   }
 
   // ==================== SHARED PREFERENCES ====================
@@ -139,25 +144,193 @@ class StorageService {
     await _hiveBox.clear();
   }
 
-  // ==================== FILE UPLOAD ====================
+  // ==================== SUPABASE STORAGE (FILE UPLOAD) ====================
 
-  // Upload file (mock implementation for now)
+  // Upload file to Supabase Storage
   Future<String?> uploadFile({
     required File file,
+    required String bucket,
     required String path,
-    required String fileName,
+    String? fileName,
   }) async {
     try {
-      debugPrint('Uploading file to $path/$fileName');
+      final String finalFileName = fileName ?? file.path.split('/').last;
+      final String filePath = '$path/$finalFileName';
 
-      // TODO: Replace with actual file upload (Firebase Storage, AWS S3, etc.)
-      await Future.delayed(const Duration(seconds: 1));
+      debugPrint('📤 Uploading file to Supabase: $bucket/$filePath');
 
-      // Return mock URL
-      return 'https://example.com/storage/$path/$fileName';
+      // Upload file
+      await _supabase.storage
+          .from(bucket)
+          .upload(filePath, file);
 
+      // Get public URL
+      final String publicUrl = _supabase.storage
+          .from(bucket)
+          .getPublicUrl(filePath);
+
+      debugPrint('✅ File uploaded successfully: $publicUrl');
+      return publicUrl;
     } catch (e) {
-      debugPrint('Failed to upload file: $e');
+      debugPrint('❌ Failed to upload file: $e');
+      return null;
+    }
+  }
+
+  // Upload image (profile picture, cover image, etc.)
+  Future<String?> uploadImage({
+    required File image,
+    required String userId,
+    required String type, // 'profile', 'cover', 'post'
+  }) async {
+    try {
+      final String bucket = 'images';
+      final String path = 'users/$userId/$type';
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      return await uploadFile(
+        file: image,
+        bucket: bucket,
+        path: path,
+        fileName: fileName,
+      );
+    } catch (e) {
+      debugPrint('Failed to upload image: $e');
+      return null;
+    }
+  }
+
+  // Upload gift image
+  Future<String?> uploadGiftImage({
+    required File image,
+    required String giftId,
+  }) async {
+    try {
+      final String bucket = 'gifts';
+      final String path = giftId;
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      return await uploadFile(
+        file: image,
+        bucket: bucket,
+        path: path,
+        fileName: fileName,
+      );
+    } catch (e) {
+      debugPrint('Failed to upload gift image: $e');
+      return null;
+    }
+  }
+
+  // Upload room cover image
+  Future<String?> uploadRoomCover({
+    required File image,
+    required String roomId,
+  }) async {
+    try {
+      final String bucket = 'rooms';
+      final String path = roomId;
+      final String fileName = 'cover_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      return await uploadFile(
+        file: image,
+        bucket: bucket,
+        path: path,
+        fileName: fileName,
+      );
+    } catch (e) {
+      debugPrint('Failed to upload room cover: $e');
+      return null;
+    }
+  }
+
+  // Delete file from Supabase Storage
+  Future<bool> deleteFile({
+    required String bucket,
+    required String path,
+  }) async {
+    try {
+      debugPrint('🗑️ Deleting file from Supabase: $bucket/$path');
+
+      await _supabase.storage
+          .from(bucket)
+          .remove([path]);
+
+      debugPrint('✅ File deleted successfully');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Failed to delete file: $e');
+      return false;
+    }
+  }
+
+  // List files in a directory
+  Future<List<String>> listFiles({
+    required String bucket,
+    required String path,
+  }) async {
+    try {
+      final response = await _supabase.storage
+          .from(bucket)
+          .list(path: path);
+
+      return response.map((file) => file.name).toList();
+    } catch (e) {
+      debugPrint('Failed to list files: $e');
+      return [];
+    }
+  }
+
+  // Get public URL
+  String getPublicUrl({
+    required String bucket,
+    required String path,
+  }) {
+    return _supabase.storage.from(bucket).getPublicUrl(path);
+  }
+
+  // Get download URL (signed URL for private buckets)
+  Future<String?> getDownloadUrl({
+    required String bucket,
+    required String path,
+    int expiresIn = 60, // seconds
+  }) async {
+    try {
+      final url = await _supabase.storage
+          .from(bucket)
+          .createSignedUrl(path, expiresIn);
+      return url;
+    } catch (e) {
+      debugPrint('Failed to get download URL: $e');
+      return null;
+    }
+  }
+
+  // Upload bytes data (for web)
+  Future<String?> uploadBytes({
+    required Uint8List bytes,
+    required String bucket,
+    required String path,
+    String? fileName,
+  }) async {
+    try {
+      final String finalFileName = fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}';
+      final String filePath = '$path/$finalFileName';
+
+      debugPrint('📤 Uploading bytes to Supabase: $bucket/$filePath');
+
+      await _supabase.storage
+          .from(bucket)
+          .uploadBinary(filePath, bytes);
+
+      final String publicUrl = _supabase.storage
+          .from(bucket)
+          .getPublicUrl(filePath);
+
+      debugPrint('✅ Bytes uploaded successfully');
+      return publicUrl;
+    } catch (e) {
+      debugPrint('❌ Failed to upload bytes: $e');
       return null;
     }
   }
@@ -174,7 +347,6 @@ class StorageService {
     await setInt(PrefKeys.userCoins, user.coins);
     await setInt(PrefKeys.userDiamonds, user.diamonds);
 
-    // 🟢 Fix: UserTier enum to int
     if (user.tier != null) {
       await setInt(PrefKeys.userTier, user.tier!.index);
     }
@@ -194,12 +366,12 @@ class StorageService {
     return null;
   }
 
-  // 🟢 Get user ID
+  // Get user ID
   Future<String?> getUserId() async {
     return getString(PrefKeys.userId);
   }
 
-  // 🟢 Set user ID
+  // Set user ID
   Future<void> setUserId(String userId) async {
     await setString(PrefKeys.userId, userId);
   }
@@ -210,7 +382,6 @@ class StorageService {
 
     final app.User? user = getUser();
     if (user != null) {
-      // 🟢 Fix: coins is final, so create new user
       final updatedUser = user.copyWith(coins: coins);
       await saveUser(updatedUser);
     }
@@ -468,35 +639,4 @@ class StorageService {
     await clear();
     await clearHive();
   }
-}
-
-// PrefKeys class
-class PrefKeys {
-  static const String userData = 'user_data';
-  static const String userId = 'user_id';
-  static const String userName = 'user_name';
-  static const String userEmail = 'user_email';
-  static const String userCoins = 'user_coins';
-  static const String userDiamonds = 'user_diamonds';
-  static const String userTier = 'user_tier';
-  static const String authToken = 'auth_token';
-  static const String refreshToken = 'refresh_token';
-  static const String isLoggedIn = 'is_logged_in';
-  static const String themeMode = 'theme_mode';
-  static const String language = 'language';
-  static const String notificationsEnabled = 'notifications_enabled';
-  static const String soundEnabled = 'sound_enabled';
-  static const String vibrationEnabled = 'vibration_enabled';
-  static const String country = 'country';
-  static const String region = 'region';
-  static const String lastLocation = 'last_location';
-  static const String cachedRooms = 'cached_rooms';
-  static const String cachedGifts = 'cached_gifts';
-  static const String lastSync = 'last_sync';
-  static const String hasSeenOnboarding = 'has_seen_onboarding';
-  static const String hasCompletedProfile = 'has_completed_profile';
-  static const String gameStats = 'game_stats';
-  static const String lastGamePlayed = 'last_game_played';
-  static const String biometricEnabled = 'biometric_enabled';
-  static const String pinCode = 'pin_code';
 }
