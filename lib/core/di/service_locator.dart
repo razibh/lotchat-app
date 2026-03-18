@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -27,7 +28,6 @@ import '../services/leaderboard_service.dart';
 import '../services/search_service.dart';
 import '../services/friend_service.dart';
 import '../../features/clan/services/clan_service.dart';
-
 import '../services/pk_service.dart';
 
 final GetIt getIt = GetIt.instance;
@@ -48,6 +48,9 @@ class ServiceLocator {
     try {
       debugPrint('🚀 Initializing ServiceLocator...');
 
+      // Register Supabase client first
+      _registerSupabase();
+
       // Register all services
       await _registerCoreServices();
       _registerApiServices();
@@ -62,6 +65,19 @@ class ServiceLocator {
     } catch (e, stackTrace) {
       debugPrint('❌ ServiceLocator initialization failed: $e');
       debugPrint('📚 StackTrace: $stackTrace');
+    }
+  }
+
+  // Register Supabase client
+  void _registerSupabase() {
+    debugPrint('📝 Registering Supabase Client...');
+
+    try {
+      final supabase = Supabase.instance.client;
+      getIt.registerSingleton<SupabaseClient>(supabase);
+      debugPrint('   ✅ SupabaseClient registered');
+    } catch (e) {
+      debugPrint('❌ Error registering Supabase client: $e');
     }
   }
 
@@ -108,7 +124,7 @@ class ServiceLocator {
     debugPrint('📝 Registering API Services...');
 
     try {
-      // API Service (Lazy)
+      // API Service (Lazy) - Supabase
       getIt.registerLazySingleton<ApiService>(ApiService.new);
       debugPrint('   ✅ ApiService registered');
 
@@ -120,11 +136,11 @@ class ServiceLocator {
       });
       debugPrint('   ✅ SocketService registered');
 
-      // Auth Service
+      // Auth Service -  Supabase
       getIt.registerSingleton<AuthService>(AuthService());
       debugPrint('   ✅ AuthService registered');
 
-      // Database Service
+      // Database Service Supabase-
       getIt.registerSingleton<DatabaseService>(DatabaseService());
       debugPrint('   ✅ DatabaseService registered');
 
@@ -248,6 +264,15 @@ class ServiceLocator {
     }
   }
 
+  // Get Supabase client (helper method)
+  SupabaseClient get supabase {
+    try {
+      return getIt<SupabaseClient>();
+    } catch (e) {
+      throw Exception('❌ SupabaseClient not found: $e');
+    }
+  }
+
   // Check if service exists
   bool isRegistered<T extends Object>() {
     return getIt.isRegistered<T>();
@@ -296,6 +321,8 @@ class ServiceLocator {
         debugPrint('   ✅ CacheService disposed');
       }
 
+      // Note: Supabase client doesn't need explicit disposal
+
       debugPrint('✅ All services disposed successfully');
     } catch (e) {
       debugPrint('❌ Error disposing services: $e');
@@ -318,3 +345,6 @@ extension ServiceLocatorExtension on BuildContext {
 T getService<T extends Object>() {
   return ServiceLocator.instance.get<T>();
 }
+
+// Global helper for Supabase access
+SupabaseClient get supabase => ServiceLocator.instance.supabase;

@@ -1,59 +1,69 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/user_models.dart' as app;
 import 'database_service.dart';
+import '../../../core/di/service_locator.dart';
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final SupabaseClient _supabase = getService<SupabaseClient>();
   final DatabaseService _databaseService = DatabaseService();
 
   // Auth state changes stream
-  Stream<User?> get user => _auth.authStateChanges();
+  Stream<AuthState> get user => _supabase.auth.onAuthStateChange;
 
-  // ✅ NEW: Get user data from Firestore
+  // Get current user
+  User? getCurrentUser() {
+    return _supabase.auth.currentUser;
+  }
+
+  // ✅ Get user data from Supabase
   Future<Map<String, dynamic>?> getUserData(String userId) async {
     try {
-      final doc = await _firestore.collection('users').doc(userId).get();
-      if (doc.exists) {
-        return doc.data();
-      }
-      return null;
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('id', userId)
+          .single();
+      return response;
     } catch (e) {
       debugPrint('Error getting user data: $e');
       return null;
     }
   }
 
-  // ✅ NEW: Stream user data
-  Stream<DocumentSnapshot> streamUserData(String userId) {
-    return _firestore.collection('users').doc(userId).snapshots();
+  // ✅ Stream user data (Realtime)
+  Stream<Map<String, dynamic>?> streamUserData(String userId) {
+    return _supabase
+        .from('users')
+        .stream(primaryKey: ['id'])
+        .eq('id', userId)
+        .map((data) => data.isNotEmpty ? data.first : null);
   }
 
-  // ✅ NEW: Update user's clan ID
+  // ✅ Update user's clan ID
   Future<void> updateUserClan(String userId, String? clanId) async {
     try {
-      await _firestore.collection('users').doc(userId).update({
-        'clanId': clanId,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      await _supabase
+          .from('users')
+          .update({'clan_id': clanId, 'updated_at': DateTime.now().toIso8601String()})
+          .eq('id', userId);
     } catch (e) {
       debugPrint('Error updating user clan: $e');
     }
   }
 
-  // ✅ NEW: Update user online status
+  // ✅ Update user online status
   Future<void> updateUserStatus(String userId, bool isOnline) async {
     try {
-      await _firestore.collection('users').doc(userId).update({
-        'isOnline': isOnline,
-        'lastSeen': FieldValue.serverTimestamp(),
-      });
+      await _supabase
+          .from('users')
+          .update({
+        'is_online': isOnline,
+        'last_seen': DateTime.now().toIso8601String(),
+      })
+          .eq('id', userId);
     } catch (e) {
       debugPrint('Error updating user status: $e');
     }
@@ -69,16 +79,23 @@ class AuthService {
     required String region,
   }) async {
     try {
-      final UserCredential result = await _auth.createUserWithEmailAndPassword(
+      final AuthResponse response = await _supabase.auth.signUp(
         email: email,
         password: password,
+        data: {
+          'username': username,
+          'phone': phone,
+          'country': country,
+          'region': region,
+        },
       );
 
-      final User? user = result.user;
+      final User? user = response.user;
       if (user == null) return null;
 
+      // Auto create profile via trigger or manual
       final newUser = app.User(
-        id: user.uid,
+        id: user.id,
         username: username,
         email: email,
         name: username,
@@ -88,12 +105,13 @@ class AuthService {
         phoneNumber: phone,
         coins: 1000,
         diamonds: 0,
+        isOnline: true,
       );
 
       await _databaseService.createUser(newUser);
 
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_id', user.uid);
+      await prefs.setString('user_id', user.id);
       await prefs.setBool('is_logged_in', true);
 
       return newUser;
@@ -109,18 +127,21 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final UserCredential result = await _auth.signInWithEmailAndPassword(
+      final AuthResponse response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
-      final User? user = result.user;
+      final User? user = response.user;
       if (user == null) return null;
 
-      final app.User? userData = await _databaseService.getUser(user.uid);
+      // Update online status
+      await updateUserStatus(user.id, true);
+
+      final app.User? userData = await _databaseService.getUser(user.id);
 
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_id', user.uid);
+      await prefs.setString('user_id', user.id);
       await prefs.setBool('is_logged_in', true);
 
       return userData;
@@ -133,39 +154,42 @@ class AuthService {
   // Login with Google
   Future<app.User?> signInWithGoogle() async {
     try {
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null;
-
-      final googleAuth = await googleUser.authentication;
-
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+      final response = await _supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? null : 'io.supabase.lotchat://login-callback',
       );
 
-      final UserCredential result = await _auth.signInWithCredential(credential);
+      // OAuth flow - need to handle redirect
+      // For now, check if session exists
+      final session = _supabase.auth.currentSession;
+      if (session == null) return null;
 
-      final User? user = result.user;
-      if (user == null) return null;
+      final user = session.user;
 
-      app.User? userData = await _databaseService.getUser(user.uid);
+      app.User? userData = await _databaseService.getUser(user.id);
 
       if (userData == null) {
+        final metadata = user.userMetadata ?? {};
         userData = app.User(
-          id: user.uid,
-          username: user.displayName ?? 'User',
+          id: user.id,
+          username: metadata['full_name'] ?? 'User',
           email: user.email ?? '',
-          name: user.displayName ?? 'User',
+          name: metadata['full_name'] ?? 'User',
           role: app.UserRole.user,
           countryId: 'Unknown',
           createdAt: DateTime.now(),
-          phoneNumber: user.phoneNumber ?? '',
-          avatar: user.photoURL,
+          phoneNumber: user.phone ?? '',
+          avatar: user.userMetadata?['avatar_url'],
           coins: 1000,
           diamonds: 0,
+          isOnline: true,
         );
         await _databaseService.createUser(userData);
       }
+
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_id', user.id);
+      await prefs.setBool('is_logged_in', true);
 
       return userData;
     } catch (e) {
@@ -174,56 +198,55 @@ class AuthService {
     }
   }
 
-  // Login with phone
-  Future<void> signInWithPhone(
-      String phoneNumber,
-      Function(PhoneAuthCredential) verificationCompleted,
-      Function(FirebaseAuthException) verificationFailed,
-      Function(String, int?) codeSent,
-      Function(String) codeAutoRetrievalTimeout,
-      ) async {
-    await _auth.verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      verificationCompleted: verificationCompleted,
-      verificationFailed: verificationFailed,
-      codeSent: codeSent,
-      codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
-    );
+  // Login with phone (OTP)
+  Future<void> signInWithPhone(String phoneNumber) async {
+    try {
+      await _supabase.auth.signInWithOtp(
+        phone: phoneNumber,
+      );
+    } catch (e) {
+      debugPrint('Phone sign in error: $e');
+      rethrow;
+    }
   }
 
   // Verify OTP
   Future<app.User?> verifyOTP({
-    required String verificationId,
-    required String smsCode,
+    required String phone,
+    required String token,
   }) async {
     try {
-      final PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
+      final AuthResponse response = await _supabase.auth.verifyOTP(
+        phone: phone,
+        token: token,
+        type: OtpType.sms,
       );
 
-      final UserCredential result = await _auth.signInWithCredential(credential);
-
-      final User? user = result.user;
+      final User? user = response.user;
       if (user == null) return null;
 
-      app.User? userData = await _databaseService.getUser(user.uid);
+      app.User? userData = await _databaseService.getUser(user.id);
 
       if (userData == null) {
         userData = app.User(
-          id: user.uid,
-          username: 'User${user.uid.substring(0, 5)}',
+          id: user.id,
+          username: 'User${user.id.substring(0, 5)}',
           email: '',
-          name: 'User${user.uid.substring(0, 5)}',
+          name: 'User${user.id.substring(0, 5)}',
           role: app.UserRole.user,
           countryId: 'Unknown',
           createdAt: DateTime.now(),
-          phoneNumber: user.phoneNumber ?? '',
+          phoneNumber: phone,
           coins: 1000,
           diamonds: 0,
+          isOnline: true,
         );
         await _databaseService.createUser(userData);
       }
+
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_id', user.id);
+      await prefs.setBool('is_logged_in', true);
 
       return userData;
     } catch (e) {
@@ -234,8 +257,12 @@ class AuthService {
 
   // Logout
   Future<void> signOut() async {
-    await _auth.signOut();
-    await _googleSignIn.signOut();
+    final user = _supabase.auth.currentUser;
+    if (user != null) {
+      await updateUserStatus(user.id, false);
+    }
+
+    await _supabase.auth.signOut();
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('user_id');
@@ -245,7 +272,7 @@ class AuthService {
   // Reset password
   Future<bool> resetPassword(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(email: email);
+      await _supabase.auth.resetPasswordForEmail(email);
       return true;
     } catch (e) {
       debugPrint('Password reset error: $e');
@@ -253,20 +280,31 @@ class AuthService {
     }
   }
 
-  // Get current user
-  User? getCurrentUser() {
-    return _auth.currentUser;
-  }
-
   // Update user profile
   Future<void> updateProfile({
     String? displayName,
     String? photoURL,
   }) async {
-    final User? user = _auth.currentUser;
+    final User? user = _supabase.auth.currentUser;
     if (user != null) {
-      await user.updateDisplayName(displayName);
-      await user.updatePhotoURL(photoURL);
+      await _supabase.auth.updateUser(
+        UserAttributes(
+          data: {
+            if (displayName != null) 'full_name': displayName,
+            if (photoURL != null) 'avatar_url': photoURL,
+          },
+        ),
+      );
+
+      // Update users table as well
+      await _supabase
+          .from('users')
+          .update({
+        if (displayName != null) 'name': displayName,
+        if (photoURL != null) 'avatar': photoURL,
+        'updated_at': DateTime.now().toIso8601String(),
+      })
+          .eq('id', user.id);
     }
   }
 }
