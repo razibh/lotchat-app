@@ -1,6 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User hide
 
 import '../../core/di/service_locator.dart';
 import '../../core/services/friend_service.dart';
@@ -36,10 +36,11 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen>
   }
 
   Future<void> _getCurrentUser() async {
-    final User? user = _authService.getCurrentUser();
-    if (user != null) {
+    // ✅ Firebase Auth → Supabase Auth
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
       setState(() {
-        _currentUserId = user.uid;
+        _currentUserId = session.user.id;
       });
       _setupStreams();
     }

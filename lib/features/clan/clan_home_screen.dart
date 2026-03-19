@@ -1,9 +1,10 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User hide
+
 import '../../core/di/service_locator.dart';
 import '../clan/services/clan_service.dart';
 import '../../core/services/auth_service.dart';
-import '../../core/models/clan_model.dart';  // ← এই ইম্পোর্ট যোগ করুন
+import '../../core/models/clan_model.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../widgets/common/empty_state_widget.dart';
@@ -45,12 +46,19 @@ class _ClanHomeScreenState extends State<ClanHomeScreen>
 
   Future<void> _loadData() async {
     await runWithLoading(() async {
-      // Get user's clan
-      final User? user = _authService.getCurrentUser();
-      if (user != null) {
+      // ✅ Firebase Auth → Supabase Auth
+      final session = Supabase.instance.client.auth.currentSession;
+      final String? userId = session?.user.id;
+
+      if (userId != null) {
         // ইউজারের ডকুমেন্ট থেকে clanId পাওয়ার জন্য
-        final userDoc = await _authService.getUserData(user.uid);
-        final clanId = userDoc?['clanId'] as String?;
+        final userDoc = await Supabase.instance.client
+            .from('users')
+            .select('clan_id')
+            .eq('id', userId)
+            .maybeSingle();
+
+        final clanId = userDoc?['clan_id'] as String?;
 
         if (clanId != null) {
           _myClan = await _clanService.getClan(clanId);

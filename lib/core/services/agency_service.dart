@@ -1,7 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_models.dart' as app;
+import '../di/service_locator.dart';
 
 // AgencyRole enum
 enum AgencyRole {
@@ -12,17 +12,19 @@ enum AgencyRole {
 }
 
 class AgencyService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final SupabaseClient _supabase = getService<SupabaseClient>();
 
   // ==================== AGENCY OPERATIONS ====================
   Future<Agency?> getAgency(String agencyId) async {
     try {
-      final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore.collection('agencies').doc(agencyId).get();
-      if (doc.exists) {
-        return Agency.fromJson(doc.data()!, doc.id);
-      }
-      return null;
+      final response = await _supabase
+          .from('agencies')
+          .select()
+          .eq('id', agencyId)
+          .maybeSingle();
+
+      if (response == null) return null;
+      return Agency.fromJson(response, response['id']);
     } catch (e) {
       debugPrint('Error getting agency: $e');
       return null;
@@ -31,16 +33,15 @@ class AgencyService {
 
   Future<Agency?> getAgencyByOwner(String ownerId) async {
     try {
-      final QuerySnapshot<Map<String, dynamic>> query = await _firestore
-          .collection('agencies')
-          .where('ownerId', isEqualTo: ownerId)
+      final response = await _supabase
+          .from('agencies')
+          .select()
+          .eq('owner_id', ownerId)
           .limit(1)
-          .get();
+          .maybeSingle();
 
-      if (query.docs.isNotEmpty) {
-        return Agency.fromJson(query.docs.first.data(), query.docs.first.id);
-      }
-      return null;
+      if (response == null) return null;
+      return Agency.fromJson(response, response['id']);
     } catch (e) {
       debugPrint('Error getting agency by owner: $e');
       return null;
@@ -48,15 +49,13 @@ class AgencyService {
   }
 
   Stream<Agency?> streamAgency(String agencyId) {
-    return _firestore
-        .collection('agencies')
-        .doc(agencyId)
-        .snapshots()
-        .map((DocumentSnapshot<Map<String, dynamic>> doc) {
-      if (doc.exists) {
-        return Agency.fromJson(doc.data()!, doc.id);
-      }
-      return null;
+    return _supabase
+        .from('agencies')
+        .stream(primaryKey: ['id'])
+        .eq('id', agencyId)
+        .map((data) {
+      if (data.isEmpty) return null;
+      return Agency.fromJson(data.first, data.first['id']);
     });
   }
 
@@ -65,61 +64,61 @@ class AgencyService {
     final Agency? agency = await getAgency(agencyId);
     if (agency == null) throw Exception('Agency not found');
 
-    final User? currentUser = _auth.currentUser;
-    if (currentUser == null) throw Exception('Not logged in');
+    final session = _supabase.auth.currentSession;
+    if (session == null) throw Exception('Not logged in');
 
     // Check if current user is owner or co-owner
-    if (currentUser.uid != agency.ownerId && !agency.coOwners.contains(currentUser.uid)) {
+    if (session.user.id != agency.ownerId && !agency.coOwners.contains(session.user.id)) {
       throw Exception('Unauthorized');
     }
 
-    await _firestore.runTransaction((Transaction transaction) async {
-      final DocumentReference<Map<String, dynamic>> agencyRef = _firestore.collection('agencies').doc(agencyId);
+    // Add member to agency
+    final updatedMembers = [...agency.members, userId];
+    await _supabase
+        .from('agencies')
+        .update({'members': updatedMembers})
+        .eq('id', agencyId);
 
-      transaction.update(agencyRef, {
-        'members': FieldValue.arrayUnion([userId]),
-      });
-
-      transaction.update(
-        _firestore.collection('users').doc(userId),
-        {
-          'agencyId': agencyId,
-          'role': 'agency',
-        },
-      );
-    });
+    // Update user's agency info
+    await _supabase
+        .from('users')
+        .update({
+      'agency_id': agencyId,
+      'role': 'agency',
+    })
+        .eq('id', userId);
   }
 
   Future<void> removeMember(String agencyId, String userId) async {
     final Agency? agency = await getAgency(agencyId);
     if (agency == null) throw Exception('Agency not found');
 
-    final User? currentUser = _auth.currentUser;
-    if (currentUser == null) throw Exception('Not logged in');
+    final session = _supabase.auth.currentSession;
+    if (session == null) throw Exception('Not logged in');
 
     // Check if current user is owner or co-owner
-    if (currentUser.uid != agency.ownerId && !agency.coOwners.contains(currentUser.uid)) {
+    if (session.user.id != agency.ownerId && !agency.coOwners.contains(session.user.id)) {
       throw Exception('Unauthorized');
     }
 
-    await _firestore.runTransaction((Transaction transaction) async {
-      final DocumentReference<Map<String, dynamic>> agencyRef = _firestore.collection('agencies').doc(agencyId);
+    // Remove member from agency
+    final updatedMembers = agency.members.where((id) => id != userId).toList();
+    await _supabase
+        .from('agencies')
+        .update({'members': updatedMembers})
+        .eq('id', agencyId);
 
-      transaction.update(agencyRef, {
-        'members': FieldValue.arrayRemove([userId]),
-      });
-
-      transaction.update(
-        _firestore.collection('users').doc(userId),
-        {
-          'agencyId': null,
-          'role': 'user',
-        },
-      );
-    });
+    // Update user's agency info
+    await _supabase
+        .from('users')
+        .update({
+      'agency_id': null,
+      'role': 'user',
+    })
+        .eq('id', userId);
   }
 
-  // 🟢 ADD: Change member role
+  // Change member role
   Future<void> changeMemberRole(
       String agencyId,
       String userId,
@@ -129,18 +128,21 @@ class AgencyService {
       final Agency? agency = await getAgency(agencyId);
       if (agency == null) throw Exception('Agency not found');
 
-      final User? currentUser = _auth.currentUser;
-      if (currentUser == null) throw Exception('Not logged in');
+      final session = _supabase.auth.currentSession;
+      if (session == null) throw Exception('Not logged in');
 
       // Check if current user is owner or co-owner
-      if (currentUser.uid != agency.ownerId && !agency.coOwners.contains(currentUser.uid)) {
+      if (session.user.id != agency.ownerId && !agency.coOwners.contains(session.user.id)) {
         throw Exception('Unauthorized');
       }
 
       // Update user's role in users collection
-      await _firestore.collection('users').doc(userId).update({
-        'agencyRole': newRole.toString().split('.').last,
-      });
+      await _supabase
+          .from('users')
+          .update({
+        'agency_role': newRole.toString().split('.').last,
+      })
+          .eq('id', userId);
 
       debugPrint('Changed role for user $userId in agency $agencyId to $newRole');
     } catch (e) {
@@ -154,40 +156,38 @@ class AgencyService {
     final Agency? agency = await getAgency(agencyId);
     if (agency == null) throw Exception('Agency not found');
 
-    final User? currentUser = _auth.currentUser;
-    if (currentUser == null) throw Exception('Not logged in');
+    final session = _supabase.auth.currentSession;
+    if (session == null) throw Exception('Not logged in');
 
     // Only owner can add co-owners
-    if (currentUser.uid != agency.ownerId) {
+    if (session.user.id != agency.ownerId) {
       throw Exception('Only owner can add co-owners');
     }
 
-    await _firestore
-        .collection('agencies')
-        .doc(agencyId)
-        .update({
-      'coOwners': FieldValue.arrayUnion([userId]),
-    });
+    final updatedCoOwners = [...agency.coOwners, userId];
+    await _supabase
+        .from('agencies')
+        .update({'co_owners': updatedCoOwners})
+        .eq('id', agencyId);
   }
 
   Future<void> removeCoOwner(String agencyId, String userId) async {
     final Agency? agency = await getAgency(agencyId);
     if (agency == null) throw Exception('Agency not found');
 
-    final User? currentUser = _auth.currentUser;
-    if (currentUser == null) throw Exception('Not logged in');
+    final session = _supabase.auth.currentSession;
+    if (session == null) throw Exception('Not logged in');
 
     // Only owner can remove co-owners
-    if (currentUser.uid != agency.ownerId) {
+    if (session.user.id != agency.ownerId) {
       throw Exception('Only owner can remove co-owners');
     }
 
-    await _firestore
-        .collection('agencies')
-        .doc(agencyId)
-        .update({
-      'coOwners': FieldValue.arrayRemove([userId]),
-    });
+    final updatedCoOwners = agency.coOwners.where((id) => id != userId).toList();
+    await _supabase
+        .from('agencies')
+        .update({'co_owners': updatedCoOwners})
+        .eq('id', agencyId);
   }
 
   // ==================== EARNINGS MANAGEMENT ====================
@@ -197,40 +197,35 @@ class AgencyService {
     required int amount,
     required String source,
   }) async {
-    await _firestore.runTransaction((Transaction transaction) async {
-      final DocumentReference<Map<String, dynamic>> agencyRef = _firestore.collection('agencies').doc(agencyId);
-      final DocumentSnapshot<Map<String, dynamic>> agencyDoc = await transaction.get(agencyRef);
+    // Get agency data
+    final agency = await getAgency(agencyId);
+    if (agency == null) throw Exception('Agency not found');
 
-      if (!agencyDoc.exists) return;
+    final commissionRate = agency.commissionRate;
+    final int agencyCommission = (amount * commissionRate).round();
+    final int userEarnings = amount - agencyCommission;
 
-      final Map<String, dynamic>? data = agencyDoc.data();
-      final commissionRate = data?['commissionRate'] ?? 0.1; // Default 10%
+    // Update agency earnings - type conversion important here
+    final updatedMemberEarnings = Map<String, int>.from(agency.memberEarnings);
+    updatedMemberEarnings[userId] = (updatedMemberEarnings[userId] ?? 0) + userEarnings;
 
-      final int agencyCommission = (amount * commissionRate).round();
-      final int userEarnings = amount - agencyCommission;
+    await _supabase
+        .from('agencies')
+        .update({
+      'total_earnings': agency.totalEarnings + agencyCommission,
+      'member_earnings': updatedMemberEarnings,
+    })
+        .eq('id', agencyId);
 
-      // Update agency earnings
-      final Map<String, int> memberEarnings = Map<String, int>.from(data?['memberEarnings'] ?? {});
-      memberEarnings[userId] = (memberEarnings[userId] ?? 0) + userEarnings;
-
-      transaction.update(agencyRef, {
-        'totalEarnings': FieldValue.increment(agencyCommission),
-        'memberEarnings': memberEarnings,
-      });
-
-      // Record transaction
-      transaction.set(
-        _firestore.collection('agency_transactions').doc(),
-        {
-          'agencyId': agencyId,
-          'userId': userId,
-          'amount': amount,
-          'agencyCommission': agencyCommission,
-          'userEarnings': userEarnings,
-          'source': source,
-          'timestamp': FieldValue.serverTimestamp(),
-        },
-      );
+    // Record transaction
+    await _supabase.from('agency_transactions').insert({
+      'agency_id': agencyId,
+      'user_id': userId,
+      'amount': amount,
+      'agency_commission': agencyCommission,
+      'user_earnings': userEarnings,
+      'source': source,
+      'created_at': DateTime.now().toIso8601String(),
     });
   }
 
@@ -247,28 +242,24 @@ class AgencyService {
       final int userEarnings = agency.memberEarnings[userId] ?? 0;
       if (userEarnings < amount) throw Exception('Insufficient earnings');
 
-      await _firestore.runTransaction((Transaction transaction) async {
-        final DocumentReference<Map<String, dynamic>> agencyRef = _firestore.collection('agencies').doc(agencyId);
+      // Update member earnings
+      final updatedEarnings = Map<String, int>.from(agency.memberEarnings);
+      updatedEarnings[userId] = userEarnings - amount;
 
-        // Update member earnings
-        final Map<String, int> updatedEarnings = Map<String, int>.from(agency.memberEarnings);
-        updatedEarnings[userId] = userEarnings - amount;
+      await _supabase
+          .from('agencies')
+          .update({
+        'member_earnings': updatedEarnings,
+      })
+          .eq('id', agencyId);
 
-        transaction.update(agencyRef, {
-          'memberEarnings': updatedEarnings,
-        });
-
-        // Record withdrawal
-        transaction.set(
-          _firestore.collection('withdrawals').doc(),
-          {
-            'agencyId': agencyId,
-            'userId': userId,
-            'amount': amount,
-            'status': 'pending',
-            'timestamp': FieldValue.serverTimestamp(),
-          },
-        );
+      // Record withdrawal
+      await _supabase.from('withdrawals').insert({
+        'agency_id': agencyId,
+        'user_id': userId,
+        'amount': amount,
+        'status': 'pending',
+        'created_at': DateTime.now().toIso8601String(),
       });
 
       return true;
@@ -278,26 +269,25 @@ class AgencyService {
     }
   }
 
-  // 🟢 ADD: Get member earnings history
+  // Get member earnings history
   Future<List<Map<String, dynamic>>> getMemberEarnings(
       String agencyId,
       String userId,
       ) async {
     try {
-      final QuerySnapshot<Map<String, dynamic>> earnings = await _firestore
-          .collection('agency_transactions')
-          .where('agencyId', isEqualTo: agencyId)
-          .where('userId', isEqualTo: userId)
-          .orderBy('timestamp', descending: true)
-          .limit(20)
-          .get();
+      final response = await _supabase
+          .from('agency_transactions')
+          .select()
+          .eq('agency_id', agencyId)
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(20);
 
-      return earnings.docs.map((doc) {
-        final data = doc.data();
+      return response.map((data) {
         return {
-          'amount': data['userEarnings'] ?? 0,
+          'amount': data['user_earnings'] ?? 0,
           'description': data['source'] ?? 'Earning',
-          'timestamp': (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          'timestamp': DateTime.parse(data['created_at'] ?? DateTime.now().toIso8601String()),
         };
       }).toList();
     } catch (e) {
@@ -332,11 +322,14 @@ class AgencyService {
 
       final List<app.User> members = [];
       for (String memberId in agency.members) {
-        final DocumentSnapshot<Map<String, dynamic>> userDoc = await _firestore.collection('users').doc(memberId).get();
-        if (userDoc.exists) {
-          final data = userDoc.data()!;
-          data['id'] = userDoc.id;
-          members.add(app.User.fromJson(data));
+        final userData = await _supabase
+            .from('users')
+            .select()
+            .eq('id', memberId)
+            .maybeSingle();
+
+        if (userData != null) {
+          members.add(app.User.fromJson(userData));
         }
       }
 
@@ -349,22 +342,22 @@ class AgencyService {
 
   // ==================== AGENCY LEADERBOARD ====================
   Stream<List<AgencyMemberRank>> getAgencyLeaderboard(String agencyId) {
-    return _firestore
-        .collection('agencies')
-        .doc(agencyId)
-        .snapshots()
-        .map((DocumentSnapshot<Map<String, dynamic>> doc) {
-      if (!doc.exists) return [];
+    return _supabase
+        .from('agencies')
+        .stream(primaryKey: ['id'])
+        .eq('id', agencyId)
+        .map((data) {
+      if (data.isEmpty) return [];
 
-      final Map<String, dynamic>? data = doc.data();
-      final Map<String, int> memberEarnings = Map<String, int>.from(data?['memberEarnings'] ?? {});
+      final agency = Agency.fromJson(data.first, data.first['id']);
+      final memberEarnings = agency.memberEarnings;
 
       final List<AgencyMemberRank> ranks = [];
       memberEarnings.forEach((String userId, int earnings) {
         ranks.add(AgencyMemberRank(userId: userId, earnings: earnings));
       });
 
-      ranks.sort((AgencyMemberRank a, AgencyMemberRank b) => b.earnings.compareTo(a.earnings));
+      ranks.sort((a, b) => b.earnings.compareTo(a.earnings));
       return ranks;
     });
   }
@@ -376,62 +369,69 @@ class AgencyService {
 
     // Get today's earnings
     final DateTime today = DateTime.now();
-    final DateTime startOfDay = DateTime(today.year, today.month, today.day);
+    final startOfDay = DateTime(today.year, today.month, today.day).toIso8601String();
 
-    final QuerySnapshot<Map<String, dynamic>> todayTransactions = await _firestore
-        .collection('agency_transactions')
-        .where('agencyId', isEqualTo: agencyId)
-        .where('timestamp', isGreaterThanOrEqualTo: startOfDay)
-        .get();
+    final todayTransactions = await _supabase
+        .from('agency_transactions')
+        .select('agency_commission')
+        .eq('agency_id', agencyId)
+        .gte('created_at', startOfDay);
 
-    final int todayEarnings = todayTransactions.docs.fold<int>(
-      0,
-          (int sum, QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-        final num value = doc.data()['agencyCommission'] ?? 0;
-        return sum + value.toInt();
-      },
-    );
+    int todayEarnings = 0;
+    for (var tx in todayTransactions) {
+      // Fix: Convert num to int safely
+      todayEarnings += _toInt(tx['agency_commission']);
+    }
 
     // Get this month's earnings
-    final DateTime startOfMonth = DateTime(today.year, today.month, 1);
+    final startOfMonth = DateTime(today.year, today.month, 1).toIso8601String();
 
-    final QuerySnapshot<Map<String, dynamic>> monthTransactions = await _firestore
-        .collection('agency_transactions')
-        .where('agencyId', isEqualTo: agencyId)
-        .where('timestamp', isGreaterThanOrEqualTo: startOfMonth)
-        .get();
+    final monthTransactions = await _supabase
+        .from('agency_transactions')
+        .select('agency_commission')
+        .eq('agency_id', agencyId)
+        .gte('created_at', startOfMonth);
 
-    final int monthEarnings = monthTransactions.docs.fold<int>(
-      0,
-          (int sum, QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-        final num value = doc.data()['agencyCommission'] ?? 0;
-        return sum + value.toInt();
-      },
-    );
+    int monthEarnings = 0;
+    for (var tx in monthTransactions) {
+      // Fix: Convert num to int safely
+      monthEarnings += _toInt(tx['agency_commission']);
+    }
+
+    // Get active members
+    final activeMembers = await _supabase
+        .from('users')
+        .select()
+        .eq('agency_id', agencyId)
+        .eq('is_online', true);
 
     return AgencyStats(
       totalEarnings: agency.totalEarnings,
       todayEarnings: todayEarnings,
       monthEarnings: monthEarnings,
       memberCount: agency.members.length,
-      activeMembers: await _getActiveMembers(agencyId),
+      activeMembers: activeMembers.length,
     );
   }
 
-  Future<int> _getActiveMembers(String agencyId) async {
-    try {
-      final AggregateQuerySnapshot snapshot = await _firestore
-          .collection('users')
-          .where('agencyId', isEqualTo: agencyId)
-          .where('isOnline', isEqualTo: true)
-          .count()
-          .get();
+  // Helper method to safely convert dynamic to int
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value) ?? 0;
+    if (value is num) return value.toInt();
+    return 0;
+  }
 
-      return snapshot.count ?? 0;
-    } catch (e) {
-      debugPrint('Error getting active members: $e');
-      return 0;
-    }
+  // Helper method to safely convert dynamic to double
+  double _toDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    if (value is num) return value.toDouble();
+    return 0.0;
   }
 }
 
@@ -463,16 +463,47 @@ class Agency {
   });
 
   factory Agency.fromJson(Map<String, dynamic> json, String id) {
+    // Helper function to safely convert to int
+    int toInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is double) return value.round();
+      if (value is String) return int.tryParse(value) ?? 0;
+      if (value is num) return value.toInt();
+      return 0;
+    }
+
+    // Helper function to safely convert to double
+    double toDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      if (value is num) return value.toDouble();
+      return 0.0;
+    }
+
+    // Safely convert member_earnings map
+    Map<String, int> parseMemberEarnings(dynamic earnings) {
+      final Map<String, int> result = {};
+      if (earnings is Map) {
+        earnings.forEach((key, value) {
+          result[key.toString()] = toInt(value);
+        });
+      }
+      return result;
+    }
+
     return Agency(
       id: id,
       name: json['name'] ?? '',
-      ownerId: json['ownerId'] ?? '',
-      coOwners: List<String>.from(json['coOwners'] ?? []),
+      ownerId: json['owner_id'] ?? '',
+      coOwners: List<String>.from(json['co_owners'] ?? []),
       members: List<String>.from(json['members'] ?? []),
-      commissionRate: (json['commissionRate'] ?? 0.1).toDouble(),
-      totalEarnings: json['totalEarnings'] ?? 0,
-      memberEarnings: Map<String, int>.from(json['memberEarnings'] ?? {}),
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
+      commissionRate: toDouble(json['commission_rate'] ?? 0.1),
+      totalEarnings: toInt(json['total_earnings'] ?? 0),
+      memberEarnings: parseMemberEarnings(json['member_earnings']),
+      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
       status: json['status'] ?? 'active',
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User hide
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/friend_service.dart';
 import '../../core/services/auth_service.dart';
@@ -38,9 +39,9 @@ enum FriendsTab { friends, requests, suggestions }
 class _FriendsScreenState extends State<FriendsScreen>
     with LoadingMixin, ToastMixin, TickerProviderStateMixin {
 
-  final FriendService _friendService = ServiceLocator.instance.get<FriendService>();  // ✅ ServiceLocator.instance
-  final AuthService _authService = ServiceLocator.instance.get<AuthService>();        // ✅ ServiceLocator.instance
-  final AnalyticsService _analyticsService = ServiceLocator.instance.get<AnalyticsService>(); // ✅ ServiceLocator.instance
+  final FriendService _friendService = ServiceLocator.instance.get<FriendService>();
+  final AuthService _authService = ServiceLocator.instance.get<AuthService>();
+  final AnalyticsService _analyticsService = ServiceLocator.instance.get<AnalyticsService>();
 
   late TabController _tabController;
 
@@ -150,8 +151,9 @@ class _FriendsScreenState extends State<FriendsScreen>
   }
 
   Future<void> _getCurrentUser() async {
-    final firebase_auth.User? user = await _authService.getCurrentUser();
-    _currentUserId = user?.uid;
+    // ✅ Firebase Auth → Supabase Auth
+    final session = Supabase.instance.client.auth.currentSession;
+    _currentUserId = session?.user.id;
     _profileUserId = widget.userId ?? _currentUserId;
   }
 

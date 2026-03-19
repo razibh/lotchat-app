@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User hide
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/user_service.dart';
 import '../../core/services/auth_service.dart';
@@ -11,10 +13,10 @@ import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_field.dart';
-import '../../core/models/user_models.dart';
+import '../../core/models/user_models.dart' as app;  // ✅ আপনার নিজের User model
 
 class EditProfileScreen extends StatefulWidget {
-  final User? user; // UserModel → User
+  final app.User? user;  // ✅ app.User ব্যবহার করুন
 
   const EditProfileScreen({
     super.key,
@@ -27,7 +29,7 @@ class EditProfileScreen extends StatefulWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<User?>('user', user));
+    properties.add(DiagnosticsProperty<app.User?>('user', user));
   }
 }
 
@@ -57,7 +59,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   String? _coverImageUrl;
 
   // User Data
-  User? _currentUser; // UserModel → User
+  app.User? _currentUser;  // ✅ app.User ব্যবহার করুন
   bool _isLoading = false;
   bool _isSaving = false;
   String? _errorMessage;
@@ -83,12 +85,12 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     });
 
     try {
-      User? user = widget.user; // UserModel → User
+      app.User? user = widget.user;  // ✅ app.User ব্যবহার করুন
 
       if (user == null) {
-        final currentUser = await _authService.getCurrentUser();
-        if (currentUser != null) {
-          user = await _userService.getUserById(currentUser.uid);
+        final session = Supabase.instance.client.auth.currentSession;
+        if (session != null) {
+          user = await _userService.getUserById(session.user.id);
         }
       }
 
@@ -128,7 +130,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   }
 
   // _initControllersWithUser
-  void _initControllersWithUser(User? user) {
+  void _initControllersWithUser(app.User? user) {  // ✅ app.User ব্যবহার করুন
     if (user != null) {
       _nameController.text = user.name ?? '';
       _usernameController.text = user.username ?? '';
@@ -281,19 +283,19 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
       // Upload profile image if changed
       if (_profileImage != null) {
-        newProfileImageUrl = await _storageService.uploadFile(
-          file: _profileImage!,
-          path: 'profiles/${_currentUser?.id}',
-          fileName: 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        newProfileImageUrl = await _storageService.uploadImage(
+          image: _profileImage!,
+          userId: _currentUser!.id,
+          type: 'profile',
         );
       }
 
       // Upload cover image if changed
       if (_coverImage != null) {
-        newCoverImageUrl = await _storageService.uploadFile(
-          file: _coverImage!,
-          path: 'covers/${_currentUser?.id}',
-          fileName: 'cover_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        newProfileImageUrl = await _storageService.uploadImage(
+          image: _coverImage!,
+          userId: _currentUser!.id,
+          type: 'cover',
         );
       }
 

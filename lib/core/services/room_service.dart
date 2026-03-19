@@ -1,6 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/room_model.dart';
 import '../models/user_models.dart' as app;
 import '../models/seat_model.dart';
@@ -8,8 +8,7 @@ import '../di/service_locator.dart';
 import 'notification_service.dart';
 
 class RoomService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  late final SupabaseClient _supabase;
   late final NotificationService _notificationService;
 
   RoomService() {
@@ -18,57 +17,81 @@ class RoomService {
 
   void _initializeServices() {
     try {
+      _supabase = getService<SupabaseClient>();
       _notificationService = ServiceLocator.instance.get<NotificationService>();
     } catch (e) {
       debugPrint('Error initializing services: $e');
     }
   }
 
-  // 🟢 NEW: Get rooms by country
+  // Helper to get current user
+  String? get _currentUserId => _supabase.auth.currentSession?.user.id;
+
+  // Helper methods
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  DateTime _parseDate(dynamic date) {
+    if (date == null) return DateTime.now();
+    if (date is String) return DateTime.parse(date);
+    if (date is DateTime) return date;
+    return DateTime.now();
+  }
+
+  // ==================== GET ROOMS ====================
+
+  /// Get rooms by country
   Future<List<RoomModel>> getRooms(String country) async {
     try {
-      QuerySnapshot<Map<String, dynamic>> snapshot;
+      List<Map<String, dynamic>> response;
 
       if (country == 'All') {
-        snapshot = await _firestore
-            .collection('rooms')
-            .where('status', isEqualTo: 'active')
-            .orderBy('viewerCount', descending: true)
-            .limit(50)
-            .get();
+        response = await _supabase
+            .from('rooms')
+            .select()
+            .eq('status', 'active')
+            .order('viewer_count', ascending: false)
+            .limit(50);
       } else {
-        snapshot = await _firestore
-            .collection('rooms')
-            .where('country', isEqualTo: country)
-            .where('status', isEqualTo: 'active')
-            .orderBy('viewerCount', descending: true)
-            .limit(50)
-            .get();
+        response = await _supabase
+            .from('rooms')
+            .select()
+            .eq('country', country)
+            .eq('status', 'active')
+            .order('viewer_count', ascending: false)
+            .limit(50);
       }
 
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return RoomModel.fromJson(data);
-      }).toList();
+      return response.map((json) => RoomModel.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error getting rooms: $e');
       return _getMockRooms();
     }
   }
 
-  // 🟢 NEW: Update viewer count
+  /// Update viewer count
   Future<void> updateViewerCount(String roomId, int count) async {
     try {
-      await _firestore.collection('rooms').doc(roomId).update({
-        'viewerCount': count,
+      final updateQuery = _supabase
+          .from('rooms')
+          .update({
+        'viewer_count': count,
+        'updated_at': DateTime.now().toIso8601String(),
       });
+      await updateQuery.eq('id', roomId);
     } catch (e) {
       debugPrint('Error updating viewer count: $e');
     }
   }
 
-  // Create room
+  // ==================== CREATE ROOM ====================
+
+  /// Create room
   Future<RoomModel?> createRoom({
     required String name,
     required String category,
@@ -78,16 +101,23 @@ class RoomService {
     String? pinCode,
     int maxSeats = 9,
   }) async {
-    final User? firebaseUser = _auth.currentUser;
-    if (firebaseUser == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
-      final RoomModel room = RoomModel(
+      // Get current user info
+      final userData = await _supabase
+          .from('users')
+          .select('username, avatar_url')
+          .eq('id', userId)
+          .maybeSingle();
+
+      final room = RoomModel(
         id: '',
         name: name,
-        hostId: firebaseUser.uid,
-        hostName: firebaseUser.displayName ?? 'User',
-        hostAvatar: firebaseUser.photoURL,
+        hostId: userId,
+        hostName: userData?['username'] ?? 'User',
+        hostAvatar: userData?['avatar_url'],
         category: category,
         description: description,
         coverImage: coverImage,
@@ -103,22 +133,32 @@ class RoomService {
         status: RoomStatus.active,
       );
 
-      final DocumentReference<Map<String, dynamic>> docRef = await _firestore.collection('rooms').add(room.toJson());
-      return room.copyWith(id: docRef.id);
+      final response = await _supabase
+          .from('rooms')
+          .insert(room.toJson())
+          .select()
+          .single();
+
+      return RoomModel.fromJson(response);
     } catch (e) {
       debugPrint('Error creating room: $e');
       return null;
     }
   }
 
-  // Get room
+  // ==================== GET ROOM ====================
+
+  /// Get room
   Future<RoomModel?> getRoom(String roomId) async {
     try {
-      final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore.collection('rooms').doc(roomId).get();
-      if (doc.exists) {
-        final data = doc.data()!;
-        data['id'] = doc.id;
-        return RoomModel.fromJson(data);
+      final response = await _supabase
+          .from('rooms')
+          .select()
+          .eq('id', roomId)
+          .maybeSingle();
+
+      if (response != null) {
+        return RoomModel.fromJson(response);
       }
       return null;
     } catch (e) {
@@ -127,76 +167,87 @@ class RoomService {
     }
   }
 
-  // Stream room
+  /// Stream room
   Stream<RoomModel?> streamRoom(String roomId) {
-    return _firestore
-        .collection('rooms')
-        .doc(roomId)
-        .snapshots()
-        .map((DocumentSnapshot<Map<String, dynamic>> doc) {
-      if (doc.exists) {
-        final data = doc.data()!;
-        data['id'] = doc.id;
-        return RoomModel.fromJson(data);
-      }
-      return null;
-    });
+    try {
+      final stream = _supabase
+          .from('rooms')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        for (var item in data) {
+          if (item['id'].toString() == roomId) {
+            return RoomModel.fromJson(item);
+          }
+        }
+        return null;
+      });
+    } catch (e) {
+      debugPrint('Error streaming room: $e');
+      return Stream.value(null);
+    }
   }
 
-  // Get active rooms
+  /// Get active rooms stream
   Stream<List<RoomModel>> getActiveRooms({String? category, String? country}) {
-    Query<Map<String, dynamic>> query = _firestore
-        .collection('rooms')
-        .where('status', isEqualTo: 'active')
-        .orderBy('viewerCount', descending: true);
+    try {
+      final stream = _supabase
+          .from('rooms')
+          .stream(primaryKey: ['id']);
 
-    if (category != null && category != 'All') {
-      query = query.where('category', isEqualTo: category);
+      return stream.map((data) {
+        // Manual filtering
+        var filteredData = data.where((item) => item['status'] == 'active').toList();
+
+        if (category != null && category != 'All') {
+          filteredData = filteredData.where((item) => item['category'] == category).toList();
+        }
+
+        if (country != null && country != 'All') {
+          filteredData = filteredData.where((item) => item['country'] == country).toList();
+        }
+
+        // Sort by viewer count
+        filteredData.sort((a, b) {
+          final aCount = _toInt(a['viewer_count']);
+          final bCount = _toInt(b['viewer_count']);
+          return bCount.compareTo(aCount);
+        });
+
+        return filteredData.map((json) => RoomModel.fromJson(json)).toList();
+      });
+    } catch (e) {
+      debugPrint('Error getting active rooms stream: $e');
+      return Stream.value([]);
     }
-
-    if (country != null && country != 'All') {
-      query = query.where('country', isEqualTo: country);
-    }
-
-    return query.snapshots().map((QuerySnapshot<Map<String, dynamic>> snapshot) => snapshot.docs
-        .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-      final data = doc.data();
-      data['id'] = doc.id;
-      return RoomModel.fromJson(data);
-    }).toList());
   }
 
-  // Get recommended rooms
+  // ==================== GET RECOMMENDED ROOMS ====================
+
+  /// Get recommended rooms
   Future<List<RoomModel>> getRecommendedRooms(String userId, {int limit = 10}) async {
     try {
-      final app.User? user = await _getUser(userId);
-      if (user == null) return [];
-
       // Get user's room history
-      final QuerySnapshot<Map<String, dynamic>> historySnapshot = await _firestore
-          .collection('room_history')
-          .where('userId', isEqualTo: userId)
-          .orderBy('timestamp', descending: true)
-          .limit(20)
-          .get();
+      final historyResponse = await _supabase
+          .from('room_history')
+          .select('room_id')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(20);
 
-      final Set<String> visitedRoomIds = historySnapshot.docs
-          .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => doc.data()['roomId'] as String)
+      final Set<String> visitedRoomIds = historyResponse
+          .map<String>((item) => item['room_id'] as String)
           .toSet();
 
       // Get active rooms
-      final QuerySnapshot<Map<String, dynamic>> roomsSnapshot = await _firestore
-          .collection('rooms')
-          .where('status', isEqualTo: 'active')
-          .limit(50)
-          .get();
+      final roomsResponse = await _supabase
+          .from('rooms')
+          .select()
+          .eq('status', 'active')
+          .limit(50);
 
-      final rooms = roomsSnapshot.docs
-          .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return RoomModel.fromJson(data);
-      })
+      final rooms = roomsResponse
+          .map((json) => RoomModel.fromJson(json))
           .where((RoomModel r) => !visitedRoomIds.contains(r.id))
           .toList();
 
@@ -224,21 +275,30 @@ class RoomService {
     }
   }
 
-  // Update room
+  // ==================== UPDATE ROOM ====================
+
+  /// Update room
   Future<bool> updateRoom(String roomId, Map<String, dynamic> updates) async {
-    final User? firebaseUser = _auth.currentUser;
-    if (firebaseUser == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
-      final RoomModel? room = await getRoom(roomId);
+      final room = await getRoom(roomId);
       if (room == null) throw Exception('Room not found');
 
       // Check if user is host or moderator
-      if (room.hostId != firebaseUser.uid && !room.moderators.contains(firebaseUser.uid)) {
+      if (room.hostId != userId && !room.moderators.contains(userId)) {
         throw Exception('Not authorized');
       }
 
-      await _firestore.collection('rooms').doc(roomId).update(updates);
+      // Add updated_at
+      updates['updated_at'] = DateTime.now().toIso8601String();
+
+      final updateQuery = _supabase
+          .from('rooms')
+          .update(updates);
+      await updateQuery.eq('id', roomId);
+
       return true;
     } catch (e) {
       debugPrint('Error updating room: $e');
@@ -246,33 +306,24 @@ class RoomService {
     }
   }
 
-  // Join room
+  // ==================== JOIN ROOM ====================
+
+  /// Join room
   Future<bool> joinRoom(String roomId, String userId) async {
     try {
-      final DocumentReference<Map<String, dynamic>> roomRef = _firestore.collection('rooms').doc(roomId);
+      // Check if room exists and is active
+      final room = await getRoom(roomId);
+      if (room == null) throw Exception('Room not found');
+      if (room.status != RoomStatus.active) throw Exception('Room is not active');
 
-      await _firestore.runTransaction((Transaction transaction) async {
-        final DocumentSnapshot<Map<String, dynamic>> roomDoc = await transaction.get(roomRef);
-        if (!roomDoc.exists) throw Exception('Room not found');
+      // Update viewer count
+      await updateViewerCount(roomId, room.viewerCount + 1);
 
-        final room = RoomModel.fromJson(roomDoc.data()!);
-
-        if (room.status != RoomStatus.active) throw Exception('Room is not active');
-
-        // Add to viewer count
-        transaction.update(roomRef, {
-          'viewerCount': FieldValue.increment(1),
-        });
-
-        // Add to room history
-        transaction.set(
-          _firestore.collection('room_history').doc(),
-          {
-            'roomId': roomId,
-            'userId': userId,
-            'timestamp': FieldValue.serverTimestamp(),
-          },
-        );
+      // Add to room history
+      await _supabase.from('room_history').insert({
+        'room_id': roomId,
+        'user_id': userId,
+        'created_at': DateTime.now().toIso8601String(),
       });
 
       return true;
@@ -282,19 +333,17 @@ class RoomService {
     }
   }
 
-  // Leave room
+  // ==================== LEAVE ROOM ====================
+
+  /// Leave room
   Future<bool> leaveRoom(String roomId) async {
     try {
-      final DocumentReference<Map<String, dynamic>> roomRef = _firestore.collection('rooms').doc(roomId);
+      final room = await getRoom(roomId);
+      if (room == null) throw Exception('Room not found');
 
-      await _firestore.runTransaction((Transaction transaction) async {
-        final DocumentSnapshot<Map<String, dynamic>> roomDoc = await transaction.get(roomRef);
-        if (!roomDoc.exists) throw Exception('Room not found');
-
-        transaction.update(roomRef, {
-          'viewerCount': FieldValue.increment(-1),
-        });
-      });
+      // Update viewer count (ensure it doesn't go below 0)
+      final newCount = max(0, room.viewerCount - 1);
+      await updateViewerCount(roomId, newCount);
 
       return true;
     } catch (e) {
@@ -303,45 +352,50 @@ class RoomService {
     }
   }
 
-  // Take seat
+  // ==================== SEAT MANAGEMENT ====================
+
+  /// Take seat
   Future<bool> takeSeat(String roomId, int seatNumber, String userId) async {
+    final currentUser = _supabase.auth.currentUser;
+    if (currentUser == null) throw Exception('User not logged in');
+
     try {
-      final DocumentReference<Map<String, dynamic>> roomRef = _firestore.collection('rooms').doc(roomId);
+      final room = await getRoom(roomId);
+      if (room == null) throw Exception('Room not found');
 
-      await _firestore.runTransaction((Transaction transaction) async {
-        final DocumentSnapshot<Map<String, dynamic>> roomDoc = await transaction.get(roomRef);
-        if (!roomDoc.exists) throw Exception('Room not found');
+      if (seatNumber < 1 || seatNumber > room.maxSeats) {
+        throw Exception('Invalid seat number');
+      }
 
-        final room = RoomModel.fromJson(roomDoc.data()!);
+      final seat = room.seats.firstWhere((s) => s.seatNumber == seatNumber);
 
-        if (seatNumber < 1 || seatNumber > room.maxSeats) {
-          throw Exception('Invalid seat number');
+      if (!seat.isEmpty) {
+        throw Exception('Seat is already taken');
+      }
+
+      // Update seat
+      final updatedSeats = room.seats.map((s) {
+        if (s.seatNumber == seatNumber) {
+          return SeatModel(
+            seatNumber: s.seatNumber,
+            userId: userId,
+            userName: currentUser.userMetadata?['full_name'] ?? currentUser.email ?? 'User',
+            userAvatar: currentUser.userMetadata?['avatar_url'],
+            isMuted: false,
+            isSpeaking: false,
+            isEmpty: false,
+          );
         }
+        return s;
+      }).toList();
 
-        final seat = room.seats.firstWhere((s) => s.seatNumber == seatNumber);
-
-        if (!seat.isEmpty) {
-          throw Exception('Seat is already taken');
-        }
-
-        // Update seat
-        final updatedSeats = room.seats.map((s) {
-          if (s.seatNumber == seatNumber) {
-            return SeatModel(
-              seatNumber: s.seatNumber,
-              userId: userId,
-              userName: _auth.currentUser?.displayName ?? 'User',
-              userAvatar: _auth.currentUser?.photoURL,
-              isMuted: false,
-              isSpeaking: false,
-              isEmpty: false,
-            );
-          }
-          return s;
-        }).toList();
-
-        transaction.update(roomRef, {'seats': updatedSeats.map((s) => s.toJson()).toList()});
+      final updateQuery = _supabase
+          .from('rooms')
+          .update({
+        'seats': updatedSeats.map((s) => s.toJson()).toList(),
+        'updated_at': DateTime.now().toIso8601String(),
       });
+      await updateQuery.eq('id', roomId);
 
       return true;
     } catch (e) {
@@ -350,30 +404,30 @@ class RoomService {
     }
   }
 
-  // Leave seat
+  /// Leave seat
   Future<bool> leaveSeat(String roomId, int seatNumber) async {
     try {
-      final DocumentReference<Map<String, dynamic>> roomRef = _firestore.collection('rooms').doc(roomId);
+      final room = await getRoom(roomId);
+      if (room == null) throw Exception('Room not found');
 
-      await _firestore.runTransaction((Transaction transaction) async {
-        final DocumentSnapshot<Map<String, dynamic>> roomDoc = await transaction.get(roomRef);
-        if (!roomDoc.exists) throw Exception('Room not found');
+      // Update seat
+      final updatedSeats = room.seats.map((s) {
+        if (s.seatNumber == seatNumber) {
+          return SeatModel(
+            seatNumber: s.seatNumber,
+            isEmpty: true,
+          );
+        }
+        return s;
+      }).toList();
 
-        final room = RoomModel.fromJson(roomDoc.data()!);
-
-        // Update seat
-        final updatedSeats = room.seats.map((s) {
-          if (s.seatNumber == seatNumber) {
-            return SeatModel(
-              seatNumber: s.seatNumber,
-              isEmpty: true,
-            );
-          }
-          return s;
-        }).toList();
-
-        transaction.update(roomRef, {'seats': updatedSeats.map((s) => s.toJson()).toList()});
+      final updateQuery = _supabase
+          .from('rooms')
+          .update({
+        'seats': updatedSeats.map((s) => s.toJson()).toList(),
+        'updated_at': DateTime.now().toIso8601String(),
       });
+      await updateQuery.eq('id', roomId);
 
       return true;
     } catch (e) {
@@ -382,35 +436,35 @@ class RoomService {
     }
   }
 
-  // Mute/unmute seat
+  /// Toggle mute
   Future<bool> toggleMute(String roomId, int seatNumber, bool isMuted) async {
     try {
-      final DocumentReference<Map<String, dynamic>> roomRef = _firestore.collection('rooms').doc(roomId);
+      final room = await getRoom(roomId);
+      if (room == null) throw Exception('Room not found');
 
-      await _firestore.runTransaction((Transaction transaction) async {
-        final DocumentSnapshot<Map<String, dynamic>> roomDoc = await transaction.get(roomRef);
-        if (!roomDoc.exists) throw Exception('Room not found');
+      // Update seat mute status
+      final updatedSeats = room.seats.map((s) {
+        if (s.seatNumber == seatNumber && s.userId != null) {
+          return SeatModel(
+            seatNumber: s.seatNumber,
+            userId: s.userId,
+            userName: s.userName,
+            userAvatar: s.userAvatar,
+            isMuted: isMuted,
+            isSpeaking: s.isSpeaking,
+            isEmpty: s.isEmpty,
+          );
+        }
+        return s;
+      }).toList();
 
-        final room = RoomModel.fromJson(roomDoc.data()!);
-
-        // Update seat mute status
-        final updatedSeats = room.seats.map((s) {
-          if (s.seatNumber == seatNumber && s.userId != null) {
-            return SeatModel(
-              seatNumber: s.seatNumber,
-              userId: s.userId,
-              userName: s.userName,
-              userAvatar: s.userAvatar,
-              isMuted: isMuted,
-              isSpeaking: s.isSpeaking,
-              isEmpty: s.isEmpty,
-            );
-          }
-          return s;
-        }).toList();
-
-        transaction.update(roomRef, {'seats': updatedSeats.map((s) => s.toJson()).toList()});
+      final updateQuery = _supabase
+          .from('rooms')
+          .update({
+        'seats': updatedSeats.map((s) => s.toJson()).toList(),
+        'updated_at': DateTime.now().toIso8601String(),
       });
+      await updateQuery.eq('id', roomId);
 
       return true;
     } catch (e) {
@@ -419,35 +473,35 @@ class RoomService {
     }
   }
 
-  // Update speaking status
+  /// Update speaking status
   Future<bool> updateSpeaking(String roomId, int seatNumber, bool isSpeaking) async {
     try {
-      final DocumentReference<Map<String, dynamic>> roomRef = _firestore.collection('rooms').doc(roomId);
+      final room = await getRoom(roomId);
+      if (room == null) throw Exception('Room not found');
 
-      await _firestore.runTransaction((Transaction transaction) async {
-        final DocumentSnapshot<Map<String, dynamic>> roomDoc = await transaction.get(roomRef);
-        if (!roomDoc.exists) throw Exception('Room not found');
+      // Update seat speaking status
+      final updatedSeats = room.seats.map((s) {
+        if (s.seatNumber == seatNumber && s.userId != null) {
+          return SeatModel(
+            seatNumber: s.seatNumber,
+            userId: s.userId,
+            userName: s.userName,
+            userAvatar: s.userAvatar,
+            isMuted: s.isMuted,
+            isSpeaking: isSpeaking,
+            isEmpty: s.isEmpty,
+          );
+        }
+        return s;
+      }).toList();
 
-        final room = RoomModel.fromJson(roomDoc.data()!);
-
-        // Update seat speaking status
-        final updatedSeats = room.seats.map((s) {
-          if (s.seatNumber == seatNumber && s.userId != null) {
-            return SeatModel(
-              seatNumber: s.seatNumber,
-              userId: s.userId,
-              userName: s.userName,
-              userAvatar: s.userAvatar,
-              isMuted: s.isMuted,
-              isSpeaking: isSpeaking,
-              isEmpty: s.isEmpty,
-            );
-          }
-          return s;
-        }).toList();
-
-        transaction.update(roomRef, {'seats': updatedSeats.map((s) => s.toJson()).toList()});
+      final updateQuery = _supabase
+          .from('rooms')
+          .update({
+        'seats': updatedSeats.map((s) => s.toJson()).toList(),
+        'updated_at': DateTime.now().toIso8601String(),
       });
+      await updateQuery.eq('id', roomId);
 
       return true;
     } catch (e) {
@@ -456,23 +510,29 @@ class RoomService {
     }
   }
 
-  // Close room
+  // ==================== CLOSE ROOM ====================
+
+  /// Close room
   Future<bool> closeRoom(String roomId) async {
-    final User? firebaseUser = _auth.currentUser;
-    if (firebaseUser == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
-      final RoomModel? room = await getRoom(roomId);
+      final room = await getRoom(roomId);
       if (room == null) throw Exception('Room not found');
 
-      if (room.hostId != firebaseUser.uid) {
+      if (room.hostId != userId) {
         throw Exception('Only host can close the room');
       }
 
-      await _firestore.collection('rooms').doc(roomId).update({
+      final updateQuery = _supabase
+          .from('rooms')
+          .update({
         'status': 'ended',
-        'closedAt': FieldValue.serverTimestamp(),
+        'closed_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
       });
+      await updateQuery.eq('id', roomId);
 
       return true;
     } catch (e) {
@@ -481,14 +541,18 @@ class RoomService {
     }
   }
 
-  // Get user
+  // ==================== GET USER ====================
+
   Future<app.User?> _getUser(String userId) async {
     try {
-      final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore.collection('users').doc(userId).get();
-      if (doc.exists) {
-        final data = doc.data()!;
-        data['id'] = doc.id;
-        return app.User.fromJson(data);
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (response != null) {
+        return app.User.fromJson(response);
       }
       return null;
     } catch (e) {
@@ -497,7 +561,9 @@ class RoomService {
     }
   }
 
-  // Mock rooms for testing
+  // ==================== MOCK ROOMS ====================
+
+  /// Mock rooms for testing
   List<RoomModel> _getMockRooms() {
     return List.generate(5, (index) {
       return RoomModel(
@@ -520,7 +586,9 @@ class RoomService {
     });
   }
 
-  // Get room categories
+  // ==================== GET CATEGORIES ====================
+
+  /// Get room categories
   static List<String> getCategories() {
     return [
       'All',
@@ -534,5 +602,69 @@ class RoomService {
       'Party',
       'Chill',
     ];
+  }
+
+  // ==================== GET POPULAR ROOMS ====================
+
+  /// Get popular rooms by category - FIXED
+  Future<List<RoomModel>> getPopularRooms({String? category, int limit = 10}) async {
+    try {
+      List<Map<String, dynamic>> response;
+
+      if (category != null && category != 'All') {
+        // FIXED: আলাদা কোয়েরি
+        response = await _supabase
+            .from('rooms')
+            .select()
+            .eq('status', 'active')
+            .eq('category', category)
+            .order('viewer_count', ascending: false)
+            .limit(limit);
+      } else {
+        response = await _supabase
+            .from('rooms')
+            .select()
+            .eq('status', 'active')
+            .order('viewer_count', ascending: false)
+            .limit(limit);
+      }
+
+      return response.map((json) => RoomModel.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('Error getting popular rooms: $e');
+      return [];
+    }
+  }
+
+  // ==================== ROOM STATISTICS ====================
+
+  /// Get room statistics
+  Future<Map<String, dynamic>> getRoomStatistics(String roomId) async {
+    try {
+      final room = await getRoom(roomId);
+      if (room == null) return {};
+
+      // Get peak viewers
+      final peakViewers = room.viewerCount; // You might want to track this historically
+
+      // Get average session duration
+      final historyResponse = await _supabase
+          .from('room_history')
+          .select('created_at')
+          .eq('room_id', roomId);
+
+      return {
+        'currentViewers': room.viewerCount,
+        'peakViewers': peakViewers,
+        'totalVisits': historyResponse.length,
+        'occupiedSeats': room.seats.where((s) => !s.isEmpty).length,
+        'totalSeats': room.maxSeats,
+        'createdAt': room.createdAt.toIso8601String(),
+        'status': room.status.toString(),
+      };
+    } catch (e) {
+      debugPrint('Error getting room statistics: $e');
+      return {};
+    }
   }
 }

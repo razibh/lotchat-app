@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/agency_service.dart';
 import '../../core/services/notification_service.dart';
@@ -219,14 +221,6 @@ class _MemberManagementState extends State<MemberManagement>
           showSuccess('Member added successfully');
           _loadAgencyData();
 
-          // Send notification to new member
-          await _notificationService.sendNotification(
-            userId: userId,
-            type: 'agency',
-            title: 'Added to Agency',
-            body: 'You have been added to ${_agency!.name} agency',
-            data: {'agencyId': widget.agencyId},
-          );
         } catch (e) {
           showError('Failed to add member: $e');
         }
@@ -428,7 +422,7 @@ class _MemberManagementState extends State<MemberManagement>
             children: [
               Padding(
                 padding: const EdgeInsets.all(8),
-                child: CustomSearchBar(  // ← CustomSearchBar ব্যবহার করুন
+                child: CustomSearchBar(
                   hintText: 'Search members...',
                   onChanged: (value) {
                     setState(() {

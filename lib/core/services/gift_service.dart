@@ -1,14 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/gift_model.dart';
 import '../di/service_locator.dart';
 import 'notification_service.dart';
 import 'analytics_service.dart';
 
 class GiftService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  late final SupabaseClient _supabase;
   late final NotificationService _notificationService;
   late final AnalyticsService _analyticsService;
 
@@ -18,6 +16,7 @@ class GiftService {
 
   void _initializeServices() {
     try {
+      _supabase = getService<SupabaseClient>();
       _notificationService = ServiceLocator.instance.get<NotificationService>();
       _analyticsService = ServiceLocator.instance.get<AnalyticsService>();
     } catch (e) {
@@ -25,43 +24,38 @@ class GiftService {
     }
   }
 
+  // Helper to get current user
+  String? get _currentUserId => _supabase.auth.currentSession?.user.id;
+
   // ==================== GET GIFTS ====================
 
-  // Get available gifts
+  /// Get available gifts
   Future<List<GiftModel>> getAvailableGifts() async {
     try {
-      final snapshot = await _firestore
-          .collection('gifts')
-          .where('isAvailable', isEqualTo: true)
-          .orderBy('price')
-          .get();
+      final response = await _supabase
+          .from('gifts')
+          .select()
+          .eq('is_available', true)
+          .order('price', ascending: true);
 
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return GiftModel.fromJson(data);
-      }).toList();
+      return response.map((json) => GiftModel.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error getting gifts: $e');
       return GiftModel.getMockGifts();
     }
   }
 
-  // Get gifts by category
+  /// Get gifts by category
   Future<List<GiftModel>> getGiftsByCategory(String category) async {
     try {
-      final snapshot = await _firestore
-          .collection('gifts')
-          .where('category', isEqualTo: category)
-          .where('isAvailable', isEqualTo: true)
-          .orderBy('price')
-          .get();
+      final response = await _supabase
+          .from('gifts')
+          .select()
+          .eq('category', category)
+          .eq('is_available', true)
+          .order('price', ascending: true);
 
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return GiftModel.fromJson(data);
-      }).toList();
+      return response.map((json) => GiftModel.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error getting gifts by category: $e');
       final allGifts = GiftModel.getMockGifts();
@@ -69,14 +63,17 @@ class GiftService {
     }
   }
 
-  // Get gift by id
+  /// Get gift by id
   Future<GiftModel?> getGift(String giftId) async {
     try {
-      final doc = await _firestore.collection('gifts').doc(giftId).get();
-      if (doc.exists) {
-        final data = doc.data()!;
-        data['id'] = doc.id;
-        return GiftModel.fromJson(data);
+      final response = await _supabase
+          .from('gifts')
+          .select()
+          .eq('id', giftId)
+          .maybeSingle();
+
+      if (response != null) {
+        return GiftModel.fromJson(response);
       }
       return null;
     } catch (e) {
@@ -89,22 +86,20 @@ class GiftService {
     }
   }
 
-  // Get recent gifts
+  /// Get recent gifts
   Future<List<GiftModel>> getRecentGifts(String userId) async {
     try {
-      final snapshot = await _firestore
-          .collection('gift_transactions')
-          .where('senderId', isEqualTo: userId)
-          .orderBy('timestamp', descending: true)
-          .limit(10)
-          .get();
+      final response = await _supabase
+          .from('gift_transactions')
+          .select()
+          .eq('sender_id', userId)
+          .order('created_at', ascending: false)
+          .limit(10);
 
       final List<GiftModel> recentGifts = [];
 
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        final giftId = data['giftId'] as String?;
-
+      for (var data in response) {
+        final giftId = data['gift_id'] as String?;
         if (giftId != null) {
           final gift = await getGift(giftId);
           if (gift != null) {
@@ -122,7 +117,7 @@ class GiftService {
 
   // ==================== SEND GIFT ====================
 
-  // Send gift
+  /// Send gift - FIXED (update methods)
   Future<bool> sendGift({
     required String senderId,
     required String receiverId,
@@ -131,8 +126,9 @@ class GiftService {
     String? roomId,
     String? message,
   }) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
+    if (userId != senderId) throw Exception('Unauthorized');
 
     try {
       final GiftModel? gift = await getGift(giftId);
@@ -140,84 +136,99 @@ class GiftService {
 
       final int totalPrice = gift.price * amount;
 
-      return await _firestore.runTransaction((Transaction transaction) async {
-        // Check sender's coins
-        final DocumentReference<Map<String, dynamic>> senderRef = _firestore.collection('users').doc(senderId);
-        final DocumentSnapshot<Map<String, dynamic>> senderDoc = await transaction.get(senderRef);
+      // Get sender's current coins
+      final senderData = await _supabase
+          .from('users')
+          .select('coins')
+          .eq('id', senderId)
+          .single();
 
-        if (!senderDoc.exists) throw Exception('Sender not found');
+      final senderCoins = senderData['coins'] as int? ?? 0;
+      if (senderCoins < totalPrice) {
+        throw Exception('Insufficient coins');
+      }
 
-        final senderCoins = senderDoc.data()!['coins'] as int? ?? 0;
-        if (senderCoins < totalPrice) {
-          throw Exception('Insufficient coins');
-        }
+      // Get receiver's current diamonds
+      final receiverData = await _supabase
+          .from('users')
+          .select('diamonds')
+          .eq('id', receiverId)
+          .maybeSingle();
 
-        // Deduct coins from sender
-        transaction.update(senderRef, {
+      final receiverDiamonds = receiverData?['diamonds'] as int? ?? 0;
+      final int earnedDiamonds = (totalPrice / 2).round();
+
+      try {
+        // 1. Deduct coins from sender - FIXED
+        final updateSenderQuery = _supabase
+            .from('users')
+            .update({
           'coins': senderCoins - totalPrice,
+          'updated_at': DateTime.now().toIso8601String(),
         });
+        await updateSenderQuery.eq('id', senderId);
 
-        // Add diamonds to receiver (50% conversion)
-        final DocumentReference<Map<String, dynamic>> receiverRef = _firestore.collection('users').doc(receiverId);
-        final DocumentSnapshot<Map<String, dynamic>> receiverDoc = await transaction.get(receiverRef);
+        // 2. Add diamonds to receiver - FIXED
+        final updateReceiverQuery = _supabase
+            .from('users')
+            .update({
+          'diamonds': receiverDiamonds + earnedDiamonds,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+        await updateReceiverQuery.eq('id', receiverId);
 
-        int earnedDiamonds = 0;
-        if (receiverDoc.exists) {
-          final receiverDiamonds = receiverDoc.data()!['diamonds'] as int? ?? 0;
-          earnedDiamonds = (totalPrice / 2).round();
-
-          transaction.update(receiverRef, {
-            'diamonds': receiverDiamonds + earnedDiamonds,
-          });
-        }
-
-        // Record gift transaction
-        final DocumentReference<Map<String, dynamic>> giftTransactionRef = _firestore.collection('gift_transactions').doc();
-        transaction.set(giftTransactionRef, {
-          'senderId': senderId,
-          'senderName': user.displayName ?? 'User',
-          'receiverId': receiverId,
-          'giftId': giftId,
-          'giftName': gift.name,
+        // 3. Record gift transaction
+        await _supabase.from('gift_transactions').insert({
+          'sender_id': senderId,
+          'sender_name': (await _getUserName(senderId)) ?? 'User',
+          'receiver_id': receiverId,
+          'gift_id': giftId,
+          'gift_name': gift.name,
           'amount': amount,
-          'totalPrice': totalPrice,
-          'roomId': roomId,
+          'total_price': totalPrice,
+          'room_id': roomId,
           'message': message,
-          'timestamp': FieldValue.serverTimestamp(),
+          'created_at': DateTime.now().toIso8601String(),
         });
 
-        // Update gift stats
-        final DocumentReference<Map<String, dynamic>> giftRef = _firestore.collection('gifts').doc(giftId);
-        transaction.update(giftRef, {
-          'sentCount': FieldValue.increment(amount),
+        // 4. Update gift stats - FIXED
+        final updateGiftQuery = _supabase
+            .from('gifts')
+            .update({
+          'sent_count': (gift.sentCount ?? 0) + amount,
         });
+        await updateGiftQuery.eq('id', giftId);
 
-        // Update sender's stats
-        transaction.update(senderRef, {
-          'totalGiftsSent': FieldValue.increment(amount),
-          'totalCoinsSpent': FieldValue.increment(totalPrice),
+        // 5. Update sender's stats - FIXED
+        final updateSenderStatsQuery = _supabase
+            .from('users')
+            .update({
+          'total_gifts_sent': (await _getUserStat(senderId, 'total_gifts_sent')) + amount,
+          'total_coins_spent': (await _getUserStat(senderId, 'total_coins_spent')) + totalPrice,
         });
+        await updateSenderStatsQuery.eq('id', senderId);
 
-        // Update receiver's stats
-        if (receiverDoc.exists) {
-          transaction.update(receiverRef, {
-            'totalGiftsReceived': FieldValue.increment(amount),
-            'totalDiamondsEarned': FieldValue.increment(earnedDiamonds),
-          });
-        }
+        // 6. Update receiver's stats - FIXED
+        final updateReceiverStatsQuery = _supabase
+            .from('users')
+            .update({
+          'total_gifts_received': (await _getUserStat(receiverId, 'total_gifts_received')) + amount,
+          'total_diamonds_earned': (await _getUserStat(receiverId, 'total_diamonds_earned')) + earnedDiamonds,
+        });
+        await updateReceiverStatsQuery.eq('id', receiverId);
 
         // Send notification
         try {
-          await _notificationService.sendNotification(
-            userId: receiverId,
-            type: 'gift',
+          final senderName = await _getUserName(senderId) ?? 'Someone';
+          await _notificationService.showNotification(
             title: 'Gift Received! 🎁',
-            body: '${user.displayName ?? 'Someone'} sent you ${amount == 1 ? 'a' : amount} ${gift.name}${amount > 1 ? 's' : ''}',
+            body: '$senderName sent you ${amount == 1 ? 'a' : amount} ${gift.name}${amount > 1 ? 's' : ''}',
             data: {
+              'type': 'gift',
               'senderId': senderId,
+              'receiverId': receiverId,
               'giftId': giftId,
-              'amount': amount.toString(), // 🟢 Convert to String
-              'roomId': roomId ?? '',
+              'amount': amount,
             },
           );
         } catch (e) {
@@ -238,80 +249,162 @@ class GiftService {
         }
 
         return true;
-      });
+      } catch (e) {
+        debugPrint('Transaction failed: $e');
+        return false;
+      }
     } catch (e) {
       debugPrint('Error sending gift: $e');
       return false;
     }
   }
 
-  // ==================== GIFT HISTORY ====================
+  /// Helper to get user stat
+  Future<int> _getUserStat(String userId, String statField) async {
+    try {
+      final response = await _supabase
+          .from('users')
+          .select(statField)
+          .eq('id', userId)
+          .maybeSingle();
 
-  // Get gift history
+      return response?[statField] as int? ?? 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Get user name helper
+  Future<String?> _getUserName(String userId) async {
+    try {
+      final response = await _supabase
+          .from('users')
+          .select('username')
+          .eq('id', userId)
+          .maybeSingle();
+
+      return response?['username'];
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ==================== GIFT HISTORY - FIXED ====================
+
+  /// Get gift history (as user or receiver) - FIXED
   Stream<List<Map<String, dynamic>>> getGiftHistory(String userId) {
-    return _firestore
-        .collection('gift_transactions')
-        .where(Filter.or(
-      Filter('senderId', isEqualTo: userId),
-      Filter('receiverId', isEqualTo: userId),
-    ))
-        .orderBy('timestamp', descending: true)
-        .limit(100)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) {
-      final Map<String, dynamic> data = doc.data();
-      data['id'] = doc.id;
-      return data;
-    }).toList());
+    try {
+      final stream = _supabase
+          .from('gift_transactions')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        // Manual filtering for both sender and receiver
+        final filtered = data.where((item) =>
+        item['sender_id'] == userId || item['receiver_id'] == userId
+        ).toList();
+
+        // Manual sorting
+        filtered.sort((a, b) {
+          final aTime = DateTime.parse(a['created_at'] ?? DateTime.now().toIso8601String());
+          final bTime = DateTime.parse(b['created_at'] ?? DateTime.now().toIso8601String());
+          return bTime.compareTo(aTime);
+        });
+
+        // Take first 100
+        final limited = filtered.take(100).toList();
+
+        return limited.map((item) {
+          final map = Map<String, dynamic>.from(item);
+          map['id'] = map['id'].toString();
+          return map;
+        }).toList();
+      });
+    } catch (e) {
+      debugPrint('Error getting gift history: $e');
+      return Stream.value([]);
+    }
   }
 
-  // Get sent gifts
+  /// Get sent gifts - FIXED
   Stream<List<Map<String, dynamic>>> getSentGifts(String userId) {
-    return _firestore
-        .collection('gift_transactions')
-        .where('senderId', isEqualTo: userId)
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) {
-      final Map<String, dynamic> data = doc.data();
-      data['id'] = doc.id;
-      return data;
-    }).toList());
+    try {
+      final stream = _supabase
+          .from('gift_transactions')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        // Manual filtering
+        final filtered = data.where((item) => item['sender_id'] == userId).toList();
+
+        // Manual sorting
+        filtered.sort((a, b) {
+          final aTime = DateTime.parse(a['created_at'] ?? DateTime.now().toIso8601String());
+          final bTime = DateTime.parse(b['created_at'] ?? DateTime.now().toIso8601String());
+          return bTime.compareTo(aTime);
+        });
+
+        return filtered.map((item) {
+          final map = Map<String, dynamic>.from(item);
+          map['id'] = map['id'].toString();
+          return map;
+        }).toList();
+      });
+    } catch (e) {
+      debugPrint('Error getting sent gifts: $e');
+      return Stream.value([]);
+    }
   }
 
-  // Get received gifts
+  /// Get received gifts - FIXED
   Stream<List<Map<String, dynamic>>> getReceivedGifts(String userId) {
-    return _firestore
-        .collection('gift_transactions')
-        .where('receiverId', isEqualTo: userId)
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) {
-      final Map<String, dynamic> data = doc.data();
-      data['id'] = doc.id;
-      return data;
-    }).toList());
+    try {
+      final stream = _supabase
+          .from('gift_transactions')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        // Manual filtering
+        final filtered = data.where((item) => item['receiver_id'] == userId).toList();
+
+        // Manual sorting
+        filtered.sort((a, b) {
+          final aTime = DateTime.parse(a['created_at'] ?? DateTime.now().toIso8601String());
+          final bTime = DateTime.parse(b['created_at'] ?? DateTime.now().toIso8601String());
+          return bTime.compareTo(aTime);
+        });
+
+        return filtered.map((item) {
+          final map = Map<String, dynamic>.from(item);
+          map['id'] = map['id'].toString();
+          return map;
+        }).toList();
+      });
+    } catch (e) {
+      debugPrint('Error getting received gifts: $e');
+      return Stream.value([]);
+    }
   }
 
   // ==================== LEADERBOARDS ====================
 
-  // Get top gifters
+  /// Get top gifters
   Future<List<Map<String, dynamic>>> getTopGifters({int limit = 10}) async {
     try {
-      final snapshot = await _firestore
-          .collection('users')
-          .orderBy('totalGiftsSent', descending: true)
-          .limit(limit)
-          .get();
+      final response = await _supabase
+          .from('users')
+          .select('id, username, avatar_url, total_gifts_sent, total_coins_spent')
+          .not('total_gifts_sent', 'is', null)
+          .order('total_gifts_sent', ascending: false)
+          .limit(limit);
 
-      return snapshot.docs.map((doc) {
-        final Map<String, dynamic> data = doc.data();
+      return response.map((user) {
         return {
-          'userId': doc.id,
-          'username': data['username'] ?? '',
-          'avatar': data['photoURL'] ?? '',
-          'totalGifts': data['totalGiftsSent']?.toString() ?? '0', // 🟢 Convert to String
-          'totalCoinsSpent': data['totalCoinsSpent']?.toString() ?? '0', // 🟢 Convert to String
+          'userId': user['id'] ?? '',
+          'username': user['username'] ?? '',
+          'avatar': user['avatar_url'] ?? '',
+          'totalGifts': (user['total_gifts_sent'] ?? 0).toString(),
+          'totalCoinsSpent': (user['total_coins_spent'] ?? 0).toString(),
         };
       }).toList();
     } catch (e) {
@@ -320,23 +413,23 @@ class GiftService {
     }
   }
 
-  // Get top receivers
+  /// Get top receivers
   Future<List<Map<String, dynamic>>> getTopReceivers({int limit = 10}) async {
     try {
-      final snapshot = await _firestore
-          .collection('users')
-          .orderBy('totalGiftsReceived', descending: true)
-          .limit(limit)
-          .get();
+      final response = await _supabase
+          .from('users')
+          .select('id, username, avatar_url, total_gifts_received, total_diamonds_earned')
+          .not('total_gifts_received', 'is', null)
+          .order('total_gifts_received', ascending: false)
+          .limit(limit);
 
-      return snapshot.docs.map((doc) {
-        final Map<String, dynamic> data = doc.data();
+      return response.map((user) {
         return {
-          'userId': doc.id,
-          'username': data['username'] ?? '',
-          'avatar': data['photoURL'] ?? '',
-          'totalGifts': data['totalGiftsReceived']?.toString() ?? '0', // 🟢 Convert to String
-          'totalDiamondsEarned': data['totalDiamondsEarned']?.toString() ?? '0', // 🟢 Convert to String
+          'userId': user['id'] ?? '',
+          'username': user['username'] ?? '',
+          'avatar': user['avatar_url'] ?? '',
+          'totalGifts': (user['total_gifts_received'] ?? 0).toString(),
+          'totalDiamondsEarned': (user['total_diamonds_earned'] ?? 0).toString(),
         };
       }).toList();
     } catch (e) {
@@ -345,42 +438,41 @@ class GiftService {
     }
   }
 
-  // Get recent gifters
+  /// Get recent gifters
   Future<List<Map<String, dynamic>>> getRecentGifters(String receiverId) async {
     try {
-      final snapshot = await _firestore
-          .collection('gift_transactions')
-          .where('receiverId', isEqualTo: receiverId)
-          .orderBy('timestamp', descending: true)
-          .limit(10)
-          .get();
+      final response = await _supabase
+          .from('gift_transactions')
+          .select('''
+            sender_id,
+            gift_name,
+            amount,
+            created_at,
+            users:sender_id (username, avatar_url)
+          ''')
+          .eq('receiver_id', receiverId)
+          .order('created_at', ascending: false)
+          .limit(10);
 
       final List<Map<String, dynamic>> gifters = [];
       final Set<String> seenIds = {};
 
-      for (final doc in snapshot.docs) {
-        final Map<String, dynamic> data = doc.data();
-        final senderId = data['senderId'] as String?;
+      for (final item in response) {
+        final senderId = item['sender_id'] as String?;
 
         if (senderId != null && !seenIds.contains(senderId)) {
           seenIds.add(senderId);
 
-          final senderDoc = await _firestore
-              .collection('users')
-              .doc(senderId)
-              .get();
+          final userData = item['users'] as Map<String, dynamic>?;
 
-          if (senderDoc.exists) {
-            final Map<String, dynamic>? senderData = senderDoc.data();
-            gifters.add({
-              'userId': senderId,
-              'name': senderData?['username'] ?? data['senderName'] ?? '',
-              'avatar': senderData?['photoURL'] ?? '',
-              'giftName': data['giftName'] ?? '',
-              'amount': data['amount']?.toString() ?? '0', // 🟢 Convert to String
-              'timestamp': data['timestamp']?.toString() ?? '',
-            });
-          }
+          gifters.add({
+            'userId': senderId,
+            'name': userData?['username'] ?? '',
+            'avatar': userData?['avatar_url'] ?? '',
+            'giftName': item['gift_name'] ?? '',
+            'amount': (item['amount'] ?? 0).toString(),
+            'timestamp': item['created_at'] ?? '',
+          });
         }
       }
 
@@ -393,43 +485,47 @@ class GiftService {
 
   // ==================== STATISTICS ====================
 
-  // Get gift stats
+  /// Get gift stats
   Future<Map<String, dynamic>> getGiftStats(String userId) async {
     try {
-      final QuerySnapshot<Map<String, dynamic>> sent = await _firestore
-          .collection('gift_transactions')
-          .where('senderId', isEqualTo: userId)
-          .get();
+      // Get sent transactions
+      final sentResponse = await _supabase
+          .from('gift_transactions')
+          .select('amount, total_price')
+          .eq('sender_id', userId);
 
-      final QuerySnapshot<Map<String, dynamic>> received = await _firestore
-          .collection('gift_transactions')
-          .where('receiverId', isEqualTo: userId)
-          .get();
+      // Get received transactions
+      final receivedResponse = await _supabase
+          .from('gift_transactions')
+          .select('amount, total_price')
+          .eq('receiver_id', userId);
 
       var totalSent = 0;
       var totalReceived = 0;
       var coinsSpent = 0;
       var diamondsEarned = 0;
 
-      for (final doc in sent.docs) {
-        final Map<String, dynamic> data = doc.data();
-        totalSent += data['amount'] as int? ?? 0;
-        coinsSpent += data['totalPrice'] as int? ?? 0;
+      for (final item in sentResponse) {
+        totalSent += item['amount'] as int? ?? 0;
+        coinsSpent += item['total_price'] as int? ?? 0;
       }
 
-      for (final doc in received.docs) {
-        final Map<String, dynamic> data = doc.data();
-        totalReceived += data['amount'] as int? ?? 0;
-        diamondsEarned += ((data['totalPrice'] as int? ?? 0) / 2).round();
+      for (final item in receivedResponse) {
+        totalReceived += item['amount'] as int? ?? 0;
+        diamondsEarned += ((item['total_price'] as int? ?? 0) / 2).round();
       }
+
+      // Get unique senders/receivers
+      final uniqueSenders = await _getUniqueCount('gift_transactions', 'sender_id', receiverId: userId);
+      final uniqueReceivers = await _getUniqueCount('gift_transactions', 'receiver_id', senderId: userId);
 
       return {
-        'totalSent': totalSent.toString(), // 🟢 Convert to String
-        'totalReceived': totalReceived.toString(), // 🟢 Convert to String
-        'coinsSpent': coinsSpent.toString(), // 🟢 Convert to String
-        'diamondsEarned': diamondsEarned.toString(), // 🟢 Convert to String
-        'uniqueSenders': _getUniqueCount(received.docs, 'senderId'),
-        'uniqueReceivers': _getUniqueCount(sent.docs, 'receiverId'),
+        'totalSent': totalSent.toString(),
+        'totalReceived': totalReceived.toString(),
+        'coinsSpent': coinsSpent.toString(),
+        'diamondsEarned': diamondsEarned.toString(),
+        'uniqueSenders': uniqueSenders,
+        'uniqueReceivers': uniqueReceivers,
       };
     } catch (e) {
       debugPrint('Error getting gift stats: $e');
@@ -437,30 +533,57 @@ class GiftService {
     }
   }
 
-  int _getUniqueCount(List<QueryDocumentSnapshot> docs, String field) {
-    final Set<String> unique = {};
-    for (final doc in docs) {
-      final data = doc.data() as Map<String, dynamic>;
-      unique.add(data[field] as String);
+  /// Get unique count helper
+  Future<int> _getUniqueCount(String table, String field, {String? senderId, String? receiverId}) async {
+    try {
+      var query = _supabase.from(table).select(field);
+
+      if (senderId != null) {
+        query = query.eq('sender_id', senderId);
+      }
+      if (receiverId != null) {
+        query = query.eq('receiver_id', receiverId);
+      }
+
+      final response = await query;
+      final Set<String> unique = {};
+      for (final item in response) {
+        unique.add(item[field] as String);
+      }
+      return unique.length;
+    } catch (e) {
+      return 0;
     }
-    return unique.length;
   }
 
   // ==================== FAVORITES ====================
 
-  // Get favorite gifts
+  /// Get favorite gifts
   Future<List<Map<String, dynamic>>> getFavoriteGifts(String userId) async {
     try {
-      final snapshot = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('favorite_gifts')
-          .orderBy('addedAt', descending: true)
-          .get();
+      final response = await _supabase
+          .from('favorite_gifts')
+          .select('''
+            gift_id,
+            gift_name,
+            gift_category,
+            added_at,
+            gifts (*)
+          ''')
+          .eq('user_id', userId)
+          .order('added_at', ascending: false);
 
-      return snapshot.docs.map((doc) {
-        final Map<String, dynamic> data = doc.data();
-        data['id'] = doc.id;
+      return response.map((item) {
+        final Map<String, dynamic> data = Map.from(item);
+        data['id'] = data['gift_id'];
+        data['addedAt'] = data['added_at'];
+
+        // Merge gift data if available
+        if (data['gifts'] != null) {
+          data.addAll(Map.from(data['gifts'] as Map));
+          data.remove('gifts');
+        }
+
         return data;
       }).toList();
     } catch (e) {
@@ -469,25 +592,31 @@ class GiftService {
     }
   }
 
-  // Add to favorites
+  /// Add to favorites
   Future<bool> addToFavorites(String giftId) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
       final GiftModel? gift = await getGift(giftId);
       if (gift == null) throw Exception('Gift not found');
 
-      await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('favorite_gifts')
-          .doc(giftId)
-          .set({
-        'giftId': giftId,
-        'giftName': gift.name,
-        'giftCategory': gift.category,
-        'addedAt': FieldValue.serverTimestamp(),
+      // Check if already in favorites
+      final existing = await _supabase
+          .from('favorite_gifts')
+          .select()
+          .eq('user_id', userId)
+          .eq('gift_id', giftId)
+          .maybeSingle();
+
+      if (existing != null) return true; // Already exists
+
+      await _supabase.from('favorite_gifts').insert({
+        'user_id': userId,
+        'gift_id': giftId,
+        'gift_name': gift.name,
+        'gift_category': gift.category,
+        'added_at': DateTime.now().toIso8601String(),
       });
 
       return true;
@@ -497,23 +626,39 @@ class GiftService {
     }
   }
 
-  // Remove from favorites
+  /// Remove from favorites
   Future<bool> removeFromFavorites(String giftId) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
-      await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('favorite_gifts')
-          .doc(giftId)
-          .delete();
+      await _supabase
+          .from('favorite_gifts')
+          .delete()
+          .eq('user_id', userId)
+          .eq('gift_id', giftId);
 
       return true;
     } catch (e) {
       debugPrint('Error removing from favorites: $e');
       return false;
+    }
+  }
+
+  /// Get popular gifts
+  Future<List<GiftModel>> getPopularGifts({int limit = 10}) async {
+    try {
+      final response = await _supabase
+          .from('gifts')
+          .select()
+          .eq('is_available', true)
+          .order('sent_count', ascending: false)
+          .limit(limit);
+
+      return response.map((json) => GiftModel.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('Error getting popular gifts: $e');
+      return GiftModel.getMockGifts().take(limit).toList();
     }
   }
 }

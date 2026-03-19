@@ -1,13 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../di/service_locator.dart';
 
 class ModerationService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  late final SupabaseClient _supabase;
+
+  ModerationService() {
+    _supabase = getService<SupabaseClient>();
+  }
 
   // Banned words list
   static const List<String> bannedWords = [
@@ -30,6 +33,9 @@ class ModerationService {
     'terrorist', 'bomb', 'kill', 'murder', 'rape', 'suicide',
     'child porn', 'cp', 'sex with', 'underage',
   ];
+
+  // Helper to get current user
+  String? get _currentUserId => _supabase.auth.currentSession?.user.id;
 
   // ==================== TEXT MODERATION ====================
   ModerationResult moderateText(String text) {
@@ -183,7 +189,8 @@ class ModerationService {
     return false; // Placeholder
   }
 
-  // ==================== REPORT SYSTEM ====================
+  // ==================== REPORT SYSTEM - FIXED ====================
+
   Future<void> submitReport({
     required String reporterId,
     required String reportedUserId,
@@ -192,81 +199,305 @@ class ModerationService {
     List<String>? evidence,
     String? screenRecording,
   }) async {
-    await _firestore.collection('reports').add({
-      'reporterId': reporterId,
-      'reportedUserId': reportedUserId,
-      'reason': reason.toString().split('.').last,
-      'description': description,
-      'evidence': evidence,
-      'screenRecording': screenRecording,
-      'status': 'pending',
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+    try {
+      await _supabase.from('reports').insert({
+        'reporter_id': reporterId,
+        'reported_user_id': reportedUserId,
+        'reason': reason.toString().split('.').last,
+        'description': description,
+        'evidence': evidence,
+        'screen_recording': screenRecording,
+        'status': 'pending',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Error submitting report: $e');
+    }
   }
 
-  // ==================== AUTO-MODERATION ====================
-  Future<void> autoModerateUser(String userId, ModerationResult result) async {
-    if (result.action == ModerationAction.ban) {
-      // Auto-ban user
-      await _firestore.collection('users').doc(userId).update({
-        'isBanned': true,
-        'banReason': 'Auto-moderation: Extreme content detected',
-        'bannedAt': FieldValue.serverTimestamp(),
-        'bannedBy': 'system',
-      });
+  // ==================== AUTO-MODERATION - FIXED ====================
 
-      // Send notification
-      await _firestore.collection('notifications').add({
-        'userId': userId,
-        'type': 'system',
-        'title': 'Account Banned',
-        'body': 'Your account has been banned due to violation of community guidelines.',
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    } else if (result.action == ModerationAction.block) {
-      // Just block the content, don't ban user
-      // Implementation depends on what was being moderated
+  Future<void> autoModerateUser(String userId, ModerationResult result) async {
+    try {
+      if (result.action == ModerationAction.ban) {
+        // Auto-ban user - FIXED: আলাদা করে updateQuery
+        final updateQuery = _supabase
+            .from('users')
+            .update({
+          'is_banned': true,
+          'ban_reason': 'Auto-moderation: Extreme content detected',
+          'banned_at': DateTime.now().toIso8601String(),
+          'banned_by': 'system',
+        });
+        await updateQuery.eq('id', userId);
+
+        // Send notification
+        await _supabase.from('notifications').insert({
+          'user_id': userId,
+          'type': 'system',
+          'title': 'Account Banned',
+          'body': 'Your account has been banned due to violation of community guidelines.',
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      } else if (result.action == ModerationAction.block) {
+        // Log the block action
+        await _supabase.from('moderation_actions').insert({
+          'user_id': userId,
+          'action': 'block',
+          'reason': 'Content moderation',
+          'details': result.foundWords.join(', '),
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      }
+    } catch (e) {
+      debugPrint('Error in autoModerateUser: $e');
     }
   }
 
   // ==================== SCREEN RECORDING FOR REPORT ====================
+
   Future<String?> uploadScreenRecording(String filePath, String reportId) async {
     try {
-      final Reference ref = _storage.ref().child('reports/$reportId/screen_recording.mp4');
-      await ref.putFile(File(filePath));
-      return await ref.getDownloadURL();
+      final file = File(filePath);
+      if (!await file.exists()) return null;
+
+      final fileBytes = await file.readAsBytes();
+      final fileName = 'screen_recording_${DateTime.now().millisecondsSinceEpoch}.mp4';
+      final path = 'reports/$reportId/$fileName';
+
+      await _supabase.storage
+          .from('reports')
+          .uploadBinary(path, fileBytes);
+
+      final publicUrl = _supabase.storage
+          .from('reports')
+          .getPublicUrl(path);
+
+      return publicUrl;
     } catch (e) {
       debugPrint('Error uploading screen recording: $e');
       return null;
     }
   }
 
-  // ==================== GET REPORTS ====================
+  // ==================== GET REPORTS - FIXED ====================
+
   Stream<List<Report>> getReports({ReportStatus? status}) {
-    Query<Map<String, dynamic>> query = _firestore
-        .collection('reports')
-        .orderBy('timestamp', descending: true);
+    try {
+      final stream = _supabase
+          .from('reports')
+          .stream(primaryKey: ['id']);
 
-    if (status != null) {
-      query = query.where('status', isEqualTo: status.toString().split('.').last);
+      return stream.map((data) {
+        // Manual filtering
+        var filteredData = data;
+
+        if (status != null) {
+          final statusStr = status.toString().split('.').last;
+          filteredData = filteredData.where((item) => item['status'] == statusStr).toList();
+        }
+
+        // Sort manually
+        filteredData.sort((a, b) {
+          final aTime = DateTime.parse(a['created_at'] ?? DateTime.now().toIso8601String());
+          final bTime = DateTime.parse(b['created_at'] ?? DateTime.now().toIso8601String());
+          return bTime.compareTo(aTime);
+        });
+
+        return filteredData.map((item) {
+          item['id'] = item['id'].toString();
+          return Report.fromJson(item);
+        }).toList();
+      });
+    } catch (e) {
+      debugPrint('Error getting reports stream: $e');
+      return Stream.value([]);
     }
-
-    return query.snapshots().map((QuerySnapshot<Map<String, dynamic>> snapshot) => snapshot.docs
-        .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-      final data = doc.data();
-      data['id'] = doc.id;
-      return Report.fromJson(data, doc.id);
-    })
-        .toList());
   }
 
-  // ==================== RESOLVE REPORT ====================
+  /// Get reports as future (non-streaming) - FIXED
+  Future<List<Report>> getReportsFuture({ReportStatus? status, int limit = 100}) async {
+    try {
+      // বেস কোয়েরি তৈরি করুন
+      var query = _supabase
+          .from('reports')
+          .select()
+          .order('created_at', ascending: false)
+          .limit(limit);
+
+      // যদি status দেওয়া থাকে, তাহলে নতুন কোয়েরি তৈরি করুন
+      if (status != null) {
+        final statusStr = status.toString().split('.').last;
+        // FIXED: নতুন কোয়েরি তৈরি করুন এবং execute করুন
+        final response = await _supabase
+            .from('reports')
+            .select()
+            .eq('status', statusStr)
+            .order('created_at', ascending: false)
+            .limit(limit);
+
+        return response.map((item) {
+          item['id'] = item['id'].toString();
+          return Report.fromJson(item);
+        }).toList();
+      } else {
+        // status না থাকলে original query execute করুন
+        final response = await query;
+
+        return response.map((item) {
+          item['id'] = item['id'].toString();
+          return Report.fromJson(item);
+        }).toList();
+      }
+    } catch (e) {
+      debugPrint('Error getting reports: $e');
+      return [];
+    }
+  }
+
+  // ==================== RESOLVE REPORT - FIXED ====================
+
   Future<void> resolveReport(String reportId, String resolution) async {
-    await _firestore.collection('reports').doc(reportId).update({
-      'status': 'resolved',
-      'resolution': resolution,
-      'resolvedAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      final updateQuery = _supabase
+          .from('reports')
+          .update({
+        'status': 'resolved',
+        'resolution': resolution,
+        'resolved_at': DateTime.now().toIso8601String(),
+      });
+      await updateQuery.eq('id', reportId);
+    } catch (e) {
+      debugPrint('Error resolving report: $e');
+    }
+  }
+
+  /// Update report status - FIXED
+  Future<void> updateReportStatus(String reportId, ReportStatus status) async {
+    try {
+      final statusStr = status.toString().split('.').last;
+      final updateQuery = _supabase
+          .from('reports')
+          .update({
+        'status': statusStr,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateQuery.eq('id', reportId);
+    } catch (e) {
+      debugPrint('Error updating report status: $e');
+    }
+  }
+
+  /// Assign report to moderator - FIXED
+  Future<void> assignReport(String reportId, String moderatorId) async {
+    try {
+      final updateQuery = _supabase
+          .from('reports')
+          .update({
+        'assigned_to': moderatorId,
+        'status': 'investigating',
+        'assigned_at': DateTime.now().toIso8601String(),
+      });
+      await updateQuery.eq('id', reportId);
+    } catch (e) {
+      debugPrint('Error assigning report: $e');
+    }
+  }
+
+  // ==================== USER MODERATION HISTORY ====================
+
+  /// Get user's moderation history
+  Future<List<Map<String, dynamic>>> getUserModerationHistory(String userId) async {
+    try {
+      final response = await _supabase
+          .from('moderation_actions')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(50);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting user moderation history: $e');
+      return [];
+    }
+  }
+
+  /// Get user's report history (as reporter)
+  Future<List<Map<String, dynamic>>> getUserReportsAsReporter(String userId) async {
+    try {
+      final response = await _supabase
+          .from('reports')
+          .select()
+          .eq('reporter_id', userId)
+          .order('created_at', ascending: false)
+          .limit(50);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting user reports: $e');
+      return [];
+    }
+  }
+
+  /// Get user's report history (as reported)
+  Future<List<Map<String, dynamic>>> getUserReportsAsReported(String userId) async {
+    try {
+      final response = await _supabase
+          .from('reports')
+          .select()
+          .eq('reported_user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(50);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting user reports: $e');
+      return [];
+    }
+  }
+
+  // ==================== BANNED WORDS MANAGEMENT (ADMIN) ====================
+
+  /// Add banned word
+  Future<void> addBannedWord(String word, {bool isExtreme = false}) async {
+    try {
+      await _supabase.from('banned_words').insert({
+        'word': word,
+        'is_extreme': isExtreme,
+        'added_by': _currentUserId,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Error adding banned word: $e');
+    }
+  }
+
+  /// Remove banned word
+  Future<void> removeBannedWord(String word) async {
+    try {
+      await _supabase
+          .from('banned_words')
+          .delete()
+          .eq('word', word);
+    } catch (e) {
+      debugPrint('Error removing banned word: $e');
+    }
+  }
+
+  /// Get banned words list from database
+  Future<List<String>> getBannedWords() async {
+    try {
+      final response = await _supabase
+          .from('banned_words')
+          .select('word, is_extreme')
+          .order('created_at');
+
+      return response.map<String>((item) => item['word'] as String).toList();
+    } catch (e) {
+      debugPrint('Error getting banned words: $e');
+      return bannedWords; // Fallback to static list
+    }
   }
 }
 
@@ -333,9 +564,11 @@ class Report {
   final List<String>? evidence;
   final String? screenRecording;
   final ReportStatus status;
-  final DateTime timestamp;
+  final DateTime createdAt;
   final String? resolution;
   final DateTime? resolvedAt;
+  final String? assignedTo;
+  final DateTime? assignedAt;
 
   Report({
     required this.id,
@@ -343,34 +576,41 @@ class Report {
     required this.reportedUserId,
     required this.reason,
     required this.status,
-    required this.timestamp,
+    required this.createdAt,
     this.description,
     this.evidence,
     this.screenRecording,
     this.resolution,
     this.resolvedAt,
+    this.assignedTo,
+    this.assignedAt,
   });
 
-  factory Report.fromJson(Map<String, dynamic> json, String id) {
+  factory Report.fromJson(Map<String, dynamic> json) {
     return Report(
-      id: id,
-      reporterId: json['reporterId'] ?? '',
-      reportedUserId: json['reportedUserId'] ?? '',
+      id: json['id']?.toString() ?? '',
+      reporterId: json['reporter_id'] ?? json['reporterId'] ?? '',
+      reportedUserId: json['reported_user_id'] ?? json['reportedUserId'] ?? '',
       reason: _parseReportReason(json['reason']),
       description: json['description'],
       evidence: json['evidence'] != null
           ? List<String>.from(json['evidence'])
           : null,
-      screenRecording: json['screenRecording'],
+      screenRecording: json['screen_recording'] ?? json['screenRecording'],
       status: _parseReportStatus(json['status']),
-      timestamp: json['timestamp'] != null
-          ? (json['timestamp'] as Timestamp).toDate()
-          : DateTime.now(),
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']),
       resolution: json['resolution'],
-      resolvedAt: json['resolvedAt'] != null
-          ? (json['resolvedAt'] as Timestamp).toDate()
-          : null,
+      resolvedAt: _parseDate(json['resolved_at'] ?? json['resolvedAt']),
+      assignedTo: json['assigned_to'] ?? json['assignedTo'],
+      assignedAt: _parseDate(json['assigned_at'] ?? json['assignedAt']),
     );
+  }
+
+  static DateTime _parseDate(dynamic date) {
+    if (date == null) return DateTime.now();
+    if (date is String) return DateTime.parse(date);
+    if (date is DateTime) return date;
+    return DateTime.now();
   }
 
   static ReportReason _parseReportReason(String? reason) {

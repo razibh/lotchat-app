@@ -1,6 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User hide
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/moments_service.dart';
 import '../../core/services/auth_service.dart';
@@ -32,7 +33,7 @@ class _MomentsScreenState extends State<MomentsScreen>
   String? _currentUserId;
 
   // Loading state
-  bool _isLoading = true; // Add this line
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -42,9 +43,10 @@ class _MomentsScreenState extends State<MomentsScreen>
   }
 
   Future<void> _getCurrentUser() async {
-    final User? user = _authService.getCurrentUser();
+    // ✅ Firebase Auth → Supabase Auth
+    final session = Supabase.instance.client.auth.currentSession;
     setState(() {
-      _currentUserId = user?.uid;
+      _currentUserId = session?.user.id;
     });
   }
 

@@ -11,6 +11,8 @@ class GiftModel {
   final bool isVip;
   final bool isSvip;
   final int tier;
+  final int? sentCount;  // 🔴 NEW: sentCount property যোগ করা হল
+
   final Map<String, dynamic> effects;
 
   GiftModel({
@@ -24,44 +26,47 @@ class GiftModel {
     this.isVip = false,
     this.isSvip = false,
     this.tier = 0,
+    this.sentCount,  // 🔴 NEW: কন্সট্রাক্টরে যোগ করা হল
     this.effects = const {},
   });
 
-  // fromJson factory constructor
+  // fromJson factory constructor - UPDATED
   factory GiftModel.fromJson(Map<String, dynamic> json) {
     return GiftModel(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       price: json['price'] ?? 0,
       category: json['category'] ?? '',
-      animationPath: json['animationPath'] ?? '',
-      soundPath: json['soundPath'] ?? '',
-      previewImage: json['previewImage'] ?? '',
-      isVip: json['isVip'] ?? false,
-      isSvip: json['isSvip'] ?? false,
+      animationPath: json['animation_path'] ?? json['animationPath'] ?? '',
+      soundPath: json['sound_path'] ?? json['soundPath'] ?? '',
+      previewImage: json['preview_image'] ?? json['previewImage'] ?? '',
+      isVip: json['is_vip'] ?? json['isVip'] ?? false,
+      isSvip: json['is_svip'] ?? json['isSvip'] ?? false,
       tier: json['tier'] ?? 0,
+      sentCount: json['sent_count'] ?? json['sentCount'] ?? 0,  // 🔴 NEW: sent_count parse করা হল
       effects: json['effects'] ?? {},
     );
   }
 
-  // toJson method
+  // toJson method - UPDATED
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'name': name,
       'price': price,
       'category': category,
-      'animationPath': animationPath,
-      'soundPath': soundPath,
-      'previewImage': previewImage,
-      'isVip': isVip,
-      'isSvip': isSvip,
+      'animation_path': animationPath,
+      'sound_path': soundPath,
+      'preview_image': previewImage,
+      'is_vip': isVip,
+      'is_svip': isSvip,
       'tier': tier,
+      'sent_count': sentCount,  // 🔴 NEW: sent_count যোগ করা হল
       'effects': effects,
     };
   }
 
-  // getMockGifts method (for testing/fallback)
+  // getMockGifts method (for testing/fallback) - UPDATED with sentCount
   static List<GiftModel> getMockGifts() {
     return [
       GiftModel(
@@ -72,6 +77,7 @@ class GiftModel {
         animationPath: 'assets/gifts/rose.json',
         soundPath: 'assets/sounds/gifts/rose.mp3',
         previewImage: 'assets/gifts/preview/rose.png',
+        sentCount: 0,  // 🔴 NEW: sentCount যোগ করা হল
       ),
       GiftModel(
         id: 'g2',
@@ -81,6 +87,7 @@ class GiftModel {
         animationPath: 'assets/gifts/chocolate.json',
         soundPath: 'assets/sounds/gifts/chocolate.mp3',
         previewImage: 'assets/gifts/preview/chocolate.png',
+        sentCount: 0,  // 🔴 NEW: sentCount যোগ করা হল
       ),
       GiftModel(
         id: 'vip1',
@@ -92,6 +99,7 @@ class GiftModel {
         previewImage: 'assets/gifts/preview/vip_car.png',
         isVip: true,
         tier: 1,
+        sentCount: 0,  // 🔴 NEW: sentCount যোগ করা হল
         effects: {'fullscreen': true, 'duration': 5},
       ),
       GiftModel(
@@ -104,17 +112,18 @@ class GiftModel {
         previewImage: 'assets/gifts/preview/svip_yacht.png',
         isSvip: true,
         tier: 1,
+        sentCount: 0,  // 🔴 NEW: sentCount যোগ করা হল
         effects: {'fullscreen': true, 'duration': 10, 'confetti': true},
       ),
     ];
   }
 
-  // 🟢 ADD: getGifts method (alias for getMockGifts)
+  // getGifts method (alias for getMockGifts)
   static List<GiftModel> getGifts() {
     return getMockGifts();
   }
 
-  // copyWith method (optional but useful)
+  // copyWith method - UPDATED with sentCount
   GiftModel copyWith({
     String? id,
     String? name,
@@ -126,6 +135,7 @@ class GiftModel {
     bool? isVip,
     bool? isSvip,
     int? tier,
+    int? sentCount,  // 🔴 NEW: sentCount প্যারামিটার যোগ করা হল
     Map<String, dynamic>? effects,
   }) {
     return GiftModel(
@@ -139,7 +149,18 @@ class GiftModel {
       isVip: isVip ?? this.isVip,
       isSvip: isSvip ?? this.isSvip,
       tier: tier ?? this.tier,
+      sentCount: sentCount ?? this.sentCount,  // 🔴 NEW: sentCount যোগ করা হল
       effects: effects ?? this.effects,
     );
+  }
+
+  // 🟢 Utility method to check if gift is popular (optional)
+  bool get isPopular => (sentCount ?? 0) > 100;
+
+  // 🟢 Utility method to get tier name (optional)
+  String get tierName {
+    if (isSvip) return 'SVIP';
+    if (isVip) return 'VIP';
+    return 'Normal';
   }
 }

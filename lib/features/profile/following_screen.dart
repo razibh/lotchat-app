@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User hide
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/user_service.dart';
 import '../../core/services/auth_service.dart';
@@ -9,7 +11,7 @@ import '../../mixins/toast_mixin.dart';
 import '../../widgets/animation/fade_animation.dart';
 import '../../widgets/common/empty_state_widget.dart';
 import '../../widgets/common/custom_button.dart';
-import '../../core/models/user_models.dart';
+import '../../core/models/user_models.dart' as app;  // ✅ আপনার নিজের User model
 
 class FollowingScreen extends StatefulWidget {
   final String? userId;
@@ -39,7 +41,7 @@ class _FollowingScreenState extends State<FollowingScreen>
   final AuthService _authService = ServiceLocator().get<AuthService>();
   final AnalyticsService _analyticsService = ServiceLocator().get<AnalyticsService>();
 
-  List<User> _following = [];
+  List<app.User> _following = [];  // ✅ app.User ব্যবহার করুন
   String? _currentUserId;
   String? _profileUserId;
 
@@ -91,12 +93,14 @@ class _FollowingScreenState extends State<FollowingScreen>
   }
 
   Future<void> _getCurrentUser() async {
-    final user = await _authService.getCurrentUser();
-    _currentUserId = user?.uid;
+    final session = Supabase.instance.client.auth.currentSession;
+    _currentUserId = session?.user.id;
     _profileUserId = widget.userId ?? _currentUserId;
   }
 
   Future<void> _loadFollowing({bool refresh = false}) async {
+    if (_profileUserId == null) return;
+
     if (refresh) {
       _currentPage = 1;
       _hasMore = true;
@@ -133,7 +137,7 @@ class _FollowingScreenState extends State<FollowingScreen>
     }
   }
 
-  Future<void> _toggleFollow(User user) async {
+  Future<void> _toggleFollow(app.User user) async {  // ✅ app.User ব্যবহার করুন
     if (_currentUserId == null) {
       showError('Please login to follow users');
       return;
@@ -200,7 +204,7 @@ class _FollowingScreenState extends State<FollowingScreen>
     }
   }
 
-  void _onUserTap(User user) {
+  void _onUserTap(app.User user) {  // ✅ app.User ব্যবহার করুন
     _analyticsService.trackEvent(
       'view_profile_from_following',
       parameters: {
@@ -210,12 +214,11 @@ class _FollowingScreenState extends State<FollowingScreen>
     );
 
     // Navigate to user profile
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (_) => UserProfileScreen(userId: user.id),
-    //   ),
-    // );
+    Navigator.pushNamed(
+      context,
+      '/profile/view',
+      arguments: user.id,
+    );
   }
 
   @override
@@ -322,7 +325,7 @@ class _FollowingScreenState extends State<FollowingScreen>
     );
   }
 
-  Widget _buildUserTile(User user) {
+  Widget _buildUserTile(app.User user) {  // ✅ app.User ব্যবহার করুন
     final isCurrentUser = _currentUserId == user.id;
     final isFollowed = _isFollowingUser(user.id);
 

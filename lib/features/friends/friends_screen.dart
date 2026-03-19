@@ -1,6 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User hide
 
 import '../../core/di/service_locator.dart';
 import '../../core/models/user_models.dart' as app_models;
@@ -44,25 +44,23 @@ class _FriendsScreenState extends State<FriendsScreen>
   @override
   void initState() {
     super.initState();
-    initPagination(); // PaginationMixin এর initPagination কল
+    initPagination();
     _getCurrentUser();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      loadFirstPage(setState); // setState প্যারামিটার সহ
+      loadFirstPage(setState);
     });
   }
 
   @override
   void dispose() {
-    disposePagination(); // PaginationMixin এর disposePagination কল
+    disposePagination();
     super.dispose();
   }
 
   @override
   Future<PaginationResult<FriendModel>> fetchPage(int page) async {
-    // এখানে আপনার API কল হবে
     await Future.delayed(const Duration(seconds: 1));
 
-    // Mock data generation
     if (_friends.isEmpty) {
       _friends = _generateMockFriends(15);
       _pendingRequests = 3;
@@ -80,9 +78,10 @@ class _FriendsScreenState extends State<FriendsScreen>
   }
 
   Future<void> _getCurrentUser() async {
-    final firebase_auth.User? user = _authService.getCurrentUser();
+    // ✅ Firebase Auth → Supabase Auth
+    final session = Supabase.instance.client.auth.currentSession;
     setState(() {
-      _currentUserId = user?.uid;
+      _currentUserId = session?.user.id;
     });
   }
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../core/models/user_models.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User hide
+
+import '../../core/models/user_models.dart' as app;  // ✅ আপনার নিজের User model
 import '../../widgets/badge_widget.dart';
 import '../../widgets/frame_widget.dart';
 import '../../core/services/user_service.dart';
@@ -36,7 +38,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastMixin {
   bool isEditing = false;
-  User? user;
+  app.User? user;
   String? _currentUserId;
   bool _isFollowing = false;
   bool _isFriend = false;
@@ -69,14 +71,14 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
   }
 
   Future<void> _getCurrentUser() async {
-    final currentUser = await _authService.getCurrentUser();
+    final session = Supabase.instance.client.auth.currentSession;
     setState(() {
-      _currentUserId = currentUser?.uid;
+      _currentUserId = session?.user.id;
     });
   }
 
   Future<void> _loadUser() async {
-    showLoading(); // LoadingMixin এর showLoading() ব্যবহার
+    showLoading();
 
     try {
       final loadedUser = await _userService.getUserById(widget.userId);
@@ -89,7 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
         _websiteController.text = user?.website ?? '';
       });
 
-      hideLoading(); // LoadingMixin এর hideLoading() ব্যবহার
+      hideLoading();
 
       // Check relationship if not own profile
       if (!widget.isOwnProfile && _currentUserId != null) {
@@ -116,7 +118,8 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
   }
 
   Future<void> _checkRelationship() async {
-    // Check if following
+    if (_currentUserId == null) return;
+
     final following = await _userService.isFollowing(_currentUserId!, widget.userId);
 
     setState(() {
@@ -131,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
     }
 
     try {
-      showButtonLoading(); // LoadingMixin এর showButtonLoading() ব্যবহার
+      showButtonLoading();
 
       bool success;
       if (_isFollowing) {
@@ -140,7 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
         success = await _userService.followUser(_currentUserId!, widget.userId);
       }
 
-      hideButtonLoading(); // LoadingMixin এর hideButtonLoading() ব্যবহার
+      hideButtonLoading();
 
       if (success) {
         setState(() {
@@ -164,7 +167,6 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
   }
 
   Future<void> _sendFriendRequest() async {
-    // Implement friend request logic
     setState(() {
       _hasSentRequest = true;
     });
@@ -216,7 +218,7 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
   Future<void> _changeProfilePicture() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      // Upload image and update user
+      // TODO: Upload to Supabase Storage using StorageService
       showSuccess('Profile picture updated');
     }
   }
@@ -252,7 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading || user == null) {  // isLoading ব্যবহার করুন (_isLoading না)
+    if (isLoading || user == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -288,9 +290,9 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
       bottomNavigationBar: _buildBottomBar(),
     );
   }
+
   Widget _buildSliverAppBar() {
-    // ফ্রেম পাথ নির্ধারণের জন্য হেল্পার ফাংশন
-    String _getFramePath(UserTier? tier) {
+    String _getFramePath(app.UserTier? tier) {
       if (tier == null) return 'assets/frames/default_frame.png';
 
       if (tier.toString().contains('vip')) {
@@ -309,7 +311,6 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
         background: Stack(
           fit: StackFit.expand,
           children: [
-            // Cover Image
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -323,7 +324,6 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
               ),
             ),
 
-            // Profile Info Overlay
             Positioned(
               bottom: 0,
               left: 0,
@@ -342,11 +342,10 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
                 ),
                 child: Row(
                   children: [
-                    // Profile Picture with Frame
                     Stack(
                       children: [
                         FrameWidget(
-                          framePath: _getFramePath(user!.tier), // ✅ framePath দিতে হবে
+                          framePath: _getFramePath(user!.tier),
                           size: 80,
                           child: CircleAvatar(
                             radius: 35,
@@ -408,7 +407,7 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
                           Row(
                             children: [
                               BadgeWidget(
-                                tier: user!.tier ?? UserTier.normal, // ✅ tier দিতে হবে
+                                tier: user!.tier ?? app.UserTier.normal,
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
@@ -452,6 +451,7 @@ class _ProfileScreenState extends State<ProfileScreen> with LoadingMixin, ToastM
       ),
     );
   }
+
   Widget _buildStatsRow() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,

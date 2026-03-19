@@ -1,15 +1,18 @@
 import 'dart:math';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/game_model.dart';
 import '../models/user_models.dart' as app;
-import 'database_service.dart';
+import '../di/service_locator.dart';
 
 class GameService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final DatabaseService _databaseService = DatabaseService();
+  late final SupabaseClient _supabase;
 
-  // Game types - 🟢 const সরিয়ে final ব্যবহার
+  GameService() {
+    _supabase = getService<SupabaseClient>();
+  }
+
+  // Game types
   static final Map<String, GameConfig> gameConfigs = {
     'roulette': GameConfig(
       minBet: 100,
@@ -37,6 +40,48 @@ class GameService {
       winMultiplier: {'jackpot': 50, 'bonus': 10, 'small': 2},
     ),
   };
+
+  // ==================== HELPER METHODS ====================
+
+  String? get _currentUserId => _supabase.auth.currentSession?.user.id;
+
+  Future<app.User?> _getUser(String userId) async {
+    try {
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (response != null) {
+        return app.User.fromJson(response);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting user: $e');
+      return null;
+    }
+  }
+
+  // Helper to safely convert to int
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value) ?? 0;
+    if (value is num) return value.toInt();
+    return 0;
+  }
+
+  // Helper to safely convert to double
+  double _toDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    if (value is num) return value.toDouble();
+    return 0.0;
+  }
 
   // ==================== ROULETTE ====================
   RouletteResult playRoulette({
@@ -387,7 +432,8 @@ class GameService {
     return filtered[random.nextInt(filtered.length)];
   }
 
-  // ==================== GAME RESULT PROCESSING ====================
+  // ==================== GAME RESULT PROCESSING - FIXED ====================
+
   Future<GamePlayResult> processGameResult({
     required String userId,
     required String gameType,
@@ -396,7 +442,7 @@ class GameService {
     required int winAmount,
     Map<String, dynamic>? gameData,
   }) async {
-    final app.User? user = await _databaseService.getUser(userId);
+    final app.User? user = await _getUser(userId);
     if (user == null) throw Exception('User not found');
 
     int finalCoins = user.coins;
@@ -422,18 +468,33 @@ class GameService {
 
     stats['games_played'] = (stats['games_played'] ?? 0) + 1;
 
-    await _databaseService.updateUser(userId, {
-      'coins': finalCoins,
-      'diamonds': finalDiamonds,
-      'stats': stats,
-    });
+    // FIXED: Update user in Supabase
+    try {
+      final updateQuery = _supabase.from('users').update({
+        'coins': finalCoins,
+        'diamonds': finalDiamonds,
+        'stats': stats,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
 
-    await _databaseService.addCoins(
-      userId,
-      coinsChange.abs(),
-      won ? 'Game winning' : 'Game bet',
+      await updateQuery.eq('id', userId);
+
+      debugPrint('✅ User updated successfully');
+    } catch (e) {
+      debugPrint('❌ Error updating user: $e');
+      throw Exception('Failed to update user');
+    }
+
+    // Record coin transaction
+    await _addCoinTransaction(
+      userId: userId,
+      amount: coinsChange.abs(),
+      type: won ? 'win' : 'bet',
+      description: won ? 'Game winning' : 'Game bet',
+      gameType: gameType,
     );
 
+    // Save game history
     await _saveGameHistory(
       userId: userId,
       gameType: gameType,
@@ -452,6 +513,27 @@ class GameService {
     );
   }
 
+  Future<void> _addCoinTransaction({
+    required String userId,
+    required int amount,
+    required String type,
+    required String description,
+    String? gameType,
+  }) async {
+    try {
+      await _supabase.from('coin_transactions').insert({
+        'user_id': userId,
+        'amount': amount,
+        'type': type,
+        'description': description,
+        'game_type': gameType,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Error adding coin transaction: $e');
+    }
+  }
+
   Future<void> _saveGameHistory({
     required String userId,
     required String gameType,
@@ -460,35 +542,350 @@ class GameService {
     required int winAmount,
     Map<String, dynamic>? gameData,
   }) async {
-    await _firestore.collection('game_history').add({
-      'userId': userId,
-      'gameType': gameType,
-      'betAmount': betAmount,
-      'won': won,
-      'winAmount': winAmount,
-      'gameData': gameData,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+    try {
+      await _supabase.from('game_history').insert({
+        'user_id': userId,
+        'game_type': gameType,
+        'bet_amount': betAmount,
+        'won': won,
+        'win_amount': winAmount,
+        'game_data': gameData ?? {},
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Error saving game history: $e');
+    }
   }
 
+  // ==================== GAME HISTORY - FIXED ====================
+
+  /// Get user's game history - FIXED
+  Future<List<Map<String, dynamic>>> getUserGameHistory({
+    String? gameType,
+    int limit = 50,
+  }) async {
+    final userId = _currentUserId;
+    if (userId == null) return [];
+
+    try {
+      // বেস কোয়েরি
+      var query = _supabase
+          .from('game_history')
+          .select()
+          .eq('user_id', userId);
+
+      // gameType থাকলে যোগ করুন
+      if (gameType != null) {
+        query = query.eq('game_type', gameType);
+      }
+
+      // order এবং limit যোগ করে execute
+      final response = await query
+          .order('created_at', ascending: false)
+          .limit(limit);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting game history: $e');
+      return [];
+    }
+  }
+
+  /// Stream user's game history - FIXED
+  Stream<List<Map<String, dynamic>>> streamUserGameHistory({String? gameType}) {
+    final userId = _currentUserId;
+    if (userId == null) return Stream.value([]);
+
+    try {
+      // Get stream without filters first
+      final stream = _supabase
+          .from('game_history')
+          .stream(primaryKey: ['id']);
+
+      // Apply manual filtering
+      return stream.map((data) {
+        // First filter by user_id
+        var filtered = data.where((item) => item['user_id'] == userId).toList();
+
+        // Then filter by gameType if provided
+        if (gameType != null) {
+          filtered = filtered.where((item) => item['game_type'] == gameType).toList();
+        }
+
+        // Sort manually
+        filtered.sort((a, b) {
+          final aTime = DateTime.parse(a['created_at'] ?? DateTime.now().toIso8601String());
+          final bTime = DateTime.parse(b['created_at'] ?? DateTime.now().toIso8601String());
+          return bTime.compareTo(aTime);
+        });
+
+        return filtered.map((item) => Map<String, dynamic>.from(item)).toList();
+      });
+    } catch (e) {
+      debugPrint('Error streaming game history: $e');
+      return Stream.value([]);
+    }
+  }
+
+  // ==================== LEADERBOARD - FIXED ====================
+
+  /// Get leaderboard for a specific game
   Stream<List<GameLeaderboardEntry>> getLeaderboard(String gameType) {
-    return _firestore
-        .collection('users')
-        .orderBy('stats.total_winnings', descending: true)
-        .limit(100)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-        .map((doc) {
-      final data = doc.data();
-      return GameLeaderboardEntry(
-        userId: doc.id,
-        username: data['username'] ?? 'Unknown',
-        photoURL: data['photoURL'],
-        totalWinnings: data['stats']?['total_winnings'] ?? 0,
-        gamesPlayed: data['stats']?['games_played'] ?? 0,
-      );
-    })
-        .toList());
+    try {
+      // Get users with game stats
+      final stream = _supabase
+          .from('users')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        // Filter users with game stats and sort manually
+        final usersWithStats = data.where((user) {
+          final stats = user['stats'] as Map<String, dynamic>?;
+          return stats != null && stats['games_played'] != null && stats['games_played'] > 0;
+        }).toList();
+
+        // Sort by total_winnings
+        usersWithStats.sort((a, b) {
+          final aStats = a['stats'] as Map<String, dynamic>? ?? {};
+          final bStats = b['stats'] as Map<String, dynamic>? ?? {};
+          final aWinnings = _toInt(aStats['total_winnings']);
+          final bWinnings = _toInt(bStats['total_winnings']);
+          return bWinnings.compareTo(aWinnings);
+        });
+
+        return usersWithStats.map((userData) {
+          final stats = userData['stats'] as Map<String, dynamic>? ?? {};
+          return GameLeaderboardEntry(
+            userId: userData['id'] ?? '',
+            username: userData['username'] ?? 'Unknown',
+            photoURL: userData['avatar_url'],
+            totalWinnings: _toInt(stats['total_winnings']),
+            gamesPlayed: _toInt(stats['games_played']),
+          );
+        }).toList();
+      });
+    } catch (e) {
+      debugPrint('Error getting leaderboard: $e');
+      return Stream.value([]);
+    }
+  }
+
+  /// Get overall game stats - FIXED
+  Future<Map<String, dynamic>> getGameStats(String userId) async {
+    try {
+      // Get user's game history
+      final response = await _supabase
+          .from('game_history')
+          .select()
+          .eq('user_id', userId);
+
+      final history = List<Map<String, dynamic>>.from(response);
+
+      final totalGames = history.length;
+      int wins = 0;
+      int losses = 0;
+      int totalBet = 0;
+      int totalWin = 0;
+
+      for (var game in history) {
+        final won = game['won'] as bool? ?? false;
+        final betAmount = _toInt(game['bet_amount']);
+        final winAmount = _toInt(game['win_amount']);
+
+        if (won) {
+          wins++;
+          totalWin += winAmount;
+        } else {
+          losses++;
+        }
+        totalBet += betAmount;
+      }
+
+      // Get stats by game type
+      final Map<String, Map<String, dynamic>> gameTypeStats = {};
+      for (var game in history) {
+        final gameType = game['game_type'] ?? 'unknown';
+        final won = game['won'] as bool? ?? false;
+        final betAmount = _toInt(game['bet_amount']);
+        final winAmount = _toInt(game['win_amount']);
+
+        if (!gameTypeStats.containsKey(gameType)) {
+          gameTypeStats[gameType] = {
+            'games': 0,
+            'wins': 0,
+            'totalBet': 0,
+            'totalWin': 0,
+          };
+        }
+        gameTypeStats[gameType]!['games'] = (gameTypeStats[gameType]!['games'] as int) + 1;
+        gameTypeStats[gameType]!['totalBet'] = (gameTypeStats[gameType]!['totalBet'] as int) + betAmount;
+        if (won) {
+          gameTypeStats[gameType]!['wins'] = (gameTypeStats[gameType]!['wins'] as int) + 1;
+          gameTypeStats[gameType]!['totalWin'] = (gameTypeStats[gameType]!['totalWin'] as int) + winAmount;
+        }
+      }
+
+      return {
+        'totalGames': totalGames,
+        'wins': wins,
+        'losses': losses,
+        'winRate': totalGames > 0 ? (wins / totalGames) : 0,
+        'totalBet': totalBet,
+        'totalWin': totalWin,
+        'netProfit': totalWin - totalBet,
+        'gameTypeStats': gameTypeStats,
+      };
+    } catch (e) {
+      debugPrint('Error getting game stats: $e');
+      return {};
+    }
+  }
+
+  // ==================== ACTIVE GAMES - FIXED ====================
+
+  /// Create a multiplayer game
+  Future<String> createMultiplayerGame({
+    required String gameType,
+    required int betAmount,
+    required int maxPlayers,
+    Map<String, dynamic>? gameSettings,
+  }) async {
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
+
+    try {
+      final gameData = {
+        'game_type': gameType,
+        'bet_amount': betAmount,
+        'max_players': maxPlayers,
+        'current_players': [userId],
+        'status': 'waiting',
+        'game_settings': gameSettings ?? {},
+        'created_by': userId,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+
+      final response = await _supabase
+          .from('active_games')
+          .insert(gameData)
+          .select()
+          .single();
+
+      return response['id'].toString();
+    } catch (e) {
+      debugPrint('Error creating multiplayer game: $e');
+      throw Exception('Failed to create game');
+    }
+  }
+
+  /// Join a multiplayer game - FIXED
+  Future<bool> joinMultiplayerGame(String gameId) async {
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
+
+    try {
+      final game = await _supabase
+          .from('active_games')
+          .select()
+          .eq('id', gameId)
+          .single();
+
+      if (game == null) throw Exception('Game not found');
+
+      final currentPlayers = List<String>.from(game['current_players'] ?? []);
+      if (currentPlayers.contains(userId)) {
+        return true; // Already joined
+      }
+
+      if (currentPlayers.length >= (game['max_players'] ?? 2)) {
+        throw Exception('Game is full');
+      }
+
+      currentPlayers.add(userId);
+
+      // FIXED: আলাদাভাবে update
+      final updateQuery = _supabase
+          .from('active_games')
+          .update({
+        'current_players': currentPlayers,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
+      await updateQuery.eq('id', gameId);
+
+      return true;
+    } catch (e) {
+      debugPrint('Error joining multiplayer game: $e');
+      return false;
+    }
+  }
+
+  /// Get available multiplayer games - FIXED
+  Stream<List<Map<String, dynamic>>> getAvailableGames(String gameType) {
+    try {
+      final stream = _supabase
+          .from('active_games')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        // Manual filtering
+        final filtered = data.where((game) =>
+        game['game_type'] == gameType &&
+            game['status'] == 'waiting'
+        ).toList();
+
+        // Manual sorting
+        filtered.sort((a, b) {
+          final aTime = DateTime.parse(a['created_at'] ?? DateTime.now().toIso8601String());
+          final bTime = DateTime.parse(b['created_at'] ?? DateTime.now().toIso8601String());
+          return bTime.compareTo(aTime);
+        });
+
+        return filtered.map((game) => Map<String, dynamic>.from(game)).toList();
+      });
+    } catch (e) {
+      debugPrint('Error getting available games: $e');
+      return Stream.value([]);
+    }
+  }
+
+  /// Start game - FIXED
+  Future<bool> startGame(String gameId) async {
+    try {
+      final updateQuery = _supabase
+          .from('active_games')
+          .update({
+        'status': 'playing',
+        'started_at': DateTime.now().toIso8601String(),
+      });
+
+      await updateQuery.eq('id', gameId);
+
+      return true;
+    } catch (e) {
+      debugPrint('Error starting game: $e');
+      return false;
+    }
+  }
+
+  /// End game - FIXED
+  Future<bool> endGame(String gameId, Map<String, dynamic> result) async {
+    try {
+      final updateQuery = _supabase
+          .from('active_games')
+          .update({
+        'status': 'ended',
+        'ended_at': DateTime.now().toIso8601String(),
+        'result': result,
+      });
+
+      await updateQuery.eq('id', gameId);
+
+      return true;
+    } catch (e) {
+      debugPrint('Error ending game: $e');
+      return false;
+    }
   }
 }
 

@@ -1,6 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User hide
+
 import '../../core/di/service_locator.dart';
 import '../clan/services/clan_service.dart';
 import '../../core/services/auth_service.dart';
@@ -42,9 +43,10 @@ class _ClanTasksScreenState extends State<ClanTasksScreen>
   }
 
   Future<void> _getCurrentUser() async {
-    final User? user = _authService.getCurrentUser();
+    // ✅ Firebase Auth → Supabase Auth
+    final session = Supabase.instance.client.auth.currentSession;
     setState(() {
-      _currentUserId = user?.uid;
+      _currentUserId = session?.user.id;
     });
   }
 
