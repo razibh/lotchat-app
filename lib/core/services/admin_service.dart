@@ -1,101 +1,53 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart'; // 🟢 debugPrint এর জন্য
-import '../models/user_models.dart' as app; // 🟢 UserModel এর পরিবর্তে User
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/user_models.dart' as app;
 import 'database_service.dart';
+import '../di/service_locator.dart';
 
 class AdminService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final SupabaseClient _supabase = getService<SupabaseClient>();
   final DatabaseService _databaseService = DatabaseService();
 
   // ==================== CHECK ADMIN ====================
   Future<bool> isAdmin(String userId) async {
-    final app.User? user = await _databaseService.getUser(userId); // 🟢 app.User
-    return user?.role == app.UserRole.admin; // 🟢 superAdmin নেই
+    final app.User? user = await _databaseService.getUser(userId);
+    return user?.role == app.UserRole.admin;
   }
 
   Future<void> _checkAdmin() async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('Not logged in');
+    final session = _supabase.auth.currentSession;
+    if (session == null) throw Exception('Not logged in');
 
-    final bool isAdminUser = await isAdmin(user.uid);
+    final bool isAdminUser = await isAdmin(session.user.id);
     if (!isAdminUser) throw Exception('Unauthorized: Admin access required');
   }
 
   // ==================== USER MANAGEMENT ====================
-  Future<List<app.User>> getAllUsers({ // 🟢 app.User
+  Future<List<app.User>> getAllUsers({
     int limit = 100,
-    String? lastDocId,
+    int offset = 0,
   }) async {
     await _checkAdmin();
 
-    Query<Map<String, dynamic>> query = _firestore
-        .collection('users')
-        .orderBy('createdAt', descending: true)
-        .limit(limit);
+    final response = await _supabase
+        .from('users')
+        .select()
+        .order('created_at', ascending: false)
+        .range(offset, offset + limit - 1);
 
-    if (lastDocId != null) {
-      final DocumentSnapshot<Map<String, dynamic>> lastDoc = await _firestore.collection('users').doc(lastDocId).get();
-      query = query.startAfterDocument(lastDoc);
-    }
-
-    final QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
-    return snapshot.docs
-        .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-      final data = doc.data();
-      data['id'] = doc.id;
-      return app.User.fromJson(data);
-    })
-        .toList();
+    return response.map((json) => app.User.fromJson(json)).toList();
   }
 
-  Future<List<app.User>> searchUsers(String query) async { // 🟢 app.User
+  Future<List<app.User>> searchUsers(String query) async {
     await _checkAdmin();
 
-    // Search by username, email, or phone
-    final QuerySnapshot<Map<String, dynamic>> usernameQuery = await _firestore
-        .collection('users')
-        .where('username', isGreaterThanOrEqualTo: query)
-        .where('username', isLessThanOrEqualTo: '$query\uf8ff')
-        .limit(20)
-        .get();
+    final response = await _supabase
+        .from('users')
+        .select()
+        .or('username.ilike.%$query%,email.ilike.%$query%,phone_number.ilike.%$query%')
+        .limit(20);
 
-    final QuerySnapshot<Map<String, dynamic>> emailQuery = await _firestore
-        .collection('users')
-        .where('email', isEqualTo: query)
-        .get();
-
-    final QuerySnapshot<Map<String, dynamic>> phoneQuery = await _firestore
-        .collection('users')
-        .where('phone', isEqualTo: query)
-        .get();
-
-    final Map<String, app.User> results = {}; // 🟢 Map type fixed
-
-    for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in usernameQuery.docs) {
-      final data = doc.data();
-      data['id'] = doc.id;
-      results[doc.id] = app.User.fromJson(data);
-    }
-
-    for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in emailQuery.docs) {
-      if (!results.containsKey(doc.id)) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        results[doc.id] = app.User.fromJson(data);
-      }
-    }
-
-    for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in phoneQuery.docs) {
-      if (!results.containsKey(doc.id)) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        results[doc.id] = app.User.fromJson(data);
-      }
-    }
-
-    return results.values.toList();
+    return response.map((json) => app.User.fromJson(json)).toList();
   }
 
   // ==================== BAN/UNBAN USER ====================
@@ -106,20 +58,23 @@ class AdminService {
   }) async {
     await _checkAdmin();
 
-    final User? admin = _auth.currentUser;
+    final session = _supabase.auth.currentSession;
 
     DateTime? banUntil;
     if (durationDays > 0) {
       banUntil = DateTime.now().add(Duration(days: durationDays));
     }
 
-    await _firestore.collection('users').doc(userId).update({
-      'isBanned': true,
-      'banReason': reason,
-      'bannedAt': FieldValue.serverTimestamp(),
-      'bannedBy': admin?.uid,
-      'banUntil': banUntil,
-    });
+    await _supabase
+        .from('users')
+        .update({
+      'is_banned': true,
+      'ban_reason': reason,
+      'banned_at': DateTime.now().toIso8601String(),
+      'banned_by': session?.user.id,
+      'ban_until': banUntil?.toIso8601String(),
+    })
+        .eq('id', userId);
 
     // Log admin action
     await _logAdminAction(
@@ -132,13 +87,16 @@ class AdminService {
   Future<void> unbanUser(String userId) async {
     await _checkAdmin();
 
-    await _firestore.collection('users').doc(userId).update({
-      'isBanned': false,
-      'banReason': null,
-      'bannedAt': null,
-      'bannedBy': null,
-      'banUntil': null,
-    });
+    await _supabase
+        .from('users')
+        .update({
+      'is_banned': false,
+      'ban_reason': null,
+      'banned_at': null,
+      'banned_by': null,
+      'ban_until': null,
+    })
+        .eq('id', userId);
 
     await _logAdminAction(
       action: 'unban_user',
@@ -154,32 +112,31 @@ class AdminService {
   }) async {
     await _checkAdmin();
 
-    final User? admin = _auth.currentUser;
+    final session = _supabase.auth.currentSession;
 
-    await _firestore.runTransaction((Transaction transaction) async {
-      final DocumentReference<Map<String, dynamic>> userRef = _firestore.collection('users').doc(userId);
-      final DocumentSnapshot<Map<String, dynamic>> userDoc = await transaction.get(userRef);
+    // First get current user data
+    final userData = await _supabase
+        .from('users')
+        .select('coins')
+        .eq('id', userId)
+        .single();
 
-      if (!userDoc.exists) throw Exception('User not found');
+    final currentCoins = userData['coins'] ?? 0;
 
-      final currentCoins = userDoc.data()!['coins'] ?? 0;
+    // Update coins
+    await _supabase
+        .from('users')
+        .update({'coins': currentCoins + amount})
+        .eq('id', userId);
 
-      transaction.update(userRef, {
-        'coins': currentCoins + amount,
-      });
-
-      // Log transaction
-      transaction.set(
-        _firestore.collection('admin_transactions').doc(),
-        {
-          'adminId': admin?.uid,
-          'userId': userId,
-          'amount': amount,
-          'type': 'add',
-          'reason': reason,
-          'timestamp': FieldValue.serverTimestamp(),
-        },
-      );
+    // Log transaction
+    await _supabase.from('admin_transactions').insert({
+      'admin_id': session?.user.id,
+      'user_id': userId,
+      'amount': amount,
+      'type': 'add',
+      'reason': reason,
+      'created_at': DateTime.now().toIso8601String(),
     });
 
     await _logAdminAction(
@@ -196,33 +153,32 @@ class AdminService {
   }) async {
     await _checkAdmin();
 
-    final User? admin = _auth.currentUser;
+    final session = _supabase.auth.currentSession;
 
-    await _firestore.runTransaction((Transaction transaction) async {
-      final DocumentReference<Map<String, dynamic>> userRef = _firestore.collection('users').doc(userId);
-      final DocumentSnapshot<Map<String, dynamic>> userDoc = await transaction.get(userRef);
+    // First get current user data
+    final userData = await _supabase
+        .from('users')
+        .select('coins')
+        .eq('id', userId)
+        .single();
 
-      if (!userDoc.exists) throw Exception('User not found');
+    final currentCoins = userData['coins'] ?? 0;
+    if (currentCoins < amount) throw Exception('Insufficient coins');
 
-      final currentCoins = userDoc.data()!['coins'] ?? 0;
-      if (currentCoins < amount) throw Exception('Insufficient coins');
+    // Update coins
+    await _supabase
+        .from('users')
+        .update({'coins': currentCoins - amount})
+        .eq('id', userId);
 
-      transaction.update(userRef, {
-        'coins': currentCoins - amount,
-      });
-
-      // Log transaction
-      transaction.set(
-        _firestore.collection('admin_transactions').doc(),
-        {
-          'adminId': admin?.uid,
-          'userId': userId,
-          'amount': amount,
-          'type': 'remove',
-          'reason': reason,
-          'timestamp': FieldValue.serverTimestamp(),
-        },
-      );
+    // Log transaction
+    await _supabase.from('admin_transactions').insert({
+      'admin_id': session?.user.id,
+      'user_id': userId,
+      'amount': amount,
+      'type': 'remove',
+      'reason': reason,
+      'created_at': DateTime.now().toIso8601String(),
     });
 
     await _logAdminAction(
@@ -235,13 +191,16 @@ class AdminService {
   // ==================== USER ROLE MANAGEMENT ====================
   Future<void> changeUserRole({
     required String userId,
-    required app.UserRole newRole, // 🟢 app.UserRole
+    required app.UserRole newRole,
   }) async {
     await _checkAdmin();
 
-    await _firestore.collection('users').doc(userId).update({
+    await _supabase
+        .from('users')
+        .update({
       'role': newRole.toString().split('.').last,
-    });
+    })
+        .eq('id', userId);
 
     await _logAdminAction(
       action: 'change_role',
@@ -258,25 +217,32 @@ class AdminService {
   }) async {
     await _checkAdmin();
 
-    final DocumentReference<Map<String, dynamic>> agencyRef = await _firestore.collection('agencies').add({
+    final response = await _supabase
+        .from('agencies')
+        .insert({
       'name': name,
-      'ownerId': ownerId,
-      'commissionRate': commissionRate,
+      'owner_id': ownerId,
+      'commission_rate': commissionRate,
       'members': [ownerId],
-      'totalEarnings': 0,
-      'createdAt': FieldValue.serverTimestamp(),
+      'total_earnings': 0,
+      'created_at': DateTime.now().toIso8601String(),
       'status': 'active',
-    });
+    })
+        .select()
+        .single();
 
     // Update owner's role
-    await _firestore.collection('users').doc(ownerId).update({
+    await _supabase
+        .from('users')
+        .update({
       'role': 'agency',
-      'agencyId': agencyRef.id,
-    });
+      'agency_id': response['id'],
+    })
+        .eq('id', ownerId);
 
     await _logAdminAction(
       action: 'create_agency',
-      targetId: agencyRef.id,
+      targetId: response['id'],
       details: {'name': name, 'ownerId': ownerId},
     );
   }
@@ -285,19 +251,30 @@ class AdminService {
     await _checkAdmin();
 
     // Get agency members
-    final DocumentSnapshot<Map<String, dynamic>> agencyDoc = await _firestore.collection('agencies').doc(agencyId).get();
-    final members = agencyDoc.data()?['members'] ?? [];
+    final agency = await _supabase
+        .from('agencies')
+        .select('members')
+        .eq('id', agencyId)
+        .single();
+
+    final members = agency['members'] as List? ?? [];
 
     // Update all members' roles
     for (final memberId in members) {
-      await _firestore.collection('users').doc(memberId).update({
+      await _supabase
+          .from('users')
+          .update({
         'role': 'user',
-        'agencyId': null,
-      });
+        'agency_id': null,
+      })
+          .eq('id', memberId);
     }
 
     // Delete agency
-    await _firestore.collection('agencies').doc(agencyId).delete();
+    await _supabase
+        .from('agencies')
+        .delete()
+        .eq('id', agencyId);
 
     await _logAdminAction(
       action: 'delete_agency',
@@ -313,20 +290,25 @@ class AdminService {
   }) async {
     await _checkAdmin();
 
-    await _firestore.collection('sellers').doc(userId).set({
-      'userId': userId,
-      'commissionRate': commissionRate,
-      'coinBalance': initialCoins,
-      'totalCoinsSold': 0,
-      'totalEarnings': 0,
-      'createdAt': FieldValue.serverTimestamp(),
-      'isActive': true,
+    await _supabase
+        .from('sellers')
+        .insert({
+      'user_id': userId,
+      'commission_rate': commissionRate,
+      'coin_balance': initialCoins,
+      'total_coins_sold': 0,
+      'total_earnings': 0,
+      'created_at': DateTime.now().toIso8601String(),
+      'is_active': true,
     });
 
     // Update user's role
-    await _firestore.collection('users').doc(userId).update({
+    await _supabase
+        .from('users')
+        .update({
       'role': 'coinSeller',
-    });
+    })
+        .eq('id', userId);
 
     await _logAdminAction(
       action: 'create_seller',
@@ -341,12 +323,19 @@ class AdminService {
   }) async {
     await _checkAdmin();
 
-    await _firestore
-        .collection('sellers')
-        .doc(sellerId)
-        .update({
-      'coinBalance': FieldValue.increment(amount),
-    });
+    // Get current seller data
+    final sellerData = await _supabase
+        .from('sellers')
+        .select('coin_balance')
+        .eq('id', sellerId)
+        .single();
+
+    final currentBalance = sellerData['coin_balance'] ?? 0;
+
+    await _supabase
+        .from('sellers')
+        .update({'coin_balance': currentBalance + amount})
+        .eq('id', sellerId);
 
     await _logAdminAction(
       action: 'add_coins_to_seller',
@@ -359,10 +348,12 @@ class AdminService {
   Future<void> addGift(Map<String, dynamic> giftData) async {
     await _checkAdmin();
 
-    await _firestore.collection('gifts').add({
+    final session = _supabase.auth.currentSession;
+
+    await _supabase.from('gifts').insert({
       ...giftData,
-      'createdAt': FieldValue.serverTimestamp(),
-      'createdBy': _auth.currentUser?.uid,
+      'created_at': DateTime.now().toIso8601String(),
+      'created_by': session?.user.id,
     });
 
     await _logAdminAction(
@@ -374,11 +365,16 @@ class AdminService {
   Future<void> updateGift(String giftId, Map<String, dynamic> giftData) async {
     await _checkAdmin();
 
-    await _firestore.collection('gifts').doc(giftId).update({
+    final session = _supabase.auth.currentSession;
+
+    await _supabase
+        .from('gifts')
+        .update({
       ...giftData,
-      'updatedAt': FieldValue.serverTimestamp(),
-      'updatedBy': _auth.currentUser?.uid,
-    });
+      'updated_at': DateTime.now().toIso8601String(),
+      'updated_by': session?.user.id,
+    })
+        .eq('id', giftId);
 
     await _logAdminAction(
       action: 'update_gift',
@@ -390,7 +386,10 @@ class AdminService {
   Future<void> deleteGift(String giftId) async {
     await _checkAdmin();
 
-    await _firestore.collection('gifts').doc(giftId).delete();
+    await _supabase
+        .from('gifts')
+        .delete()
+        .eq('id', giftId);
 
     await _logAdminAction(
       action: 'delete_gift',
@@ -402,54 +401,51 @@ class AdminService {
   Future<AdminDashboardStats> getDashboardStats() async {
     await _checkAdmin();
 
-    final AggregateQuerySnapshot usersCount = await _firestore.collection('users').count().get();
-    final AggregateQuerySnapshot activeNow = await _firestore
-        .collection('users')
-        .where('isOnline', isEqualTo: true)
-        .count()
-        .get();
+    // Get counts using separate queries
+    final usersResponse = await _supabase
+        .from('users')
+        .select('*');
+
+    final activeNowResponse = await _supabase
+        .from('users')
+        .select()
+        .eq('is_online', true);
 
     final DateTime today = DateTime.now();
-    final DateTime startOfDay = DateTime(today.year, today.month, today.day);
+    final startOfDay = DateTime(today.year, today.month, today.day).toIso8601String();
 
-    final QuerySnapshot<Map<String, dynamic>> todayTransactions = await _firestore
-        .collection('transactions')
-        .where('timestamp', isGreaterThanOrEqualTo: startOfDay)
-        .get();
+    final todayTransactions = await _supabase
+        .from('transactions')
+        .select('amount')
+        .gte('created_at', startOfDay);
 
-    final double totalRevenue = todayTransactions.docs.fold<double>(
-      0,
-          (double sum, QueryDocumentSnapshot<Map<String, dynamic>> doc) => sum + (doc.data()['amount'] ?? 0),
-    );
+    double totalRevenue = 0;
+    for (var tx in todayTransactions) {
+      totalRevenue += (tx['amount'] ?? 0).toDouble();
+    }
 
-    final AggregateQuerySnapshot roomsActive = await _firestore
-        .collection('rooms')
-        .where('status', isEqualTo: 'active') // 🟢 isActive এর পরিবর্তে status
-        .count()
-        .get();
+    final roomsResponse = await _supabase
+        .from('rooms')
+        .select()
+        .eq('status', 'active');
+
+    final giftsResponse = await _supabase
+        .from('gifts')
+        .select();
+
+    final reportsResponse = await _supabase
+        .from('reports')
+        .select()
+        .eq('status', 'pending');
 
     return AdminDashboardStats(
-      totalUsers: usersCount.count ?? 0,
-      activeNow: activeNow.count ?? 0,
+      totalUsers: usersResponse.length,
+      activeNow: activeNowResponse.length,
       todayRevenue: totalRevenue,
-      activeRooms: roomsActive.count ?? 0,
-      totalGifts: await _getTotalGifts(),
-      pendingReports: await _getPendingReports(),
+      activeRooms: roomsResponse.length,
+      totalGifts: giftsResponse.length,
+      pendingReports: reportsResponse.length,
     );
-  }
-
-  Future<int> _getTotalGifts() async {
-    final AggregateQuerySnapshot snapshot = await _firestore.collection('gifts').count().get();
-    return snapshot.count ?? 0;
-  }
-
-  Future<int> _getPendingReports() async {
-    final AggregateQuerySnapshot snapshot = await _firestore
-        .collection('reports')
-        .where('status', isEqualTo: 'pending')
-        .count()
-        .get();
-    return snapshot.count ?? 0;
   }
 
   // ==================== LOGGING ====================
@@ -458,28 +454,29 @@ class AdminService {
     String? targetId,
     Map<String, dynamic>? details,
   }) async {
-    final User? admin = _auth.currentUser;
+    final session = _supabase.auth.currentSession;
 
-    await _firestore.collection('admin_logs').add({
-      'adminId': admin?.uid,
-      'adminEmail': admin?.email,
+    await _supabase.from('admin_logs').insert({
+      'admin_id': session?.user.id,
+      'admin_email': session?.user.email,
       'action': action,
-      'targetId': targetId,
+      'target_id': targetId,
       'details': details,
-      'timestamp': FieldValue.serverTimestamp(),
+      'created_at': DateTime.now().toIso8601String(),
     });
   }
 
   // Get admin logs
   Stream<List<AdminLog>> getAdminLogs({int limit = 100}) {
-    return _firestore
-        .collection('admin_logs')
-        .orderBy('timestamp', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((QuerySnapshot<Map<String, dynamic>> snapshot) => snapshot.docs
-        .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => AdminLog.fromJson(doc.data(), doc.id))
-        .toList());
+    return _supabase
+        .from('admin_logs')
+        .stream(primaryKey: ['id'])
+        .map((data) {
+      return data
+          .take(limit)
+          .map((json) => AdminLog.fromJson(json, json['id']))
+          .toList();
+    });
   }
 }
 
@@ -525,12 +522,12 @@ class AdminLog {
   factory AdminLog.fromJson(Map<String, dynamic> json, String id) {
     return AdminLog(
       id: id,
-      adminId: json['adminId'] ?? '',
-      adminEmail: json['adminEmail'] ?? '',
+      adminId: json['admin_id'] ?? '',
+      adminEmail: json['admin_email'] ?? '',
       action: json['action'] ?? '',
-      targetId: json['targetId'],
+      targetId: json['target_id'],
       details: json['details'],
-      timestamp: (json['timestamp'] as Timestamp).toDate(),
+      timestamp: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
     );
   }
 }

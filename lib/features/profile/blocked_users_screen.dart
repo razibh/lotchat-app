@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User hide
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/user_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/analytics_service.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
-import '../../mixins/dialog_mixin.dart'; // প্রথম ফাইল থেকে DialogMixin
+import '../../mixins/dialog_mixin.dart';
 import '../../widgets/animation/fade_animation.dart';
 import '../../widgets/common/empty_state_widget.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../widgets/search_bar.dart';
-import '../../core/models/user_models.dart';
+import '../../core/models/user_models.dart' as app;
 
 class BlockedUsersScreen extends StatefulWidget {
   final String? userId;
@@ -32,15 +34,15 @@ class BlockedUsersScreen extends StatefulWidget {
 }
 
 class _BlockedUsersScreenState extends State<BlockedUsersScreen>
-    with LoadingMixin, ToastMixin, DialogMixin { // DialogMixin যোগ
+    with LoadingMixin, ToastMixin, DialogMixin {
 
   final UserService _userService = ServiceLocator.instance.get<UserService>();
   final AuthService _authService = ServiceLocator.instance.get<AuthService>();
   final AnalyticsService _analyticsService = ServiceLocator.instance.get<AnalyticsService>();
 
-  List<User> _blockedUsers = [];
-  List<User> _filteredBlocked = []; // প্রথম ফাইল থেকে
-  String _searchQuery = ''; // প্রথম ফাইল থেকে
+  List<app.User> _blockedUsers = [];
+  List<app.User> _filteredBlocked = [];
+  String _searchQuery = '';
   String? _currentUserId;
   bool _isLoading = true;
   String? _errorMessage;
@@ -83,8 +85,9 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen>
   }
 
   Future<void> _getCurrentUser() async {
-    final user = await _authService.getCurrentUser();
-    final userId = widget.userId ?? user?.uid;
+    //  Firebase Auth → Supabase Auth
+    final session = Supabase.instance.client.auth.currentSession;
+    final userId = widget.userId ?? session?.user.id;
 
     if (userId == null) {
       throw Exception('User not logged in');
@@ -101,7 +104,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen>
 
       setState(() {
         _blockedUsers = users;
-        _filteredBlocked = users; // প্রথম ফাইল থেকে
+        _filteredBlocked = users;
         _isLoading = false;
         _isRefreshing = false;
       });
@@ -129,21 +132,20 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen>
     }
   }
 
-  // প্রথম ফাইল থেকে যোগ
   void _filterBlocked(String query) {
     setState(() {
       _searchQuery = query;
       if (query.isEmpty) {
         _filteredBlocked = _blockedUsers;
       } else {
-        _filteredBlocked = _blockedUsers.where((User u) {
+        _filteredBlocked = _blockedUsers.where((app.User u) {
           return u.username.toLowerCase().contains(query.toLowerCase());
         }).toList();
       }
     });
   }
 
-  Future<void> _unblockUser(User user) async {
+  Future<void> _unblockUser(app.User user) async {
     try {
       showLoading('Unblocking...');
 
@@ -154,7 +156,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen>
       if (success) {
         setState(() {
           _blockedUsers.removeWhere((u) => u.id == user.id);
-          _filteredBlocked.removeWhere((u) => u.id == user.id); // প্রথম ফাইল থেকে
+          _filteredBlocked.removeWhere((u) => u.id == user.id);
         });
 
         showSuccess('${user.name} has been unblocked');
@@ -182,7 +184,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen>
     }
   }
 
-  void _showUnblockDialog(User user) {
+  void _showUnblockDialog(app.User user) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -259,10 +261,10 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen>
         ),
       ],
       bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(60), // প্রথম ফাইল থেকে
+        preferredSize: const Size.fromHeight(60),
         child: Padding(
           padding: const EdgeInsets.all(8),
-          child: SearchBar( // প্রথম ফাইল থেকে SearchBar
+          child: SearchBar(
             hintText: 'Search blocked users...',
             onChanged: _filterBlocked,
           ),
@@ -300,10 +302,10 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen>
       );
     }
 
-    if (_filteredBlocked.isEmpty) { // _blockedUsers → _filteredBlocked
+    if (_filteredBlocked.isEmpty) {
       return EmptyStateWidget(
         title: 'No Blocked Users',
-        message: _searchQuery.isEmpty // প্রথম ফাইল থেকে
+        message: _searchQuery.isEmpty
             ? 'You haven\'t blocked anyone yet'
             : 'No results match your search',
         icon: Icons.block,
@@ -315,7 +317,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen>
       color: Colors.red,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _filteredBlocked.length, // _blockedUsers → _filteredBlocked
+        itemCount: _filteredBlocked.length,
         itemBuilder: (context, index) {
           final user = _filteredBlocked[index];
           return FadeAnimation(
@@ -327,7 +329,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen>
     );
   }
 
-  Widget _buildUserTile(User user) {
+  Widget _buildUserTile(app.User user) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),

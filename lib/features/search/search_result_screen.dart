@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User hide
+
 import '../../core/di/service_locator.dart';
 import '../../core/services/search_service.dart';
 import '../../core/services/auth_service.dart';
@@ -123,8 +125,9 @@ class _SearchResultScreenState extends State<SearchResultScreen>
   }
 
   Future<void> _getCurrentUser() async {
-    final user = await _authService.getCurrentUser();
-    _currentUserId = user?.uid;
+    // ✅ Firebase Auth → Supabase Auth
+    final session = Supabase.instance.client.auth.currentSession;
+    _currentUserId = session?.user.id;
   }
 
   Future<void> _performSearch({bool refresh = false}) async {

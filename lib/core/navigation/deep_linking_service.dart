@@ -1,53 +1,38 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // 🟢 kDebugMode এর জন্য
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'navigation_service.dart';
 import 'route_constants.dart';
+import 'package:flutter/services.dart';
 
 class DeepLinkingService {
   factory DeepLinkingService() => _instance;
   DeepLinkingService._internal();
   static final DeepLinkingService _instance = DeepLinkingService._internal();
 
-  final FirebaseDynamicLinks _dynamicLinks = FirebaseDynamicLinks.instance;
-  StreamSubscription<PendingDynamicLinkData>? _dynamicLinksSubscription; // 🟢 Fixed type
+  // Initialize deep linking (for mobile platforms)
+  Future<void> initDeepLinking() async {
 
-  // Initialize deep linking
-  Future<void> initDynamicLinks() async {
-    // Handle links when app is already running
-    _dynamicLinksSubscription = _dynamicLinks.onLink.listen(
-          (PendingDynamicLinkData dynamicLink) {
-        _handleDeepLink(dynamicLink);
-      },
-      onError: (e) {
-        if (kDebugMode) {
-          print('Error handling dynamic link: $e');
-        }
-      },
-    );
+    if (!kIsWeb) {
 
-    // Handle links that opened the app
-    final PendingDynamicLinkData? initialLink = await _dynamicLinks.getInitialLink();
-    if (initialLink != null) {
-      _handleDeepLink(initialLink);
     }
   }
 
-  // Handle deep link
-  void _handleDeepLink(PendingDynamicLinkData? dynamicLink) {
-    if (dynamicLink == null) return;
-
-    final Uri? deepLink = dynamicLink.link;
-    if (deepLink == null) return;
-
+  // Handle deep link from platform channels (for mobile)
+  void handleIncomingLink(String link) {
     if (kDebugMode) {
-      print('Deep link received: $deepLink');
+      print('Deep link received: $link');
     }
 
-    // Parse the link and navigate
-    _navigateToDeepLink(deepLink);
+    try {
+      final Uri uri = Uri.parse(link);
+      _navigateToDeepLink(uri);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error parsing deep link: $e');
+      }
+    }
   }
 
   // Navigate based on deep link
@@ -55,7 +40,6 @@ class DeepLinkingService {
     final String path = uri.path;
     final Map<String, String> queryParams = uri.queryParameters;
 
-    // Example: https://lotchat.app/user/123
     if (path.startsWith('/user/')) {
       final String userId = path.replaceFirst('/user/', '');
       NavigationService.navigateTo(
@@ -63,7 +47,7 @@ class DeepLinkingService {
         arguments: {'userId': userId},
       );
     }
-    // Example: https://lotchat.app/room/456
+
     else if (path.startsWith('/room/')) {
       final String roomId = path.replaceFirst('/room/', '');
       NavigationService.navigateTo(
@@ -71,7 +55,7 @@ class DeepLinkingService {
         arguments: {'roomId': roomId},
       );
     }
-    // Example: https://lotchat.app/clan/789
+
     else if (path.startsWith('/clan/')) {
       final String clanId = path.replaceFirst('/clan/', '');
       NavigationService.navigateTo(
@@ -79,7 +63,7 @@ class DeepLinkingService {
         arguments: {'clanId': clanId},
       );
     }
-    // Example: https://lotchat.app/promotion?code=WELCOME50
+
     else if (path == '/promotion') {
       final String? code = queryParams['code'];
       if (code != null) {
@@ -89,16 +73,24 @@ class DeepLinkingService {
         );
       }
     }
+
+    else if (path == '/invite') {
+      final String? ref = queryParams['ref'];
+      final String? user = queryParams['user'];
+      if (ref != null) {
+        NavigationService.navigateTo(
+          '/invite',
+          arguments: {'referralCode': ref, 'userId': user},
+        );
+      }
+    }
   }
 
-  // Create dynamic link
-  Future<String?> createDynamicLink({
+
+  String createShareableLink({
     required String path,
     Map<String, String>? queryParams,
-    String? title,
-    String? description,
-    String? imageUrl,
-  }) async {
+  }) {
     try {
       // Build the link
       String link = 'https://lotchat.app$path';
@@ -111,34 +103,12 @@ class DeepLinkingService {
         );
         link = uri.toString();
       }
-
-      final DynamicLinkParameters parameters = DynamicLinkParameters(
-        uriPrefix: 'https://lotchat.page.link',
-        link: Uri.parse(link),
-        androidParameters: const AndroidParameters(
-          packageName: 'com.lotchat.app',
-          minimumVersion: 1,
-        ),
-        iosParameters: const IOSParameters(
-          bundleId: 'com.lotchat.app',
-          minimumVersion: '1.0.0',
-          appStoreId: '123456789',
-        ),
-        socialMetaTagParameters: SocialMetaTagParameters(
-          title: title ?? 'LotChat',
-          description: description ?? 'Join me on LotChat!',
-          imageUrl: imageUrl != null ? Uri.parse(imageUrl) : null,
-        ),
-      );
-
-      final ShortDynamicLink shortLink = await _dynamicLinks.buildShortLink(parameters);
-
-      return shortLink.shortUrl.toString();
+      return link;
     } catch (e) {
       if (kDebugMode) {
-        print('Error creating dynamic link: $e');
+        print('Error creating shareable link: $e');
       }
-      return null;
+      return 'https://lotchat.app';
     }
   }
 
@@ -147,33 +117,75 @@ class DeepLinkingService {
     try {
       final Uri uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        // Fallback - copy to clipboard
+        await _copyToClipboard(url);
       }
     } catch (e) {
       if (kDebugMode) {
         print('Error sharing deep link: $e');
       }
+      await _copyToClipboard(url);
+    }
+  }
+
+  // Copy text to clipboard
+  Future<void> _copyToClipboard(String text) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (kDebugMode) {
+      print('Copied to clipboard: $text');
     }
   }
 
   // Create invite link
-  Future<String?> createInviteLink({
+  String createInviteLink({
     required String userId,
     String? referralCode,
-  }) async {
-    return createDynamicLink(
+  }) {
+    return createShareableLink(
       path: '/invite',
       queryParams: {
         'ref': referralCode ?? userId,
         'user': userId,
       },
-      title: 'Join me on LotChat!',
-      description: 'Download LotChat and connect with me!',
     );
+  }
+
+  // Create promotion link
+  String createPromotionLink(String code) {
+    return createShareableLink(
+      path: '/promotion',
+      queryParams: {'code': code},
+    );
+  }
+
+  // Parse invite link data
+  Map<String, String?>? parseInviteLink(String url) {
+    try {
+      final uri = Uri.parse(url);
+      if (uri.path == '/invite') {
+        return {
+          'referralCode': uri.queryParameters['ref'],
+          'userId': uri.queryParameters['user'],
+        };
+      }
+      return null;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error parsing invite link: $e');
+      }
+      return null;
+    }
   }
 
   // Dispose
   void dispose() {
-    _dynamicLinksSubscription?.cancel();
+
   }
 }
+
+

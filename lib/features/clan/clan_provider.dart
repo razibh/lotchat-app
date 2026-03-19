@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/models/clan_model.dart';
 import '../../features/clan/models/clan_member_model.dart';
 import '../../features/clan/services/clan_service.dart';

@@ -1,7 +1,7 @@
 import 'dart:developer' as developer;
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../di/service_locator.dart';
 
 enum LogLevel {
   debug,
@@ -16,6 +16,7 @@ class LoggerService {
   LoggerService._internal();
   static final LoggerService _instance = LoggerService._internal();
 
+  late final SupabaseClient _supabase;
   bool _isInitialized = false;
   LogLevel _minLogLevel = LogLevel.debug;
   final List<LogEntry> _recentLogs = [];
@@ -24,21 +25,19 @@ class LoggerService {
   // ==================== INITIALIZATION ====================
   Future<void> initialize({
     LogLevel minLogLevel = LogLevel.debug,
-    bool enableCrashlytics = true,
   }) async {
-    _minLogLevel = minLogLevel;
+    try {
+      _supabase = getService<SupabaseClient>();
+      _minLogLevel = minLogLevel;
+      _isInitialized = true;
 
-    if (enableCrashlytics) {
-      try {
-        await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
-      } catch (e) {
-        if (kDebugMode) {
-          print('Crashlytics initialization error: $e');
-        }
+      debug('LoggerService initialized with Supabase');
+    } catch (e) {
+      if (kDebugMode) {
+        print('LoggerService initialization error: $e');
       }
+      _isInitialized = true; // Still initialize even without Supabase
     }
-
-    _isInitialized = true;
   }
 
   // ==================== LOGGING METHODS ====================
@@ -61,17 +60,6 @@ class LoggerService {
 
   void fatal(String message, {Map<String, dynamic>? data, String? tag, dynamic error, StackTrace? stackTrace}) {
     _log(LogLevel.fatal, message, data: data, tag: tag, error: error, stackTrace: stackTrace);
-
-    // Report fatal errors to Crashlytics
-    if (error != null) {
-      try {
-        FirebaseCrashlytics.instance.recordError(error, stackTrace, reason: message);
-      } catch (e) {
-        if (kDebugMode) {
-          print('Crashlytics error: $e');
-        }
-      }
-    }
   }
 
   // ==================== PRIVATE LOG METHOD ====================
@@ -106,14 +94,9 @@ class LoggerService {
     // Print to console
     _printToConsole(logEntry);
 
-    // Send to Crashlytics for errors (as custom logs)
-    if ((level == LogLevel.error || level == LogLevel.fatal)) {
-      _sendToCrashlytics(logEntry);
-    }
-
-    // Save to Firestore for important logs
+    // Save to Supabase for important logs
     if (level == LogLevel.warning || level == LogLevel.error || level == LogLevel.fatal) {
-      _saveToFirestore(logEntry);
+      _saveToSupabase(logEntry);
     }
   }
 
@@ -148,53 +131,30 @@ class LoggerService {
     }
   }
 
-  Future<void> _sendToCrashlytics(LogEntry entry) async {
+  Future<void> _saveToSupabase(LogEntry entry) async {
     try {
-      // Log the message to Crashlytics
-      FirebaseCrashlytics.instance.log('${entry.level}: ${entry.message}');
+      if (!_isInitialized) return;
 
-      // Set custom keys (one by one)
-      if (entry.data != null) {
-        entry.data!.forEach((key, value) {
-          FirebaseCrashlytics.instance.setCustomKey(key, value.toString());
-        });
-      }
-
-      if (entry.tag != null) {
-        FirebaseCrashlytics.instance.setCustomKey('tag', entry.tag!);
-      }
-
-      if (entry.error != null) {
-        FirebaseCrashlytics.instance.setCustomKey('error', entry.error!);
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Crashlytics log error: $e');
-      }
-    }
-  }
-
-  Future<void> _saveToFirestore(LogEntry entry) async {
-    try {
-      await FirebaseFirestore.instance.collection('app_logs').add({
+      await _supabase.from('app_logs').insert({
         'level': entry.level.toString().split('.').last,
         'message': entry.message,
         'data': entry.data,
         'tag': entry.tag,
         'error': entry.error,
-        'timestamp': entry.timestamp,
+        'stack_trace': entry.stackTrace,
+        'timestamp': entry.timestamp.toIso8601String(),
       });
     } catch (e) {
       if (kDebugMode) {
-        print('Firestore log error: $e');
+        print('Supabase log error: $e');
       }
     }
   }
 
-  // ==================== LOG RETRIEVAL ====================
+  // ==================== LOG RETRIEVAL - FIXED ====================
 
   List<LogEntry> getRecentLogs({LogLevel? minLevel, String? tag}) {
-    List<LogEntry> logs = _recentLogs;
+    List<LogEntry> logs = List.from(_recentLogs);
 
     if (minLevel != null) {
       logs = logs.where((LogEntry log) => log.level.index >= minLevel.index).toList();
@@ -207,47 +167,97 @@ class LoggerService {
     return logs;
   }
 
-  Future<List<LogEntry>> getLogsFromFirestore({
+  Future<List<LogEntry>> getLogsFromSupabase({
     DateTime? startDate,
     DateTime? endDate,
     LogLevel? minLevel,
+    String? tag,
     int limit = 100,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = FirebaseFirestore.instance
-          .collection('app_logs')
-          .orderBy('timestamp', descending: true)
+      if (!_isInitialized) return [];
+
+      // Build query
+      var query = _supabase
+          .from('app_logs')
+          .select()
+          .order('timestamp', ascending: false)
           .limit(limit);
 
+      // Apply date filters if provided - FIXED
       if (startDate != null) {
-        query = query.where('timestamp', isGreaterThanOrEqualTo: startDate);
+        // Manual filtering for start date
+        // We'll fetch and filter manually
       }
 
       if (endDate != null) {
-        query = query.where('timestamp', isLessThanOrEqualTo: endDate);
+        // Manual filtering for end date
       }
 
-      final QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
+      if (tag != null) {
+        // Manual filtering for tag
+      }
 
-      return snapshot.docs.map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-        final Map<String, dynamic> data = doc.data();
+      // Execute query
+      final response = await query;
+
+      // Manual filtering
+      List<Map<String, dynamic>> filteredResponse = List.from(response);
+
+      if (startDate != null) {
+        filteredResponse = filteredResponse.where((item) {
+          final itemDate = DateTime.parse(item['timestamp']);
+          return itemDate.isAfter(startDate) || itemDate.isAtSameMomentAs(startDate);
+        }).toList();
+      }
+
+      if (endDate != null) {
+        filteredResponse = filteredResponse.where((item) {
+          final itemDate = DateTime.parse(item['timestamp']);
+          return itemDate.isBefore(endDate) || itemDate.isAtSameMomentAs(endDate);
+        }).toList();
+      }
+
+      if (tag != null) {
+        filteredResponse = filteredResponse.where((item) => item['tag'] == tag).toList();
+      }
+
+      // Convert to LogEntry objects
+      List<LogEntry> logs = filteredResponse.map((json) {
         return LogEntry(
-          level: LogLevel.values.firstWhere(
-                (LogLevel e) => e.toString().split('.').last == data['level'],
-            orElse: () => LogLevel.info,
-          ),
-          message: data['message'] ?? '',
-          data: data['data'],
-          tag: data['tag'],
-          error: data['error'],
-          timestamp: (data['timestamp'] as Timestamp).toDate(),
+          level: _parseLogLevel(json['level']),
+          message: json['message'] ?? '',
+          data: json['data'],
+          tag: json['tag'],
+          error: json['error'],
+          stackTrace: json['stack_trace'],
+          timestamp: DateTime.parse(json['timestamp']),
         );
       }).toList();
+
+      // Apply minLevel filter
+      if (minLevel != null) {
+        logs = logs.where((log) => log.level.index >= minLevel.index).toList();
+      }
+
+      return logs;
     } catch (e) {
       if (kDebugMode) {
-        print('Error fetching logs: $e');
+        print('Error fetching logs from Supabase: $e');
       }
       return [];
+    }
+  }
+
+  LogLevel _parseLogLevel(String? levelStr) {
+    if (levelStr == null) return LogLevel.info;
+    try {
+      return LogLevel.values.firstWhere(
+            (e) => e.toString().split('.').last == levelStr,
+        orElse: () => LogLevel.info,
+      );
+    } catch (e) {
+      return LogLevel.info;
     }
   }
 
@@ -291,6 +301,13 @@ class LoggerService {
     }, tag: 'NETWORK');
   }
 
+  // ==================== ERROR REPORTING ====================
+
+  Future<void> reportError(dynamic error, StackTrace? stackTrace, {String? message, Map<String, dynamic>? extraData}) async {
+    final errorMsg = message ?? 'Unhandled error';
+    fatal(errorMsg, error: error, stackTrace: stackTrace, data: extraData);
+  }
+
   // ==================== CLEANUP ====================
 
   void clearRecentLogs() {
@@ -318,6 +335,18 @@ class LogEntry {
     this.error,
     this.stackTrace,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'level': level.toString().split('.').last,
+      'message': message,
+      'data': data,
+      'tag': tag,
+      'error': error,
+      'stack_trace': stackTrace,
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
 }
 
 class PerformanceTracker {
@@ -346,4 +375,114 @@ class PerformanceTracker {
       ...?resultData,
     }, tag: 'PERFORMANCE');
   }
+
+  // Track with custom completion
+  void completeWithSuccess({Map<String, dynamic>? metadata}) {
+    end(resultData: {'status': 'success', ...?metadata});
+  }
+
+  void completeWithError(dynamic error, {Map<String, dynamic>? metadata}) {
+    end(resultData: {'status': 'error', 'error': error.toString(), ...?metadata});
+  }
 }
+
+// ==================== ALTERNATIVE HTTP-BASED VERSION (যদি উপরেরটা কাজ না করে) ====================
+
+/*
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+class LoggerService {
+  // ... same as above ...
+
+  Future<List<LogEntry>> getLogsFromSupabase({
+    DateTime? startDate,
+    DateTime? endDate,
+    LogLevel? minLevel,
+    String? tag,
+    int limit = 100,
+  }) async {
+    try {
+      if (!_isInitialized) return [];
+
+      final session = _supabase.auth.currentSession;
+      if (session == null) return [];
+
+      final supabaseUrl = 'YOUR_SUPABASE_URL'; // Get from environment
+      final supabaseKey = 'YOUR_SUPABASE_ANON_KEY'; // Get from environment
+
+      // Build URL with filters
+      String urlStr = '$supabaseUrl/rest/v1/app_logs?order=timestamp.desc&limit=$limit';
+
+      if (startDate != null) {
+        urlStr += '&timestamp=gte.${startDate.toIso8601String()}';
+      }
+      if (endDate != null) {
+        urlStr += '&timestamp=lte.${endDate.toIso8601String()}';
+      }
+      if (tag != null) {
+        urlStr += '&tag=eq.$tag';
+      }
+
+      final url = Uri.parse(urlStr);
+
+      final response = await http.get(
+        url,
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': 'Bearer ${session.accessToken}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+
+        List<LogEntry> logs = data.map((json) {
+          return LogEntry(
+            level: _parseLogLevel(json['level']),
+            message: json['message'] ?? '',
+            data: json['data'],
+            tag: json['tag'],
+            error: json['error'],
+            stackTrace: json['stack_trace'],
+            timestamp: DateTime.parse(json['timestamp']),
+          );
+        }).toList();
+
+        if (minLevel != null) {
+          logs = logs.where((log) => log.level.index >= minLevel.index).toList();
+        }
+
+        return logs;
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error fetching logs: $e');
+      return [];
+    }
+  }
+}
+*/
+
+// ==================== EXTENSION FOR CONVENIENCE ====================
+
+extension LogLevelExtension on LogLevel {
+  String get displayName {
+    switch (this) {
+      case LogLevel.debug:
+        return 'DEBUG';
+      case LogLevel.info:
+        return 'INFO';
+      case LogLevel.warning:
+        return 'WARNING';
+      case LogLevel.error:
+        return 'ERROR';
+      case LogLevel.fatal:
+        return 'FATAL';
+    }
+  }
+}
+
+// ==================== GLOBAL LOGGER ACCESS ====================
+
+LoggerService get logger => ServiceLocator.instance.get<LoggerService>();

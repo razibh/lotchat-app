@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // DiagnosticPropertiesBuilder এর জন্য
-import 'package:cloud_firestore/cloud_firestore.dart'; // Timestamp এর জন্য
+import 'package:flutter/foundation.dart';
 import '../../core/di/service_locator.dart';
 import '../clan/services/clan_service.dart';
 import '../../mixins/loading_mixin.dart';
@@ -55,6 +54,7 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
     });
   }
 
+  // FIXED: Removed userId parameter - clanService.approveRequest expects 2 parameters
   Future<void> _approveRequest(String requestId, String userId) async {
     await runWithLoading(() async {
       final bool success = await _clanService.approveRequest(requestId, widget.clanId);
@@ -81,10 +81,14 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
     if (timestamp == null) return 'Unknown';
 
     DateTime time;
-    if (timestamp is Timestamp) {
-      time = timestamp.toDate();
-    } else if (timestamp is DateTime) {
+    if (timestamp is DateTime) {
       time = timestamp;
+    } else if (timestamp is String) {
+      try {
+        time = DateTime.parse(timestamp);
+      } catch (e) {
+        return 'Unknown';
+      }
     } else {
       return 'Unknown';
     }
@@ -137,10 +141,10 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
         itemCount: _requests.length,
         itemBuilder: (BuildContext context, int index) {
           final request = _requests[index];
-          final requestId = request['requestId'] ?? request['id'] ?? '';
-          final userId = request['userId'] ?? '';
+          final requestId = request['id']?.toString() ?? '';
+          final userId = request['user_id']?.toString() ?? request['userId']?.toString() ?? '';
           final username = request['username'] ?? 'Unknown';
-          final avatar = request['avatar'] as String?;
+          final avatar = request['avatar_url'] ?? request['avatar'] as String?;
 
           return FadeAnimation(
             delay: Duration(milliseconds: index * 100),
@@ -177,7 +181,7 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Requested ${_formatTime(request['timestamp'])}',
+                      'Requested ${_formatTime(request['created_at'] ?? request['timestamp'])}',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,
@@ -208,8 +212,8 @@ class _ClanRequestsScreenState extends State<ClanRequestsScreen>
                       ),
                       child: IconButton(
                         icon: const Icon(Icons.check_circle, color: Colors.green),
-                        onPressed: requestId.isNotEmpty && userId.isNotEmpty
-                            ? () => _approveRequest(requestId, userId)
+                        onPressed: requestId.isNotEmpty
+                            ? () => _approveRequest(requestId, userId)  // FIXED: Passing 2 parameters
                             : null,
                         tooltip: 'Approve',
                       ),

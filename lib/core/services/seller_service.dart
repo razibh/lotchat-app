@@ -1,21 +1,55 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart'; // 🟢 debugPrint এর জন্য
-
-import '../models/user_models.dart' as app; // 🟢 UserModel এর জন্য
-import 'database_service.dart';
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/user_models.dart' as app;
+import '../di/service_locator.dart';
 
 class SellerService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final DatabaseService _databaseService = DatabaseService();
+  late final SupabaseClient _supabase;
+
+  SellerService() {
+    _supabase = getService<SupabaseClient>();
+  }
+
+  // Helper to get current user
+  String? get _currentUserId => _supabase.auth.currentSession?.user.id;
+
+  // Helper methods
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  double _toDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
+  DateTime _parseDate(dynamic date) {
+    if (date == null) return DateTime.now();
+    if (date is String) return DateTime.parse(date);
+    if (date is DateTime) return date;
+    return DateTime.now();
+  }
 
   // ==================== SELLER OPERATIONS ====================
+
+  /// Get seller
   Future<Seller?> getSeller(String sellerId) async {
     try {
-      final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore.collection('sellers').doc(sellerId).get();
-      if (doc.exists) {
-        return Seller.fromJson(doc.data()!, doc.id);
+      final response = await _supabase
+          .from('sellers')
+          .select()
+          .eq('id', sellerId)
+          .maybeSingle();
+
+      if (response != null) {
+        return Seller.fromJson(response);
       }
       return null;
     } catch (e) {
@@ -24,52 +58,178 @@ class SellerService {
     }
   }
 
+  /// Stream seller
   Stream<Seller?> streamSeller(String sellerId) {
-    return _firestore
-        .collection('sellers')
-        .doc(sellerId)
-        .snapshots()
-        .map((DocumentSnapshot<Map<String, dynamic>> doc) {
-      if (doc.exists) {
-        return Seller.fromJson(doc.data()!, doc.id);
+    try {
+      final stream = _supabase
+          .from('sellers')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        for (var item in data) {
+          if (item['id'].toString() == sellerId) {
+            return Seller.fromJson(item);
+          }
+        }
+        return null;
+      });
+    } catch (e) {
+      debugPrint('Error streaming seller: $e');
+      return Stream.value(null);
+    }
+  }
+
+  /// Create seller account
+  Future<Seller?> createSellerAccount({
+    required String name,
+    double commissionRate = 0.1,
+  }) async {
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
+
+    try {
+      // Check if seller already exists
+      final existing = await _supabase
+          .from('sellers')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (existing != null) {
+        return Seller.fromJson(existing);
       }
+
+      final sellerData = {
+        'user_id': userId,
+        'name': name,
+        'commission_rate': commissionRate,
+        'coin_balance': 0,
+        'total_coins_sold': 0,
+        'total_earnings': 0,
+        'packages': [],
+        'is_active': true,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+
+      final response = await _supabase
+          .from('sellers')
+          .insert(sellerData)
+          .select()
+          .single();
+
+      return Seller.fromJson(response);
+    } catch (e) {
+      debugPrint('Error creating seller account: $e');
       return null;
-    });
+    }
   }
 
   // ==================== COIN PACKAGES ====================
+
+  /// Get seller packages
   List<CoinPackage> getSellerPackages(Seller seller) {
     return seller.packages;
   }
 
-  Future<void> updatePackages(String sellerId, List<CoinPackage> packages) async {
-    final User? currentUser = _auth.currentUser;
-    if (currentUser == null) throw Exception('Not logged in');
+  /// Update packages
+  Future<bool> updatePackages(String sellerId, List<CoinPackage> packages) async {
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('Not logged in');
 
-    final Seller? seller = await getSeller(sellerId);
-    if (seller == null) throw Exception('Seller not found');
+    try {
+      final seller = await getSeller(sellerId);
+      if (seller == null) throw Exception('Seller not found');
 
-    // Check if current user is the seller
-    if (seller.userId != currentUser.uid) {
-      throw Exception('Unauthorized');
+      // Check if current user is the seller
+      if (seller.userId != userId) {
+        throw Exception('Unauthorized');
+      }
+
+      final updateQuery = _supabase
+          .from('sellers')
+          .update({
+        'packages': packages.map((p) => p.toJson()).toList(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateQuery.eq('id', sellerId);
+
+      return true;
+    } catch (e) {
+      debugPrint('Error updating packages: $e');
+      return false;
     }
+  }
 
-    await _firestore
-        .collection('sellers')
-        .doc(sellerId)
-        .update({
-      'packages': packages.map((CoinPackage p) => p.toJson()).toList(),
-    });
+  /// Add package
+  Future<bool> addPackage(String sellerId, CoinPackage package) async {
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('Not logged in');
+
+    try {
+      final seller = await getSeller(sellerId);
+      if (seller == null) throw Exception('Seller not found');
+
+      if (seller.userId != userId) {
+        throw Exception('Unauthorized');
+      }
+
+      final updatedPackages = [...seller.packages, package];
+
+      final updateQuery = _supabase
+          .from('sellers')
+          .update({
+        'packages': updatedPackages.map((p) => p.toJson()).toList(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateQuery.eq('id', sellerId);
+
+      return true;
+    } catch (e) {
+      debugPrint('Error adding package: $e');
+      return false;
+    }
+  }
+
+  /// Remove package
+  Future<bool> removePackage(String sellerId, String packageId) async {
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('Not logged in');
+
+    try {
+      final seller = await getSeller(sellerId);
+      if (seller == null) throw Exception('Seller not found');
+
+      if (seller.userId != userId) {
+        throw Exception('Unauthorized');
+      }
+
+      final updatedPackages = seller.packages.where((p) => p.id != packageId).toList();
+
+      final updateQuery = _supabase
+          .from('sellers')
+          .update({
+        'packages': updatedPackages.map((p) => p.toJson()).toList(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateQuery.eq('id', sellerId);
+
+      return true;
+    } catch (e) {
+      debugPrint('Error removing package: $e');
+      return false;
+    }
   }
 
   // ==================== COIN SALES ====================
+
+  /// Sell coins
   Future<bool> sellCoins({
     required String sellerId,
     required String buyerId,
     required CoinPackage package,
   }) async {
     try {
-      final Seller? seller = await getSeller(sellerId);
+      final seller = await getSeller(sellerId);
       if (seller == null) throw Exception('Seller not found');
 
       if (!seller.isActive) throw Exception('Seller is not active');
@@ -78,38 +238,43 @@ class SellerService {
         throw Exception('Insufficient coin balance');
       }
 
-      await _firestore.runTransaction((Transaction transaction) async {
-        // Deduct from seller
-        transaction.update(
-          _firestore.collection('sellers').doc(sellerId),
-          {
-            'coinBalance': FieldValue.increment(-package.coins),
-            'totalCoinsSold': FieldValue.increment(package.coins),
-            'totalEarnings': FieldValue.increment(package.price),
-          },
-        );
+      // Deduct from seller
+      final updateSellerQuery = _supabase
+          .from('sellers')
+          .update({
+        'coin_balance': seller.coinBalance - package.coins,
+        'total_coins_sold': seller.totalCoinsSold + package.coins,
+        'total_earnings': seller.totalEarnings + package.price,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateSellerQuery.eq('id', sellerId);
 
-        // Add to buyer
-        transaction.update(
-          _firestore.collection('users').doc(buyerId),
-          {
-            'coins': FieldValue.increment(package.coins),
-          },
-        );
+      // Add to buyer
+      final buyerData = await _supabase
+          .from('users')
+          .select('coins')
+          .eq('id', buyerId)
+          .maybeSingle();
 
-        // Record sale
-        transaction.set(
-          _firestore.collection('coin_sales').doc(),
-          {
-            'sellerId': sellerId,
-            'buyerId': buyerId,
-            'package': package.toJson(),
-            'amount': package.price,
-            'coins': package.coins,
-            'status': 'completed',
-            'timestamp': FieldValue.serverTimestamp(),
-          },
-        );
+      final buyerCoins = _toInt(buyerData?['coins']);
+
+      final updateBuyerQuery = _supabase
+          .from('users')
+          .update({
+        'coins': buyerCoins + package.coins,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateBuyerQuery.eq('id', buyerId);
+
+      // Record sale
+      await _supabase.from('coin_sales').insert({
+        'seller_id': sellerId,
+        'buyer_id': buyerId,
+        'package': package.toJson(),
+        'amount': package.price,
+        'coins': package.coins,
+        'status': 'completed',
+        'created_at': DateTime.now().toIso8601String(),
       });
 
       return true;
@@ -120,76 +285,82 @@ class SellerService {
   }
 
   // ==================== SELLER STATS ====================
+
+  /// Get seller stats
   Future<SellerStats> getSellerStats(String sellerId) async {
-    final Seller? seller = await getSeller(sellerId);
+    final seller = await getSeller(sellerId);
     if (seller == null) throw Exception('Seller not found');
 
-    // Get today's sales
-    final DateTime today = DateTime.now();
-    final DateTime startOfDay = DateTime(today.year, today.month, today.day);
+    try {
+      // Get today's sales
+      final today = DateTime.now();
+      final startOfDay = DateTime(today.year, today.month, today.day).toIso8601String();
 
-    final QuerySnapshot<Map<String, dynamic>> todaySales = await _firestore
-        .collection('coin_sales')
-        .where('sellerId', isEqualTo: sellerId)
-        .where('timestamp', isGreaterThanOrEqualTo: startOfDay)
-        .get();
+      final todaySales = await _supabase
+          .from('coin_sales')
+          .select()
+          .eq('seller_id', sellerId)
+          .gte('created_at', startOfDay);
 
-    // 🟢 Fix: Convert num to int properly
-    int todayCoins = 0;
-    for (var doc in todaySales.docs) {
-      final num value = doc.data()['coins'] ?? 0;
-      todayCoins += value.toInt();
+      int todayCoins = 0;
+      double todayEarnings = 0;
+
+      for (var sale in todaySales) {
+        todayCoins += _toInt(sale['coins']);
+        todayEarnings += _toDouble(sale['amount']);
+      }
+
+      // Get this month's sales
+      final startOfMonth = DateTime(today.year, today.month, 1).toIso8601String();
+
+      final monthSales = await _supabase
+          .from('coin_sales')
+          .select()
+          .eq('seller_id', sellerId)
+          .gte('created_at', startOfMonth);
+
+      int monthCoins = 0;
+      double monthEarnings = 0;
+
+      for (var sale in monthSales) {
+        monthCoins += _toInt(sale['coins']);
+        monthEarnings += _toDouble(sale['amount']);
+      }
+
+      return SellerStats(
+        totalCoinsSold: seller.totalCoinsSold,
+        totalEarnings: seller.totalEarnings,
+        coinBalance: seller.coinBalance,
+        todayCoins: todayCoins,
+        todayEarnings: todayEarnings,
+        monthCoins: monthCoins,
+        monthEarnings: monthEarnings,
+        totalSales: await _getTotalSales(sellerId),
+      );
+    } catch (e) {
+      debugPrint('Error getting seller stats: $e');
+      return SellerStats(
+        totalCoinsSold: seller.totalCoinsSold,
+        totalEarnings: seller.totalEarnings,
+        coinBalance: seller.coinBalance,
+        todayCoins: 0,
+        todayEarnings: 0,
+        monthCoins: 0,
+        monthEarnings: 0,
+        totalSales: 0,
+      );
     }
-
-    double todayEarnings = 0;
-    for (var doc in todaySales.docs) {
-      final num value = doc.data()['amount'] ?? 0;
-      todayEarnings += value.toDouble();
-    }
-
-    // Get this month's sales
-    final DateTime startOfMonth = DateTime(today.year, today.month, 1);
-
-    final QuerySnapshot<Map<String, dynamic>> monthSales = await _firestore
-        .collection('coin_sales')
-        .where('sellerId', isEqualTo: sellerId)
-        .where('timestamp', isGreaterThanOrEqualTo: startOfMonth)
-        .get();
-
-    // 🟢 Fix: Convert num to int properly
-    int monthCoins = 0;
-    for (var doc in monthSales.docs) {
-      final num value = doc.data()['coins'] ?? 0;
-      monthCoins += value.toInt();
-    }
-
-    double monthEarnings = 0;
-    for (var doc in monthSales.docs) {
-      final num value = doc.data()['amount'] ?? 0;
-      monthEarnings += value.toDouble();
-    }
-
-    return SellerStats(
-      totalCoinsSold: seller.totalCoinsSold,
-      totalEarnings: seller.totalEarnings,
-      coinBalance: seller.coinBalance,
-      todayCoins: todayCoins,
-      todayEarnings: todayEarnings,
-      monthCoins: monthCoins,
-      monthEarnings: monthEarnings,
-      totalSales: await _getTotalSales(sellerId),
-    );
   }
 
+  /// Get total sales count
   Future<int> _getTotalSales(String sellerId) async {
     try {
-      final AggregateQuerySnapshot snapshot = await _firestore
-          .collection('coin_sales')
-          .where('sellerId', isEqualTo: sellerId)
-          .count()
-          .get();
+      final response = await _supabase
+          .from('coin_sales')
+          .select('id')
+          .eq('seller_id', sellerId);
 
-      return snapshot.count ?? 0;
+      return response.length;
     } catch (e) {
       debugPrint('Error getting total sales: $e');
       return 0;
@@ -197,84 +368,241 @@ class SellerService {
   }
 
   // ==================== SALES HISTORY ====================
+
+  /// Get sales history as stream
   Stream<List<CoinSale>> getSalesHistory(String sellerId, {int limit = 50}) {
-    return _firestore
-        .collection('coin_sales')
-        .where('sellerId', isEqualTo: sellerId)
-        .orderBy('timestamp', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((QuerySnapshot<Map<String, dynamic>> snapshot) => snapshot.docs
-        .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-      final data = doc.data();
-      data['id'] = doc.id;
-      return CoinSale.fromJson(data, doc.id);
-    })
-        .toList());
+    try {
+      final stream = _supabase
+          .from('coin_sales')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        final filteredData = data.where((item) => item['seller_id'] == sellerId).toList();
+
+        // Sort manually
+        filteredData.sort((a, b) {
+          final aTime = _parseDate(a['created_at']);
+          final bTime = _parseDate(b['created_at']);
+          return bTime.compareTo(aTime);
+        });
+
+        // Apply limit
+        final limitedData = filteredData.take(limit).toList();
+
+        return limitedData.map((item) {
+          item['id'] = item['id'].toString();
+          return CoinSale.fromJson(item);
+        }).toList();
+      });
+    } catch (e) {
+      debugPrint('Error getting sales history stream: $e');
+      return Stream.value([]);
+    }
+  }
+
+  /// Get sales history as future
+  Future<List<CoinSale>> getSalesHistoryFuture(String sellerId, {int limit = 50}) async {
+    try {
+      final response = await _supabase
+          .from('coin_sales')
+          .select()
+          .eq('seller_id', sellerId)
+          .order('created_at', ascending: false)
+          .limit(limit);
+
+      return response.map((item) {
+        item['id'] = item['id'].toString();
+        return CoinSale.fromJson(item);
+      }).toList();
+    } catch (e) {
+      debugPrint('Error getting sales history: $e');
+      return [];
+    }
   }
 
   // ==================== TOP SELLERS ====================
+
+  /// Get top sellers as stream
   Stream<List<SellerRank>> getTopSellers({int limit = 10}) {
-    return _firestore
-        .collection('sellers')
-        .where('isActive', isEqualTo: true)
-        .orderBy('totalCoinsSold', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((QuerySnapshot<Map<String, dynamic>> snapshot) => snapshot.docs
-        .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-      final Map<String, dynamic> data = doc.data();
-      return SellerRank(
-        sellerId: doc.id,
-        name: data['name'] ?? 'Unknown',
-        totalCoinsSold: (data['totalCoinsSold'] ?? 0).toInt(),
-        totalEarnings: (data['totalEarnings'] ?? 0).toDouble(),
-      );
-    })
-        .toList());
+    try {
+      final stream = _supabase
+          .from('sellers')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        final filteredData = data.where((item) => item['is_active'] == true).toList();
+
+        // Sort by total coins sold
+        filteredData.sort((a, b) {
+          final aSold = _toInt(a['total_coins_sold']);
+          final bSold = _toInt(b['total_coins_sold']);
+          return bSold.compareTo(aSold);
+        });
+
+        // Apply limit
+        final limitedData = filteredData.take(limit).toList();
+
+        return limitedData.map((item) {
+          return SellerRank(
+            sellerId: item['id'].toString(),
+            name: item['name'] ?? 'Unknown',
+            totalCoinsSold: _toInt(item['total_coins_sold']),
+            totalEarnings: _toDouble(item['total_earnings']),
+          );
+        }).toList();
+      });
+    } catch (e) {
+      debugPrint('Error getting top sellers: $e');
+      return Stream.value([]);
+    }
+  }
+
+  /// Get top sellers as future
+  Future<List<SellerRank>> getTopSellersFuture({int limit = 10}) async {
+    try {
+      final response = await _supabase
+          .from('sellers')
+          .select()
+          .eq('is_active', true)
+          .order('total_coins_sold', ascending: false)
+          .limit(limit);
+
+      return response.map((item) {
+        return SellerRank(
+          sellerId: item['id'].toString(),
+          name: item['name'] ?? 'Unknown',
+          totalCoinsSold: _toInt(item['total_coins_sold']),
+          totalEarnings: _toDouble(item['total_earnings']),
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('Error getting top sellers: $e');
+      return [];
+    }
   }
 
   // ==================== REQUEST COIN RESTOCK ====================
-  Future<void> requestRestock(int amount) async {
-    final User? currentUser = _auth.currentUser;
-    if (currentUser == null) throw Exception('Not logged in');
 
-    final Seller? seller = await getSeller(currentUser.uid);
-    if (seller == null) throw Exception('Seller not found');
+  /// Request coin restock
+  Future<bool> requestRestock(int amount) async {
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('Not logged in');
 
-    await _firestore.collection('restock_requests').add({
-      'sellerId': currentUser.uid,
-      'sellerName': seller.name,
-      'amount': amount,
-      'status': 'pending',
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+    try {
+      final seller = await getSeller(userId);
+      if (seller == null) throw Exception('Seller not found');
+
+      await _supabase.from('restock_requests').insert({
+        'seller_id': userId,
+        'seller_name': seller.name,
+        'amount': amount,
+        'status': 'pending',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      return true;
+    } catch (e) {
+      debugPrint('Error requesting restock: $e');
+      return false;
+    }
   }
 
   // ==================== UPDATE COMMISSION RATE ====================
-  Future<void> updateCommissionRate(double rate) async {
-    final User? currentUser = _auth.currentUser;
-    if (currentUser == null) throw Exception('Not logged in');
 
-    await _firestore
-        .collection('sellers')
-        .doc(currentUser.uid)
-        .update({
-      'commissionRate': rate,
-    });
+  /// Update commission rate
+  Future<bool> updateCommissionRate(double rate) async {
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('Not logged in');
+
+    try {
+      final updateQuery = _supabase
+          .from('sellers')
+          .update({
+        'commission_rate': rate,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateQuery.eq('user_id', userId);
+
+      return true;
+    } catch (e) {
+      debugPrint('Error updating commission rate: $e');
+      return false;
+    }
   }
 
   // ==================== TOGGLE SELLER STATUS ====================
-  Future<void> toggleStatus(bool isActive) async {
-    final User? currentUser = _auth.currentUser;
-    if (currentUser == null) throw Exception('Not logged in');
 
-    await _firestore
-        .collection('sellers')
-        .doc(currentUser.uid)
-        .update({
-      'isActive': isActive,
-    });
+  /// Toggle seller status
+  Future<bool> toggleStatus(bool isActive) async {
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('Not logged in');
+
+    try {
+      final updateQuery = _supabase
+          .from('sellers')
+          .update({
+        'is_active': isActive,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateQuery.eq('user_id', userId);
+
+      return true;
+    } catch (e) {
+      debugPrint('Error toggling status: $e');
+      return false;
+    }
+  }
+
+  // ==================== SELLER BALANCE ====================
+
+  /// Add coins to seller balance (admin only)
+  Future<bool> addCoinsToBalance(String sellerId, int amount) async {
+    try {
+      final seller = await getSeller(sellerId);
+      if (seller == null) throw Exception('Seller not found');
+
+      final updateQuery = _supabase
+          .from('sellers')
+          .update({
+        'coin_balance': seller.coinBalance + amount,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateQuery.eq('id', sellerId);
+
+      return true;
+    } catch (e) {
+      debugPrint('Error adding coins to balance: $e');
+      return false;
+    }
+  }
+
+  /// Withdraw earnings
+  Future<bool> withdrawEarnings(double amount) async {
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('Not logged in');
+
+    try {
+      final seller = await getSeller(userId);
+      if (seller == null) throw Exception('Seller not found');
+
+      if (seller.totalEarnings < amount) {
+        throw Exception('Insufficient earnings');
+      }
+
+      // Record withdrawal request
+      await _supabase.from('withdrawal_requests').insert({
+        'seller_id': userId,
+        'seller_name': seller.name,
+        'amount': amount,
+        'status': 'pending',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      return true;
+    } catch (e) {
+      debugPrint('Error withdrawing earnings: $e');
+      return false;
+    }
   }
 }
 
@@ -305,23 +633,41 @@ class Seller {
     required this.createdAt,
   });
 
-  factory Seller.fromJson(Map<String, dynamic> json, String id) {
+  factory Seller.fromJson(Map<String, dynamic> json) {
     return Seller(
-      id: id,
-      userId: json['userId'] ?? '',
+      id: json['id']?.toString() ?? '',
+      userId: json['user_id'] ?? json['userId'] ?? '',
       name: json['name'] ?? 'Unknown',
-      commissionRate: (json['commissionRate'] ?? 0.1).toDouble(),
-      coinBalance: json['coinBalance'] ?? 0,
-      totalCoinsSold: json['totalCoinsSold'] ?? 0,
-      totalEarnings: (json['totalEarnings'] ?? 0).toDouble(),
+      commissionRate: (json['commission_rate'] ?? json['commissionRate'] ?? 0.1).toDouble(),
+      coinBalance: json['coin_balance'] ?? json['coinBalance'] ?? 0,
+      totalCoinsSold: json['total_coins_sold'] ?? json['totalCoinsSold'] ?? 0,
+      totalEarnings: (json['total_earnings'] ?? json['totalEarnings'] ?? 0).toDouble(),
       packages: (json['packages'] as List? ?? [])
           .map((p) => CoinPackage.fromJson(p))
           .toList(),
-      isActive: json['isActive'] ?? true,
-      createdAt: json['createdAt'] != null
-          ? (json['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
+      isActive: json['is_active'] ?? json['isActive'] ?? true,
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']),
     );
+  }
+
+  static DateTime _parseDate(dynamic date) {
+    if (date == null) return DateTime.now();
+    if (date is String) return DateTime.parse(date);
+    if (date is DateTime) return date;
+    return DateTime.now();
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'user_id': userId,
+      'name': name,
+      'commission_rate': commissionRate,
+      'coin_balance': coinBalance,
+      'total_coins_sold': totalCoinsSold,
+      'total_earnings': totalEarnings,
+      'packages': packages.map((p) => p.toJson()).toList(),
+      'is_active': isActive,
+    };
   }
 }
 
@@ -376,18 +722,23 @@ class CoinSale {
     required this.timestamp,
   });
 
-  factory CoinSale.fromJson(Map<String, dynamic> json, String id) {
+  factory CoinSale.fromJson(Map<String, dynamic> json) {
     return CoinSale(
-      id: id,
-      sellerId: json['sellerId'] ?? '',
-      buyerId: json['buyerId'] ?? '',
+      id: json['id']?.toString() ?? '',
+      sellerId: json['seller_id'] ?? json['sellerId'] ?? '',
+      buyerId: json['buyer_id'] ?? json['buyerId'] ?? '',
       package: CoinPackage.fromJson(json['package'] ?? {}),
       amount: (json['amount'] ?? 0).toDouble(),
       coins: json['coins'] ?? 0,
-      timestamp: json['timestamp'] != null
-          ? (json['timestamp'] as Timestamp).toDate()
-          : DateTime.now(),
+      timestamp: _parseDate(json['created_at'] ?? json['timestamp']),
     );
+  }
+
+  static DateTime _parseDate(dynamic date) {
+    if (date == null) return DateTime.now();
+    if (date is String) return DateTime.parse(date);
+    if (date is DateTime) return date;
+    return DateTime.now();
   }
 }
 

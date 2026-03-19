@@ -1,6 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 // 🟢 সঠিক imports
 import '../../chat/models/chat_model.dart';
@@ -8,10 +7,10 @@ import '../../chat/models/room_model.dart';
 import '../../chat/models/gift_model.dart';
 import '../models/user_models.dart' as app; // 🟢 alias ব্যবহার
 import '../constants/firestore_constants.dart';
+import '../di/service_locator.dart';
 
 class DatabaseService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final SupabaseClient _supabase = getService<SupabaseClient>();
 
   // ==================== CHAT OPERATIONS ====================
 
@@ -19,14 +18,15 @@ class DatabaseService {
     try {
       debugPrint('📝 Saving chat: ${chat.id}');
 
-      await _firestore.collection('chats').doc(chat.id).set({
+      await _supabase.from('chats').upsert({
         'id': chat.id,
         'type': chat.type,
-        'groupName': chat.groupName,
-        'groupAvatar': chat.groupAvatar,
+        'group_name': chat.groupName,
+        'group_avatar': chat.groupAvatar,
         'participants': chat.participants,
-        'lastMessage': chat.lastMessage,
-        'lastMessageTime': chat.lastMessageTime?.toIso8601String(),
+        'last_message': chat.lastMessage,
+        'last_message_time': chat.lastMessageTime?.toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
       });
 
       debugPrint('✅ Chat saved successfully: ${chat.id}');
@@ -39,7 +39,7 @@ class DatabaseService {
   Future<void> deleteChat(String chatId) async {
     try {
       debugPrint('📝 Deleting chat: $chatId');
-      await _firestore.collection('chats').doc(chatId).delete();
+      await _supabase.from('chats').delete().eq('id', chatId);
       debugPrint('✅ Chat deleted successfully: $chatId');
     } catch (e) {
       debugPrint('❌ Error deleting chat: $e');
@@ -49,48 +49,83 @@ class DatabaseService {
 
   Future<ChatModel?> getChat(String chatId) async {
     try {
-      final doc = await _firestore.collection('chats').doc(chatId).get();
-      if (doc.exists) {
-        final data = doc.data()!;
-        return ChatModel(
-          id: doc.id,
-          type: data['type'] ?? 'private',
-          groupName: data['groupName'],
-          groupAvatar: data['groupAvatar'],
-          participants: List<String>.from(data['participants'] ?? []),
-          lastMessage: data['lastMessage'],
-          lastMessageTime: data['lastMessageTime'] != null
-              ? DateTime.parse(data['lastMessageTime'])
-              : null,
-        );
-      }
-      return null;
+      final response = await _supabase
+          .from('chats')
+          .select()
+          .eq('id', chatId)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      return ChatModel(
+        id: response['id'],
+        type: response['type'] ?? 'private',
+        groupName: response['group_name'],
+        groupAvatar: response['group_avatar'],
+        participants: List<String>.from(response['participants'] ?? []),
+        lastMessage: response['last_message'],
+        lastMessageTime: response['last_message_time'] != null
+            ? DateTime.parse(response['last_message_time'])
+            : null,
+      );
     } catch (e) {
       debugPrint('Error getting chat: $e');
       return null;
     }
   }
 
-  Stream<List<ChatModel>> getChats(String userId) {
-    return _firestore
-        .collection('chats')
-        .where('participants', arrayContains: userId)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
+  // ✅ Fixed: Get chats without stream
+  Future<List<ChatModel>> getChats(String userId) async {
+    try {
+      final response = await _supabase
+          .from('chats')
+          .select()
+          .contains('participants', [userId]);
+
+      return response.map((json) {
         return ChatModel(
-          id: doc.id,
-          type: data['type'] ?? 'private',
-          groupName: data['groupName'],
-          groupAvatar: data['groupAvatar'],
-          participants: List<String>.from(data['participants'] ?? []),
-          lastMessage: data['lastMessage'],
-          lastMessageTime: data['lastMessageTime'] != null
-              ? DateTime.parse(data['lastMessageTime'])
+          id: json['id'],
+          type: json['type'] ?? 'private',
+          groupName: json['group_name'],
+          groupAvatar: json['group_avatar'],
+          participants: List<String>.from(json['participants'] ?? []),
+          lastMessage: json['last_message'],
+          lastMessageTime: json['last_message_time'] != null
+              ? DateTime.parse(json['last_message_time'])
               : null,
         );
       }).toList();
+    } catch (e) {
+      debugPrint('Error getting chats: $e');
+      return [];
+    }
+  }
+
+  // ✅ Alternative: Stream version
+  Stream<List<ChatModel>> streamChats(String userId) {
+    return _supabase
+        .from('chats')
+        .stream(primaryKey: ['id'])
+        .map((data) {
+      return data
+          .where((chat) {
+        final participants = List<String>.from(chat['participants'] ?? []);
+        return participants.contains(userId);
+      })
+          .map((json) {
+        return ChatModel(
+          id: json['id'],
+          type: json['type'] ?? 'private',
+          groupName: json['group_name'],
+          groupAvatar: json['group_avatar'],
+          participants: List<String>.from(json['participants'] ?? []),
+          lastMessage: json['last_message'],
+          lastMessageTime: json['last_message_time'] != null
+              ? DateTime.parse(json['last_message_time'])
+              : null,
+        );
+      })
+          .toList();
     });
   }
 
@@ -98,10 +133,7 @@ class DatabaseService {
 
   Future<void> createUser(app.User user) async {
     try {
-      await _firestore
-          .collection(FirestoreConstants.users)
-          .doc(user.id)
-          .set(user.toJson());
+      await _supabase.from('users').insert(user.toJson());
       debugPrint('✅ User created: ${user.id}');
     } catch (e) {
       debugPrint('❌ Error creating user: $e');
@@ -111,16 +143,15 @@ class DatabaseService {
 
   Future<app.User?> getUser(String uid) async {
     try {
-      final doc = await _firestore
-          .collection(FirestoreConstants.users)
-          .doc(uid)
-          .get();
-      if (doc.exists) {
-        final data = doc.data()!;
-        data['id'] = doc.id;
-        return app.User.fromJson(data);
-      }
-      return null;
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('id', uid)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      return app.User.fromJson(response);
     } catch (e) {
       debugPrint('Error getting user: $e');
       return null;
@@ -129,10 +160,10 @@ class DatabaseService {
 
   Future<void> updateUser(String uid, Map<String, dynamic> data) async {
     try {
-      await _firestore
-          .collection(FirestoreConstants.users)
-          .doc(uid)
-          .update(data);
+      await _supabase
+          .from('users')
+          .update(data)
+          .eq('id', uid);
       debugPrint('✅ User updated: $uid');
     } catch (e) {
       debugPrint('❌ Error updating user: $e');
@@ -142,10 +173,10 @@ class DatabaseService {
 
   Future<void> deleteUser(String uid) async {
     try {
-      await _firestore
-          .collection(FirestoreConstants.users)
-          .doc(uid)
-          .delete();
+      await _supabase
+          .from('users')
+          .delete()
+          .eq('id', uid);
       debugPrint('✅ User deleted: $uid');
     } catch (e) {
       debugPrint('❌ Error deleting user: $e');
@@ -153,35 +184,27 @@ class DatabaseService {
     }
   }
 
+  // ✅ Fixed: Stream user without eq()
   Stream<app.User?> streamUser(String uid) {
-    return _firestore
-        .collection(FirestoreConstants.users)
-        .doc(uid)
-        .snapshots()
-        .map((doc) {
-      if (doc.exists) {
-        final data = doc.data()!;
-        data['id'] = doc.id;
-        return app.User.fromJson(data);
-      }
-      return null;
+    return _supabase
+        .from('users')
+        .stream(primaryKey: ['id'])
+        .map((data) {
+      final filtered = data.where((user) => user['id'] == uid).toList();
+      if (filtered.isEmpty) return null;
+      return app.User.fromJson(filtered.first);
     });
   }
 
   Future<List<app.User>> getUsersByCountry(String country) async {
     try {
-      final query = await _firestore
-          .collection(FirestoreConstants.users)
-          .where('countryId', isEqualTo: country)
-          .limit(50)
-          .get();
-      return query.docs
-          .map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return app.User.fromJson(data);
-      })
-          .toList();
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('country_id', country)
+          .limit(50);
+
+      return response.map((json) => app.User.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error getting users by country: $e');
       return [];
@@ -192,10 +215,7 @@ class DatabaseService {
 
   Future<void> createRoom(RoomModel room) async {
     try {
-      await _firestore
-          .collection(FirestoreConstants.rooms)
-          .doc(room.id)
-          .set(room.toJson());
+      await _supabase.from('rooms').insert(room.toJson());
       debugPrint('✅ Room created: ${room.id}');
     } catch (e) {
       debugPrint('❌ Error creating room: $e');
@@ -205,16 +225,15 @@ class DatabaseService {
 
   Future<RoomModel?> getRoom(String roomId) async {
     try {
-      final doc = await _firestore
-          .collection(FirestoreConstants.rooms)
-          .doc(roomId)
-          .get();
-      if (doc.exists) {
-        final data = doc.data()!;
-        data['id'] = doc.id;
-        return RoomModel.fromJson(data);
-      }
-      return null;
+      final response = await _supabase
+          .from('rooms')
+          .select()
+          .eq('id', roomId)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      return RoomModel.fromJson(response);
     } catch (e) {
       debugPrint('Error getting room: $e');
       return null;
@@ -223,10 +242,10 @@ class DatabaseService {
 
   Future<void> updateRoom(String roomId, Map<String, dynamic> data) async {
     try {
-      await _firestore
-          .collection(FirestoreConstants.rooms)
-          .doc(roomId)
-          .update(data);
+      await _supabase
+          .from('rooms')
+          .update(data)
+          .eq('id', roomId);
       debugPrint('✅ Room updated: $roomId');
     } catch (e) {
       debugPrint('❌ Error updating room: $e');
@@ -234,23 +253,20 @@ class DatabaseService {
     }
   }
 
+  // ✅ Fixed: Stream rooms without eq()
   Stream<List<RoomModel>> streamActiveRooms(String country) {
-    var query = _firestore
-        .collection(FirestoreConstants.rooms)
-        .where('status', isEqualTo: 'active');
-    if (country != 'All') {
-      query = query.where('country', isEqualTo: country);
-    }
-    return query
-        .orderBy('viewerCount', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-        .map((doc) {
-      final data = doc.data();
-      data['id'] = doc.id;
-      return RoomModel.fromJson(data);
-    })
-        .toList());
+    return _supabase
+        .from('rooms')
+        .stream(primaryKey: ['id'])
+        .map((data) {
+      var filtered = data.where((room) => room['status'] == 'active').toList();
+
+      if (country != 'All') {
+        filtered = filtered.where((room) => room['country'] == country).toList();
+      }
+
+      return filtered.map((json) => RoomModel.fromJson(json)).toList();
+    });
   }
 
   // ==================== GIFT OPERATIONS ====================
@@ -263,42 +279,15 @@ class DatabaseService {
     String? roomId,
   }) async {
     try {
-      await _firestore.runTransaction((transaction) async {
-        final senderRef = _firestore
-            .collection(FirestoreConstants.users)
-            .doc(senderId);
-        final senderDoc = await transaction.get(senderRef);
-        if (!senderDoc.exists) return;
-
-        final senderCoins = senderDoc.data()!['coins'] ?? 0;
-        if (senderCoins < amount) throw Exception('Insufficient coins');
-
-        transaction.update(senderRef, {'coins': senderCoins - amount});
-
-        final receiverRef = _firestore
-            .collection(FirestoreConstants.users)
-            .doc(receiverId);
-        final receiverDoc = await transaction.get(receiverRef);
-        if (receiverDoc.exists) {
-          final receiverDiamonds = receiverDoc.data()!['diamonds'] ?? 0;
-          transaction.update(receiverRef, {
-            'diamonds': receiverDiamonds + (amount ~/ 2),
-          });
-        }
-
-        final giftTransactionRef = _firestore
-            .collection(FirestoreConstants.transactions)
-            .doc();
-        transaction.set(giftTransactionRef, {
-          'senderId': senderId,
-          'receiverId': receiverId,
-          'giftId': giftId,
-          'amount': amount,
-          'roomId': roomId,
-          'type': 'gift_sent',
-          'timestamp': FieldValue.serverTimestamp(),
-        });
+      // Start a transaction in Supabase
+      await _supabase.rpc('send_gift', params: {
+        'p_sender_id': senderId,
+        'p_receiver_id': receiverId,
+        'p_gift_id': giftId,
+        'p_amount': amount,
+        'p_room_id': roomId,
       });
+
       debugPrint('✅ Gift sent successfully');
     } catch (e) {
       debugPrint('❌ Error sending gift: $e');
@@ -308,15 +297,14 @@ class DatabaseService {
 
   Future<List<GiftModel>> getAvailableGifts() async {
     try {
-      final snapshot = await _firestore
-          .collection(FirestoreConstants.gifts)
-          .where('isAvailable', isEqualTo: true)
-          .get();
+      final response = await _supabase
+          .from('gifts')
+          .select()
+          .eq('is_available', true);
 
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return GiftModel.fromJson(data);
+      return response.map((json) {
+        json['id'] = json['id'];
+        return GiftModel.fromJson(json);
       }).toList();
     } catch (e) {
       debugPrint('Error getting gifts: $e');
@@ -328,14 +316,11 @@ class DatabaseService {
 
   Future<void> sendFriendRequest(String fromId, String toId) async {
     try {
-      await _firestore
-          .collection(FirestoreConstants.friendRequests)
-          .doc()
-          .set({
-        'fromId': fromId,
-        'toId': toId,
+      await _supabase.from('friend_requests').insert({
+        'from_id': fromId,
+        'to_id': toId,
         'status': 'pending',
-        'timestamp': FieldValue.serverTimestamp(),
+        'created_at': DateTime.now().toIso8601String(),
       });
       debugPrint('✅ Friend request sent');
     } catch (e) {
@@ -346,27 +331,25 @@ class DatabaseService {
 
   Future<void> acceptFriendRequest(String requestId) async {
     try {
-      await _firestore.runTransaction((transaction) async {
-        final requestRef = _firestore
-            .collection(FirestoreConstants.friendRequests)
-            .doc(requestId);
-        final requestDoc = await transaction.get(requestRef);
-        if (!requestDoc.exists) return;
+      // Update request status
+      await _supabase
+          .from('friend_requests')
+          .update({'status': 'accepted', 'updated_at': DateTime.now().toIso8601String()})
+          .eq('id', requestId);
 
-        final data = requestDoc.data()!;
-        final fromId = data['fromId'];
-        final toId = data['toId'];
+      // Get request details
+      final request = await _supabase
+          .from('friend_requests')
+          .select('from_id, to_id')
+          .eq('id', requestId)
+          .single();
 
-        transaction.update(requestRef, {'status': 'accepted'});
-        transaction.update(
-          _firestore.collection(FirestoreConstants.users).doc(fromId),
-          {'friends': FieldValue.arrayUnion([toId])},
-        );
-        transaction.update(
-          _firestore.collection(FirestoreConstants.users).doc(toId),
-          {'friends': FieldValue.arrayUnion([fromId])},
-        );
-      });
+      // Add to friends list for both users
+      await _supabase.from('friends').insert([
+        {'user_id': request['from_id'], 'friend_id': request['to_id']},
+        {'user_id': request['to_id'], 'friend_id': request['from_id']},
+      ]);
+
       debugPrint('✅ Friend request accepted');
     } catch (e) {
       debugPrint('❌ Error accepting friend request: $e');
@@ -378,26 +361,10 @@ class DatabaseService {
 
   Future<void> addCoins(String userId, int amount, String reason) async {
     try {
-      await _firestore.runTransaction((transaction) async {
-        final userRef = _firestore
-            .collection(FirestoreConstants.users)
-            .doc(userId);
-        final userDoc = await transaction.get(userRef);
-        if (!userDoc.exists) return;
-
-        final currentCoins = userDoc.data()!['coins'] ?? 0;
-        transaction.update(userRef, {'coins': currentCoins + amount});
-
-        transaction.set(
-          _firestore.collection(FirestoreConstants.transactions).doc(),
-          {
-            'userId': userId,
-            'amount': amount,
-            'type': 'credit',
-            'reason': reason,
-            'timestamp': FieldValue.serverTimestamp(),
-          },
-        );
+      await _supabase.rpc('add_coins', params: {
+        'p_user_id': userId,
+        'p_amount': amount,
+        'p_reason': reason,
       });
       debugPrint('✅ Coins added: $amount');
     } catch (e) {
@@ -416,14 +383,14 @@ class DatabaseService {
     List<String>? evidence,
   }) async {
     try {
-      await _firestore.collection(FirestoreConstants.reports).add({
-        'reporterId': reporterId,
-        'reportedUserId': reportedUserId,
+      await _supabase.from('reports').insert({
+        'reporter_id': reporterId,
+        'reported_user_id': reportedUserId,
         'reason': reason,
         'description': description,
         'evidence': evidence,
         'status': 'pending',
-        'timestamp': FieldValue.serverTimestamp(),
+        'created_at': DateTime.now().toIso8601String(),
       });
       debugPrint('✅ Report submitted');
     } catch (e) {
@@ -438,55 +405,16 @@ class DatabaseService {
     try {
       if (query.isEmpty) return [];
 
-      final usernameQuery = await _firestore
-          .collection(FirestoreConstants.users)
-          .where('username', isGreaterThanOrEqualTo: query)
-          .where('username', isLessThanOrEqualTo: '$query\uf8ff')
-          .limit(20)
-          .get();
+      final response = await _supabase
+          .from('users')
+          .select()
+          .or('username.ilike.%$query%,name.ilike.%$query%')
+          .limit(20);
 
-      final idQuery = await _firestore
-          .collection(FirestoreConstants.users)
-          .where('uid', isEqualTo: query)
-          .get();
-
-      final results = <app.User>[];
-      for (final doc in usernameQuery.docs) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        results.add(app.User.fromJson(data));
-      }
-      for (final doc in idQuery.docs) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        final user = app.User.fromJson(data);
-        if (!results.any((u) => u.id == user.id)) {
-          results.add(user);
-        }
-      }
-      return results;
+      return response.map((json) => app.User.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error searching users: $e');
       return [];
-    }
-  }
-
-  // ==================== BATCH OPERATIONS ====================
-
-  Future<void> batchWrite(List<Future<void>> operations) async {
-    try {
-      final batch = _firestore.batch();
-
-      for (var op in operations) {
-        // Add operations to batch
-        // This needs to be implemented based on your needs
-      }
-
-      await batch.commit();
-      debugPrint('✅ Batch write completed');
-    } catch (e) {
-      debugPrint('❌ Error in batch write: $e');
-      rethrow;
     }
   }
 

@@ -1,15 +1,47 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/models/clan_model.dart';
 import '../models/clan_member_model.dart';
+import '../../../core/di/service_locator.dart';
+
 
 class ClanService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  late final SupabaseClient _supabase;
+
+  ClanService() {
+    _supabase = getService<SupabaseClient>();
+  }
+
+  // Helper to get current user
+  String? get _currentUserId => _supabase.auth.currentSession?.user.id;
+
+  // Helper methods
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  double _toDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
+  DateTime _parseDate(dynamic date) {
+    if (date == null) return DateTime.now();
+    if (date is String) return DateTime.parse(date);
+    if (date is DateTime) return date;
+    return DateTime.now();
+  }
 
   // ==================== CLAN OPERATIONS ====================
 
+  /// Create clan
   Future<ClanModel?> createClan({
     required String name,
     String? description,
@@ -18,22 +50,29 @@ class ClanService {
     ClanJoinType joinType = ClanJoinType.open,
     List<String> tags = const [],
   }) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
+      // Get current user info
+      final userData = await _supabase
+          .from('users')
+          .select('username, avatar_url')
+          .eq('id', userId)
+          .maybeSingle();
+
       final clanData = ClanModel(
         id: '',
         name: name,
         description: description,
         rules: rules,
         emblem: emblem,
-        leaderId: user.uid,
+        leaderId: userId,
         members: [
           ClanMember(
-            userId: user.uid,
-            username: user.displayName ?? 'User',
-            avatar: user.photoURL,
+            userId: userId,
+            username: userData?['username'] ?? 'User',
+            avatar: userData?['avatar_url'],
             role: ClanRole.leader,
             joinedAt: DateTime.now(),
           ),
@@ -55,25 +94,39 @@ class ClanService {
         settings: {},
       );
 
-      final docRef = await _firestore.collection('clans').add(clanData.toJson());
+      final response = await _supabase
+          .from('clans')
+          .insert(clanData.toJson())
+          .select()
+          .single();
 
       // Update user's clan ID
-      await _firestore.collection('users').doc(user.uid).update({
-        'clanId': docRef.id,
+      final updateUserQuery = _supabase
+          .from('users')
+          .update({
+        'clan_id': response['id'],
+        'updated_at': DateTime.now().toIso8601String(),
       });
+      await updateUserQuery.eq('id', userId);
 
-      return clanData.copyWith(id: docRef.id);
+      return ClanModel.fromJson(response);
     } catch (e) {
       debugPrint('Error creating clan: $e');
       return null;
     }
   }
 
+  /// Get clan
   Future<ClanModel?> getClan(String clanId) async {
     try {
-      final doc = await _firestore.collection('clans').doc(clanId).get();
-      if (doc.exists) {
-        return ClanModel.fromJson(doc.data()!);
+      final response = await _supabase
+          .from('clans')
+          .select()
+          .eq('id', clanId)
+          .maybeSingle();
+
+      if (response != null) {
+        return ClanModel.fromJson(response);
       }
       return null;
     } catch (e) {
@@ -82,26 +135,37 @@ class ClanService {
     }
   }
 
+  /// Stream clan
   Stream<ClanModel?> streamClan(String clanId) {
-    return _firestore
-        .collection('clans')
-        .doc(clanId)
-        .snapshots()
-        .map((doc) => doc.exists ? ClanModel.fromJson(doc.data()!) : null);
+    try {
+      final stream = _supabase
+          .from('clans')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        for (var item in data) {
+          if (item['id'].toString() == clanId) {
+            return ClanModel.fromJson(item);
+          }
+        }
+        return null;
+      });
+    } catch (e) {
+      debugPrint('Error streaming clan: $e');
+      return Stream.value(null);
+    }
   }
 
+  /// Search clans
   Future<List<ClanModel>> searchClans(String query) async {
     try {
-      final snapshot = await _firestore
-          .collection('clans')
-          .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: '$query\uf8ff')
-          .limit(20)
-          .get();
+      final response = await _supabase
+          .from('clans')
+          .select()
+          .ilike('name', '%$query%')
+          .limit(20);
 
-      return snapshot.docs
-          .map((doc) => ClanModel.fromJson(doc.data()))
-          .toList();
+      return response.map((json) => ClanModel.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error searching clans: $e');
       return [];
@@ -110,60 +174,69 @@ class ClanService {
 
   // ==================== MEMBER MANAGEMENT ====================
 
+  /// Join clan
   Future<bool> joinClan(String clanId) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
-      final clanRef = _firestore.collection('clans').doc(clanId);
+      // Get clan info
+      final clanData = await _supabase
+          .from('clans')
+          .select()
+          .eq('id', clanId)
+          .maybeSingle();
 
-      await _firestore.runTransaction((transaction) async {
-        final clanDoc = await transaction.get(clanRef);
-        if (!clanDoc.exists) throw Exception('Clan not found');
+      if (clanData == null) throw Exception('Clan not found');
 
-        final clan = ClanModel.fromJson(clanDoc.data()!);
+      final clan = ClanModel.fromJson(clanData);
 
-        if (clan.isFull) throw Exception('Clan is full');
-        if (clan.members.any((m) => m.userId == user.uid)) {
-          throw Exception('Already a member');
-        }
+      if (clan.isFull) throw Exception('Clan is full');
+      if (clan.members.any((m) => m.userId == userId)) {
+        throw Exception('Already a member');
+      }
 
-        if (clan.joinType == ClanJoinType.approval) {
-          // Add to join requests
-          transaction.set(
-            _firestore.collection('clan_requests').doc(),
-            {
-              'clanId': clanId,
-              'userId': user.uid,
-              'username': user.displayName,
-              'avatar': user.photoURL,
-              'status': 'pending',
-              'timestamp': FieldValue.serverTimestamp(),
-            },
-          );
-        } else {
-          // Direct join
-          final newMember = ClanMember(
-            userId: user.uid,
-            username: user.displayName ?? 'User',
-            avatar: user.photoURL,
-            role: ClanRole.member,
-            joinedAt: DateTime.now(),
-          );
+      if (clan.joinType == ClanJoinType.approval) {
+        // Add to join requests
+        await _supabase.from('clan_requests').insert({
+          'clan_id': clanId,
+          'user_id': userId,
+          'username': _supabase.auth.currentUser?.userMetadata?['username'] ?? 'User',
+          'avatar': _supabase.auth.currentUser?.userMetadata?['avatar_url'],
+          'status': 'pending',
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      } else {
+        // Direct join
+        final newMember = ClanMember(
+          userId: userId,
+          username: _supabase.auth.currentUser?.userMetadata?['username'] ?? 'User',
+          avatar: _supabase.auth.currentUser?.userMetadata?['avatar_url'],
+          role: ClanRole.member,
+          joinedAt: DateTime.now(),
+        );
 
-          transaction.update(clanRef, {
-            'members': FieldValue.arrayUnion([newMember.toJson()]),
-            'memberCount': FieldValue.increment(1),
-            'lastActive': FieldValue.serverTimestamp(),
-          });
+        final updatedMembers = [...clan.members, newMember];
 
-          // Update user's clan ID
-          transaction.update(
-            _firestore.collection('users').doc(user.uid),
-            {'clanId': clanId},
-          );
-        }
-      });
+        // Update clan
+        final updateClanQuery = _supabase
+            .from('clans')
+            .update({
+          'members': updatedMembers.map((m) => m.toJson()).toList(),
+          'member_count': clan.memberCount + 1,
+          'last_active': DateTime.now().toIso8601String(),
+        });
+        await updateClanQuery.eq('id', clanId);
+
+        // Update user's clan ID
+        final updateUserQuery = _supabase
+            .from('users')
+            .update({
+          'clan_id': clanId,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+        await updateUserQuery.eq('id', userId);
+      }
 
       return true;
     } catch (e) {
@@ -172,38 +245,51 @@ class ClanService {
     }
   }
 
+  /// Leave clan
   Future<bool> leaveClan(String clanId) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
-      final clanRef = _firestore.collection('clans').doc(clanId);
+      // Get clan info
+      final clanData = await _supabase
+          .from('clans')
+          .select()
+          .eq('id', clanId)
+          .maybeSingle();
 
-      await _firestore.runTransaction((transaction) async {
-        final clanDoc = await transaction.get(clanRef);
-        if (!clanDoc.exists) throw Exception('Clan not found');
+      if (clanData == null) throw Exception('Clan not found');
 
-        final clan = ClanModel.fromJson(clanDoc.data()!);
+      final clan = ClanModel.fromJson(clanData);
 
-        if (clan.isLeader(user.uid)) {
-          throw Exception('Leader cannot leave. Transfer leadership first.');
-        }
+      if (clan.isLeader(userId)) {
+        throw Exception('Leader cannot leave. Transfer leadership first.');
+      }
 
-        final member = clan.getMember(user.uid);
-        if (member == null) throw Exception('Member not found');
+      final member = clan.getMember(userId);
+      if (member == null) throw Exception('Member not found');
 
-        // Remove member
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayRemove([member.toJson()]),
-          'memberCount': FieldValue.increment(-1),
-        });
+      // Remove member
+      final updatedMembers = clan.members.where((m) => m.userId != userId).toList();
 
-        // Update user's clan ID
-        transaction.update(
-          _firestore.collection('users').doc(user.uid),
-          {'clanId': FieldValue.delete()},
-        );
+      // Update clan
+      final updateClanQuery = _supabase
+          .from('clans')
+          .update({
+        'members': updatedMembers.map((m) => m.toJson()).toList(),
+        'member_count': clan.memberCount - 1,
+        'last_active': DateTime.now().toIso8601String(),
       });
+      await updateClanQuery.eq('id', clanId);
+
+      // Update user's clan ID
+      final updateUserQuery = _supabase
+          .from('users')
+          .update({
+        'clan_id': null,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateUserQuery.eq('id', userId);
 
       return true;
     } catch (e) {
@@ -212,46 +298,59 @@ class ClanService {
     }
   }
 
+  /// Kick member
   Future<bool> kickMember(String clanId, String memberId) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
-      final clanRef = _firestore.collection('clans').doc(clanId);
+      // Get clan info
+      final clanData = await _supabase
+          .from('clans')
+          .select()
+          .eq('id', clanId)
+          .maybeSingle();
 
-      await _firestore.runTransaction((transaction) async {
-        final clanDoc = await transaction.get(clanRef);
-        if (!clanDoc.exists) throw Exception('Clan not found');
+      if (clanData == null) throw Exception('Clan not found');
 
-        final clan = ClanModel.fromJson(clanDoc.data()!);
+      final clan = ClanModel.fromJson(clanData);
 
-        if (!clan.canManage(user.uid)) {
-          throw Exception('Not authorized to kick members');
-        }
+      if (!clan.canManage(userId)) {
+        throw Exception('Not authorized to kick members');
+      }
 
-        final member = clan.getMember(memberId);
-        if (member == null) throw Exception('Member not found');
+      final member = clan.getMember(memberId);
+      if (member == null) throw Exception('Member not found');
 
-        if (member.role == ClanRole.leader) {
-          throw Exception('Cannot kick leader');
-        }
+      if (member.role == ClanRole.leader) {
+        throw Exception('Cannot kick leader');
+      }
 
-        if (member.role == ClanRole.coLeader && !clan.isLeader(user.uid)) {
-          throw Exception('Only leader can kick co-leaders');
-        }
+      if (member.role == ClanRole.coLeader && !clan.isLeader(userId)) {
+        throw Exception('Only leader can kick co-leaders');
+      }
 
-        // Remove member
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayRemove([member.toJson()]),
-          'memberCount': FieldValue.increment(-1),
-        });
+      // Remove member
+      final updatedMembers = clan.members.where((m) => m.userId != memberId).toList();
 
-        // Update user's clan ID
-        transaction.update(
-          _firestore.collection('users').doc(memberId),
-          {'clanId': FieldValue.delete()},
-        );
+      // Update clan
+      final updateClanQuery = _supabase
+          .from('clans')
+          .update({
+        'members': updatedMembers.map((m) => m.toJson()).toList(),
+        'member_count': clan.memberCount - 1,
+        'last_active': DateTime.now().toIso8601String(),
       });
+      await updateClanQuery.eq('id', clanId);
+
+      // Update user's clan ID
+      final updateUserQuery = _supabase
+          .from('users')
+          .update({
+        'clan_id': null,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateUserQuery.eq('id', memberId);
 
       return true;
     } catch (e) {
@@ -260,38 +359,49 @@ class ClanService {
     }
   }
 
+  /// Change member role
   Future<bool> changeMemberRole(String clanId, String memberId, ClanRole newRole) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
-      final clanRef = _firestore.collection('clans').doc(clanId);
+      // Get clan info
+      final clanData = await _supabase
+          .from('clans')
+          .select()
+          .eq('id', clanId)
+          .maybeSingle();
 
-      await _firestore.runTransaction((transaction) async {
-        final clanDoc = await transaction.get(clanRef);
-        if (!clanDoc.exists) throw Exception('Clan not found');
+      if (clanData == null) throw Exception('Clan not found');
 
-        final clan = ClanModel.fromJson(clanDoc.data()!);
+      final clan = ClanModel.fromJson(clanData);
 
-        if (!clan.canManage(user.uid)) {
-          throw Exception('Not authorized to change roles');
+      if (!clan.canManage(userId)) {
+        throw Exception('Not authorized to change roles');
+      }
+
+      final member = clan.getMember(memberId);
+      if (member == null) throw Exception('Member not found');
+
+      // Update member role
+      final updatedMember = member.copyWith(role: newRole);
+
+      // Replace member in list
+      final updatedMembers = clan.members.map((m) {
+        if (m.userId == memberId) {
+          return updatedMember;
         }
+        return m;
+      }).toList();
 
-        final member = clan.getMember(memberId);
-        if (member == null) throw Exception('Member not found');
-
-        // Update member role
-        final updatedMember = member.copyWith(role: newRole);
-
-        // Remove old and add updated
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayRemove([member.toJson()]),
-        });
-
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayUnion([updatedMember.toJson()]),
-        });
+      // Update clan
+      final updateClanQuery = _supabase
+          .from('clans')
+          .update({
+        'members': updatedMembers.map((m) => m.toJson()).toList(),
+        'last_active': DateTime.now().toIso8601String(),
       });
+      await updateClanQuery.eq('id', clanId);
 
       return true;
     } catch (e) {
@@ -302,59 +412,111 @@ class ClanService {
 
   // ==================== JOIN REQUESTS ====================
 
+  /// Get join requests stream
   Stream<List<Map<String, dynamic>>> getJoinRequests(String clanId) {
-    return _firestore
-        .collection('clan_requests')
-        .where('clanId', isEqualTo: clanId)
-        .where('status', isEqualTo: 'pending')
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
-  }
-
-  Future<bool> approveRequest(String requestId, String clanId) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
-
     try {
-      final requestRef = _firestore.collection('clan_requests').doc(requestId);
-      final requestDoc = await requestRef.get();
+      final stream = _supabase
+          .from('clan_requests')
+          .stream(primaryKey: ['id']);
 
-      if (!requestDoc.exists) throw Exception('Request not found');
+      return stream.map((data) {
+        // Filter pending requests for this clan
+        final filtered = data.where((item) =>
+        item['clan_id'] == clanId &&
+            item['status'] == 'pending'
+        ).toList();
 
-      final requestData = requestDoc.data();
-      if (requestData == null) throw Exception('Request data not found');
-
-      final userId = requestData['userId'] as String;
-
-      await _firestore.runTransaction((transaction) async {
-        // Update request status
-        transaction.update(requestRef, {'status': 'approved'});
-
-        // Add to clan members
-        final clanRef = _firestore.collection('clans').doc(clanId);
-        final clanDoc = await transaction.get(clanRef);
-
-        if (!clanDoc.exists) throw Exception('Clan not found');
-
-        final newMember = ClanMember(
-          userId: userId,
-          username: requestData['username'] ?? '',
-          avatar: requestData['avatar'],
-          role: ClanRole.member,
-          joinedAt: DateTime.now(),
-        );
-
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayUnion([newMember.toJson()]),
-          'memberCount': FieldValue.increment(1),
+        // Sort by created_at
+        filtered.sort((a, b) {
+          final aTime = _parseDate(a['created_at']);
+          final bTime = _parseDate(b['created_at']);
+          return bTime.compareTo(aTime);
         });
 
-        // Update user's clan ID
-        transaction.update(
-          _firestore.collection('users').doc(userId),
-          {'clanId': clanId},
-        );
+        return filtered.map((item) {
+          return {
+            'id': item['id'].toString(),
+            'user_id': item['user_id'],
+            'username': item['username'] ?? 'Unknown',
+            'avatar': item['avatar'],
+            'message': item['message'],
+            'created_at': item['created_at'],
+            'status': item['status'],
+          };
+        }).toList();
       });
+    } catch (e) {
+      debugPrint('Error getting join requests: $e');
+      return Stream.value([]);
+    }
+  }
+
+  /// Approve join request - FIXED: 2 parameters
+  Future<bool> approveRequest(String requestId, String clanId) async {
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
+
+    try {
+      // Get request details
+      final requestData = await _supabase
+          .from('clan_requests')
+          .select()
+          .eq('id', requestId)
+          .maybeSingle();
+
+      if (requestData == null) throw Exception('Request not found');
+
+      final requestUserId = requestData['user_id'];
+
+      // Update request status
+      final updateRequestQuery = _supabase
+          .from('clan_requests')
+          .update({
+        'status': 'approved',
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateRequestQuery.eq('id', requestId);
+
+      // Get clan info
+      final clanData = await _supabase
+          .from('clans')
+          .select()
+          .eq('id', clanId)
+          .maybeSingle();
+
+      if (clanData == null) throw Exception('Clan not found');
+
+      final clan = ClanModel.fromJson(clanData);
+
+      // Add to clan members
+      final newMember = ClanMember(
+        userId: requestUserId,
+        username: requestData['username'] ?? 'User',
+        avatar: requestData['avatar'],
+        role: ClanRole.member,
+        joinedAt: DateTime.now(),
+      );
+
+      final updatedMembers = [...clan.members, newMember];
+
+      // Update clan
+      final updateClanQuery = _supabase
+          .from('clans')
+          .update({
+        'members': updatedMembers.map((m) => m.toJson()).toList(),
+        'member_count': clan.memberCount + 1,
+        'last_active': DateTime.now().toIso8601String(),
+      });
+      await updateClanQuery.eq('id', clanId);
+
+      // Update user's clan ID
+      final updateUserQuery = _supabase
+          .from('users')
+          .update({
+        'clan_id': clanId,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateUserQuery.eq('id', requestUserId);
 
       return true;
     } catch (e) {
@@ -363,12 +525,16 @@ class ClanService {
     }
   }
 
+  /// Reject join request
   Future<bool> rejectRequest(String requestId) async {
     try {
-      await _firestore
-          .collection('clan_requests')
-          .doc(requestId)
-          .update({'status': 'rejected'});
+      final updateRequestQuery = _supabase
+          .from('clan_requests')
+          .update({
+        'status': 'rejected',
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      await updateRequestQuery.eq('id', requestId);
       return true;
     } catch (e) {
       debugPrint('Error rejecting request: $e');
@@ -378,77 +544,102 @@ class ClanService {
 
   // ==================== CLAN ACTIVITY ====================
 
+  /// Add activity points
   Future<void> addActivityPoints(String clanId, String userId, int points) async {
     try {
-      final clanRef = _firestore.collection('clans').doc(clanId);
+      // Get clan info
+      final clanData = await _supabase
+          .from('clans')
+          .select()
+          .eq('id', clanId)
+          .maybeSingle();
 
-      await _firestore.runTransaction((transaction) async {
-        final clanDoc = await transaction.get(clanRef);
-        if (!clanDoc.exists) return;
+      if (clanData == null) return;
 
-        final clan = ClanModel.fromJson(clanDoc.data()!);
-        final member = clan.getMember(userId);
+      final clan = ClanModel.fromJson(clanData);
+      final member = clan.getMember(userId);
 
-        if (member == null) return;
+      if (member == null) return;
 
-        final updatedMember = member.copyWith(
-          activityPoints: member.activityPoints + points,
-          lastActive: DateTime.now().millisecondsSinceEpoch,
-        );
+      final updatedMember = member.copyWith(
+        activityPoints: member.activityPoints + points,
+        lastActive: DateTime.now().millisecondsSinceEpoch,
+      );
 
-        // Update member
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayRemove([member.toJson()]),
-        });
-
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayUnion([updatedMember.toJson()]),
-          'xp': FieldValue.increment(points),
-          'lastActive': FieldValue.serverTimestamp(),
-        });
-
-        // Check for level up
-        final int newXp = clan.xp + points;
-        if (newXp >= clan.xpToNextLevel) {
-          transaction.update(clanRef, {
-            'level': FieldValue.increment(1),
-            'xp': newXp - clan.xpToNextLevel,
-            'xpToNextLevel': clan.xpToNextLevel * 2,
-          });
+      // Replace member in list
+      final updatedMembers = clan.members.map((m) {
+        if (m.userId == userId) {
+          return updatedMember;
         }
+        return m;
+      }).toList();
+
+      int newXp = clan.xp + points;
+      int newLevel = clan.level;
+      int newXpToNextLevel = clan.xpToNextLevel;
+
+      // Check for level up
+      if (newXp >= clan.xpToNextLevel) {
+        newLevel = clan.level + 1;
+        newXp = newXp - clan.xpToNextLevel;
+        newXpToNextLevel = clan.xpToNextLevel * 2;
+      }
+
+      // Update clan
+      final updateClanQuery = _supabase
+          .from('clans')
+          .update({
+        'members': updatedMembers.map((m) => m.toJson()).toList(),
+        'xp': newXp,
+        'level': newLevel,
+        'xp_to_next_level': newXpToNextLevel,
+        'last_active': DateTime.now().toIso8601String(),
       });
+      await updateClanQuery.eq('id', clanId);
     } catch (e) {
       debugPrint('Error adding activity points: $e');
     }
   }
 
+  /// Add donation
   Future<void> addDonation(String clanId, String userId, int amount) async {
     try {
-      final clanRef = _firestore.collection('clans').doc(clanId);
+      // Get clan info
+      final clanData = await _supabase
+          .from('clans')
+          .select()
+          .eq('id', clanId)
+          .maybeSingle();
 
-      await _firestore.runTransaction((transaction) async {
-        final clanDoc = await transaction.get(clanRef);
-        if (!clanDoc.exists) return;
+      if (clanData == null) return;
 
-        final clan = ClanModel.fromJson(clanDoc.data()!);
-        final member = clan.getMember(userId);
+      final clan = ClanModel.fromJson(clanData);
+      final member = clan.getMember(userId);
 
-        if (member == null) return;
+      if (member == null) return;
 
-        final updatedMember = member.copyWith(
-          donations: member.donations + amount,
-          lastActive: DateTime.now().millisecondsSinceEpoch,
-        );
+      final updatedMember = member.copyWith(
+        donations: member.donations + amount,
+        lastActive: DateTime.now().millisecondsSinceEpoch,
+      );
 
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayRemove([member.toJson()]),
-        });
+      // Replace member in list
+      final updatedMembers = clan.members.map((m) {
+        if (m.userId == userId) {
+          return updatedMember;
+        }
+        return m;
+      }).toList();
 
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayUnion([updatedMember.toJson()]),
-          'clanCoins': FieldValue.increment(amount),
-        });
+      // Update clan
+      final updateClanQuery = _supabase
+          .from('clans')
+          .update({
+        'members': updatedMembers.map((m) => m.toJson()).toList(),
+        'clan_coins': clan.clanCoins + amount,
+        'last_active': DateTime.now().toIso8601String(),
       });
+      await updateClanQuery.eq('id', clanId);
     } catch (e) {
       debugPrint('Error adding donation: $e');
     }
@@ -456,54 +647,90 @@ class ClanService {
 
   // ==================== CLAN LEADERBOARD ====================
 
+  /// Get top clans stream
   Stream<List<ClanModel>> getTopClans() {
-    return _firestore
-        .collection('clans')
-        .where('isActive', isEqualTo: true)
-        .orderBy('level', descending: true)
-        .orderBy('xp', descending: true)
-        .limit(100)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-        .map((doc) => ClanModel.fromJson(doc.data()))
-        .toList());
+    try {
+      final stream = _supabase
+          .from('clans')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        final filtered = data.where((item) => item['is_active'] == true).toList();
+
+        // Sort by level and xp
+        filtered.sort((a, b) {
+          final aLevel = _toInt(a['level']);
+          final bLevel = _toInt(b['level']);
+          if (aLevel != bLevel) {
+            return bLevel.compareTo(aLevel);
+          }
+          final aXp = _toInt(a['xp']);
+          final bXp = _toInt(b['xp']);
+          return bXp.compareTo(aXp);
+        });
+
+        return filtered.take(100).map((json) => ClanModel.fromJson(json)).toList();
+      });
+    } catch (e) {
+      debugPrint('Error getting top clans: $e');
+      return Stream.value([]);
+    }
   }
 
+  /// Get top members stream
   Stream<List<ClanMember>> getTopMembers(String clanId) {
-    return _firestore
-        .collection('clans')
-        .doc(clanId)
-        .snapshots()
-        .map((doc) {
-      if (!doc.exists) return [];
-      final clan = ClanModel.fromJson(doc.data()!);
-      final members = clan.members;
-      members.sort((a, b) => b.activityPoints.compareTo(a.activityPoints));
-      return members;
-    });
+    try {
+      final stream = _supabase
+          .from('clans')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        for (var item in data) {
+          if (item['id'].toString() == clanId) {
+            final clan = ClanModel.fromJson(item);
+            final members = clan.members;
+            members.sort((a, b) => b.activityPoints.compareTo(a.activityPoints));
+            return members;
+          }
+        }
+        return [];
+      });
+    } catch (e) {
+      debugPrint('Error getting top members: $e');
+      return Stream.value([]);
+    }
   }
 
   // ==================== CLAN SETTINGS ====================
 
+  /// Update clan settings
   Future<bool> updateClanSettings(String clanId, Map<String, dynamic> settings) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
-      final clanRef = _firestore.collection('clans').doc(clanId);
-      final clanDoc = await clanRef.get();
+      // Get clan info
+      final clanData = await _supabase
+          .from('clans')
+          .select()
+          .eq('id', clanId)
+          .maybeSingle();
 
-      if (!clanDoc.exists) throw Exception('Clan not found');
+      if (clanData == null) throw Exception('Clan not found');
 
-      final clan = ClanModel.fromJson(clanDoc.data()!);
+      final clan = ClanModel.fromJson(clanData);
 
-      if (!clan.canManage(user.uid)) {
+      if (!clan.canManage(userId)) {
         throw Exception('Not authorized to update settings');
       }
 
-      await clanRef.update({
+      final updateClanQuery = _supabase
+          .from('clans')
+          .update({
         'settings': settings,
+        'updated_at': DateTime.now().toIso8601String(),
       });
+      await updateClanQuery.eq('id', clanId);
 
       return true;
     } catch (e) {
@@ -512,45 +739,54 @@ class ClanService {
     }
   }
 
+  /// Transfer leadership
   Future<bool> transferLeadership(String clanId, String newLeaderId) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
-      final clanRef = _firestore.collection('clans').doc(clanId);
+      // Get clan info
+      final clanData = await _supabase
+          .from('clans')
+          .select()
+          .eq('id', clanId)
+          .maybeSingle();
 
-      await _firestore.runTransaction((transaction) async {
-        final clanDoc = await transaction.get(clanRef);
-        if (!clanDoc.exists) throw Exception('Clan not found');
+      if (clanData == null) throw Exception('Clan not found');
 
-        final clan = ClanModel.fromJson(clanDoc.data()!);
+      final clan = ClanModel.fromJson(clanData);
 
-        if (!clan.isLeader(user.uid)) {
-          throw Exception('Only leader can transfer leadership');
-        }
+      if (!clan.isLeader(userId)) {
+        throw Exception('Only leader can transfer leadership');
+      }
 
-        final oldLeader = clan.getMember(user.uid);
-        final newLeader = clan.getMember(newLeaderId);
+      final oldLeader = clan.getMember(userId);
+      final newLeader = clan.getMember(newLeaderId);
 
-        if (oldLeader == null || newLeader == null) {
-          throw Exception('Members not found');
-        }
+      if (oldLeader == null || newLeader == null) {
+        throw Exception('Members not found');
+      }
 
-        // Update roles
-        final updatedOldLeader = oldLeader.copyWith(role: ClanRole.member);
-        final updatedNewLeader = newLeader.copyWith(role: ClanRole.leader);
+      // Update roles
+      final updatedOldLeader = oldLeader.copyWith(role: ClanRole.member);
+      final updatedNewLeader = newLeader.copyWith(role: ClanRole.leader);
 
-        // Remove both members
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayRemove([oldLeader.toJson(), newLeader.toJson()]),
-        });
+      // Update members list
+      final updatedMembers = clan.members.map((m) {
+        if (m.userId == userId) return updatedOldLeader;
+        if (m.userId == newLeaderId) return updatedNewLeader;
+        return m;
+      }).toList();
 
-        // Add updated members
-        transaction.update(clanRef, {
-          'members': FieldValue.arrayUnion([updatedOldLeader.toJson(), updatedNewLeader.toJson()]),
-          'leaderId': newLeaderId,
-        });
+      // Update clan
+      final updateClanQuery = _supabase
+          .from('clans')
+          .update({
+        'members': updatedMembers.map((m) => m.toJson()).toList(),
+        'leader_id': newLeaderId,
+        'updated_at': DateTime.now().toIso8601String(),
       });
+      await updateClanQuery.eq('id', clanId);
 
       return true;
     } catch (e) {
@@ -559,36 +795,43 @@ class ClanService {
     }
   }
 
+  /// Disband clan
   Future<bool> disbandClan(String clanId) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
-      final clanRef = _firestore.collection('clans').doc(clanId);
-      final clanDoc = await clanRef.get();
+      // Get clan info
+      final clanData = await _supabase
+          .from('clans')
+          .select()
+          .eq('id', clanId)
+          .maybeSingle();
 
-      if (!clanDoc.exists) throw Exception('Clan not found');
+      if (clanData == null) throw Exception('Clan not found');
 
-      final clan = ClanModel.fromJson(clanDoc.data()!);
+      final clan = ClanModel.fromJson(clanData);
 
-      if (!clan.isLeader(user.uid)) {
+      if (!clan.isLeader(userId)) {
         throw Exception('Only leader can disband clan');
       }
 
-      // Update all members' clanId to null
-      final batch = _firestore.batch();
-
+      // Update all members' clan_id to null
       for (final member in clan.members) {
-        batch.update(
-          _firestore.collection('users').doc(member.userId),
-          {'clanId': FieldValue.delete()},
-        );
+        final updateUserQuery = _supabase
+            .from('users')
+            .update({
+          'clan_id': null,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+        await updateUserQuery.eq('id', member.userId);
       }
 
       // Delete the clan
-      batch.delete(clanRef);
-
-      await batch.commit();
+      await _supabase
+          .from('clans')
+          .delete()
+          .eq('id', clanId);
 
       return true;
     } catch (e) {

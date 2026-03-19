@@ -1,17 +1,39 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart'; // 🟢 debugPrint এর জন্য
-
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_models.dart' as app;
 import '../models/room_model.dart';
 import '../models/gift_model.dart';
-// import '../models/post_model.dart'; // 🟢 যদি না থাকে তাহলে কমেন্ট
+import '../di/service_locator.dart';
 
 class SearchService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  late final SupabaseClient _supabase;
 
-  // Search all
+  SearchService() {
+    _supabase = getService<SupabaseClient>();
+  }
+
+  // Helper to get current user
+  String? get _currentUserId => _supabase.auth.currentSession?.user.id;
+
+  // Helper methods
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  DateTime _parseDate(dynamic date) {
+    if (date == null) return DateTime.now();
+    if (date is String) return DateTime.parse(date);
+    if (date is DateTime) return date;
+    return DateTime.now();
+  }
+
+  // ==================== SEARCH ALL ====================
+
+  /// Search all
   Future<Map<String, dynamic>> searchAll(String query, {int limit = 10}) async {
     if (query.isEmpty) {
       return {
@@ -22,7 +44,7 @@ class SearchService {
       };
     }
 
-    final List<List<Map<String, dynamic>>> futures = await Future.wait([
+    final futures = await Future.wait([
       searchUsers(query, limit: limit),
       searchRooms(query, limit: limit),
       searchGifts(query, limit: limit),
@@ -33,74 +55,83 @@ class SearchService {
       'users': futures[0],
       'rooms': futures[1],
       'gifts': futures[2],
-      'posts': [], // futures[3],
+      'posts': [],
     };
   }
 
-  // Search users
+  // ==================== SEARCH USERS ====================
+
+  /// Search users
   Future<List<Map<String, dynamic>>> searchUsers(String query, {int limit = 20}) async {
     try {
-      final User? currentUser = _auth.currentUser;
-
       // Search by username
-      final QuerySnapshot<Map<String, dynamic>> usernameQuery = await _firestore
-          .collection('users')
-          .where('username', isGreaterThanOrEqualTo: query)
-          .where('username', isLessThanOrEqualTo: '$query\uf8ff')
-          .limit(limit)
-          .get();
+      final usernameResponse = await _supabase
+          .from('users')
+          .select()
+          .ilike('username', '%$query%')
+          .limit(limit);
 
-      // Search by display name
-      final QuerySnapshot<Map<String, dynamic>> displayNameQuery = await _firestore
-          .collection('users')
-          .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: '$query\uf8ff')
-          .limit(limit)
-          .get();
+      // Search by display name (full_name)
+      final displayNameResponse = await _supabase
+          .from('users')
+          .select()
+          .ilike('full_name', '%$query%')
+          .limit(limit);
 
       // Search by ID
-      final DocumentSnapshot<Map<String, dynamic>> idQuery = await _firestore
-          .collection('users')
-          .doc(query)
-          .get();
+      Map<String, dynamic>? idResponse;
+      try {
+        idResponse = await _supabase
+            .from('users')
+            .select()
+            .eq('id', query)
+            .maybeSingle();
+      } catch (e) {
+        // Ignore error
+      }
 
       final List<Map<String, dynamic>> results = [];
       final Set<String> seenIds = {};
 
       // Add username results
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in usernameQuery.docs) {
-        if (!seenIds.contains(doc.id)) {
-          seenIds.add(doc.id);
+      for (var user in usernameResponse) {
+        final id = user['id']?.toString() ?? '';
+        if (!seenIds.contains(id)) {
+          seenIds.add(id);
           results.add({
             'type': 'user',
-            'id': doc.id,
-            'data': doc.data(),
+            'id': id,
+            'data': user,
             'relevance': 1.0,
           });
         }
       }
 
       // Add display name results
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in displayNameQuery.docs) {
-        if (!seenIds.contains(doc.id)) {
-          seenIds.add(doc.id);
+      for (var user in displayNameResponse) {
+        final id = user['id']?.toString() ?? '';
+        if (!seenIds.contains(id)) {
+          seenIds.add(id);
           results.add({
             'type': 'user',
-            'id': doc.id,
-            'data': doc.data(),
+            'id': id,
+            'data': user,
             'relevance': 0.8,
           });
         }
       }
 
       // Add ID result
-      if (idQuery.exists && !seenIds.contains(query)) {
-        results.add({
-          'type': 'user',
-          'id': query,
-          'data': idQuery.data(),
-          'relevance': 1.5, // Exact ID match is most relevant
-        });
+      if (idResponse != null) {
+        final id = idResponse['id']?.toString() ?? '';
+        if (!seenIds.contains(id)) {
+          results.add({
+            'type': 'user',
+            'id': id,
+            'data': idResponse,
+            'relevance': 1.5, // Exact ID match is most relevant
+          });
+        }
       }
 
       // Sort by relevance
@@ -113,49 +144,51 @@ class SearchService {
     }
   }
 
-  // Search rooms
+  // ==================== SEARCH ROOMS ====================
+
+  /// Search rooms
   Future<List<Map<String, dynamic>>> searchRooms(String query, {int limit = 20}) async {
     try {
       // Search by name
-      final QuerySnapshot<Map<String, dynamic>> nameQuery = await _firestore
-          .collection('rooms')
-          .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: '$query\uf8ff')
-          .where('status', isEqualTo: 'active')
-          .limit(limit)
-          .get();
+      final nameResponse = await _supabase
+          .from('rooms')
+          .select()
+          .ilike('name', '%$query%')
+          .eq('status', 'active')
+          .limit(limit);
 
       // Search by description
-      final QuerySnapshot<Map<String, dynamic>> descQuery = await _firestore
-          .collection('rooms')
-          .where('description', isGreaterThanOrEqualTo: query)
-          .where('description', isLessThanOrEqualTo: '$query\uf8ff')
-          .where('status', isEqualTo: 'active')
-          .limit(limit)
-          .get();
+      final descResponse = await _supabase
+          .from('rooms')
+          .select()
+          .ilike('description', '%$query%')
+          .eq('status', 'active')
+          .limit(limit);
 
       final List<Map<String, dynamic>> results = [];
       final Set<String> seenIds = {};
 
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in nameQuery.docs) {
-        if (!seenIds.contains(doc.id)) {
-          seenIds.add(doc.id);
+      for (var room in nameResponse) {
+        final id = room['id']?.toString() ?? '';
+        if (!seenIds.contains(id)) {
+          seenIds.add(id);
           results.add({
             'type': 'room',
-            'id': doc.id,
-            'data': doc.data(),
+            'id': id,
+            'data': room,
             'relevance': 1.0,
           });
         }
       }
 
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in descQuery.docs) {
-        if (!seenIds.contains(doc.id)) {
-          seenIds.add(doc.id);
+      for (var room in descResponse) {
+        final id = room['id']?.toString() ?? '';
+        if (!seenIds.contains(id)) {
+          seenIds.add(id);
           results.add({
             'type': 'room',
-            'id': doc.id,
-            'data': doc.data(),
+            'id': id,
+            'data': room,
             'relevance': 0.7,
           });
         }
@@ -168,49 +201,51 @@ class SearchService {
     }
   }
 
-  // Search gifts
+  // ==================== SEARCH GIFTS ====================
+
+  /// Search gifts
   Future<List<Map<String, dynamic>>> searchGifts(String query, {int limit = 20}) async {
     try {
       // Search by name
-      final QuerySnapshot<Map<String, dynamic>> nameQuery = await _firestore
-          .collection('gifts')
-          .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: '$query\uf8ff')
-          .where('isAvailable', isEqualTo: true)
-          .limit(limit)
-          .get();
+      final nameResponse = await _supabase
+          .from('gifts')
+          .select()
+          .ilike('name', '%$query%')
+          .eq('is_available', true)
+          .limit(limit);
 
       // Search by category
-      final QuerySnapshot<Map<String, dynamic>> categoryQuery = await _firestore
-          .collection('gifts')
-          .where('category', isGreaterThanOrEqualTo: query)
-          .where('category', isLessThanOrEqualTo: '$query\uf8ff')
-          .where('isAvailable', isEqualTo: true)
-          .limit(limit)
-          .get();
+      final categoryResponse = await _supabase
+          .from('gifts')
+          .select()
+          .ilike('category', '%$query%')
+          .eq('is_available', true)
+          .limit(limit);
 
       final List<Map<String, dynamic>> results = [];
       final Set<String> seenIds = {};
 
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in nameQuery.docs) {
-        if (!seenIds.contains(doc.id)) {
-          seenIds.add(doc.id);
+      for (var gift in nameResponse) {
+        final id = gift['id']?.toString() ?? '';
+        if (!seenIds.contains(id)) {
+          seenIds.add(id);
           results.add({
             'type': 'gift',
-            'id': doc.id,
-            'data': doc.data(),
+            'id': id,
+            'data': gift,
             'relevance': 1.0,
           });
         }
       }
 
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in categoryQuery.docs) {
-        if (!seenIds.contains(doc.id)) {
-          seenIds.add(doc.id);
+      for (var gift in categoryResponse) {
+        final id = gift['id']?.toString() ?? '';
+        if (!seenIds.contains(id)) {
+          seenIds.add(id);
           results.add({
             'type': 'gift',
-            'id': doc.id,
-            'data': doc.data(),
+            'id': id,
+            'data': gift,
             'relevance': 0.6,
           });
         }
@@ -223,38 +258,9 @@ class SearchService {
     }
   }
 
-  // Search posts (commented out if post_model doesn't exist)
-  /*
-  Future<List<Map<String, dynamic>>> searchPosts(String query, {int limit = 20}) async {
-    try {
-      final QuerySnapshot<Map<String, dynamic>> contentQuery = await _firestore
-          .collection('posts')
-          .where('content', isGreaterThanOrEqualTo: query)
-          .where('content', isLessThanOrEqualTo: '$query\uf8ff')
-          .orderBy('timestamp', descending: true)
-          .limit(limit)
-          .get();
+  // ==================== ADVANCED SEARCH ====================
 
-      final List<Map<String, dynamic>> results = [];
-
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in contentQuery.docs) {
-        results.add({
-          'type': 'post',
-          'id': doc.id,
-          'data': doc.data(),
-          'relevance': 1.0,
-        });
-      }
-
-      return results;
-    } catch (e) {
-      debugPrint('Error searching posts: $e');
-      return [];
-    }
-  }
-  */
-
-  // Advanced search with filters
+  /// Advanced search with filters
   Future<List<Map<String, dynamic>>> advancedSearch({
     required String query,
     String? type,
@@ -317,33 +323,41 @@ class SearchService {
     DateTime? toDate,
     int limit = 50,
   }) async {
-    Query<Map<String, dynamic>> q = _firestore.collection('users');
+    try {
+      var dbQuery = _supabase
+          .from('users')
+          .select();
 
-    if (query.isNotEmpty) {
-      q = q.where('username', isGreaterThanOrEqualTo: query)
-          .where('username', isLessThanOrEqualTo: '$query\uf8ff');
+      if (query.isNotEmpty) {
+        dbQuery = dbQuery.ilike('username', '%$query%');
+      }
+
+      if (country != null) {
+        dbQuery = dbQuery.eq('country_id', country);
+      }
+
+      if (fromDate != null) {
+        dbQuery = dbQuery.gte('created_at', fromDate.toIso8601String());
+      }
+
+      if (toDate != null) {
+        dbQuery = dbQuery.lte('created_at', toDate.toIso8601String());
+      }
+
+      final response = await dbQuery.limit(limit);
+
+      return response.map((user) {
+        return {
+          'type': 'user',
+          'id': user['id']?.toString() ?? '',
+          'data': user,
+          'relevance': 1.0,
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint('Error in advanced search users: $e');
+      return [];
     }
-
-    if (country != null) {
-      q = q.where('countryId', isEqualTo: country);
-    }
-
-    if (fromDate != null) {
-      q = q.where('createdAt', isGreaterThanOrEqualTo: fromDate);
-    }
-
-    if (toDate != null) {
-      q = q.where('createdAt', isLessThanOrEqualTo: toDate);
-    }
-
-    final QuerySnapshot<Map<String, dynamic>> snapshot = await q.limit(limit).get();
-
-    return snapshot.docs.map((doc) => {
-      'type': 'user',
-      'id': doc.id,
-      'data': doc.data(),
-      'relevance': 1.0,
-    }).toList();
   }
 
   Future<List<Map<String, dynamic>>> _advancedSearchRooms({
@@ -354,37 +368,46 @@ class SearchService {
     DateTime? toDate,
     int limit = 50,
   }) async {
-    Query<Map<String, dynamic>> q = _firestore.collection('rooms').where('status', isEqualTo: 'active');
+    try {
+      var dbQuery = _supabase
+          .from('rooms')
+          .select()
+          .eq('status', 'active');
 
-    if (query.isNotEmpty) {
-      q = q.where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: '$query\uf8ff');
+      if (query.isNotEmpty) {
+        dbQuery = dbQuery.ilike('name', '%$query%');
+      }
+
+      if (category != null && category != 'All') {
+        dbQuery = dbQuery.eq('category', category);
+      }
+
+      if (country != null) {
+        dbQuery = dbQuery.eq('country', country);
+      }
+
+      if (fromDate != null) {
+        dbQuery = dbQuery.gte('created_at', fromDate.toIso8601String());
+      }
+
+      if (toDate != null) {
+        dbQuery = dbQuery.lte('created_at', toDate.toIso8601String());
+      }
+
+      final response = await dbQuery.limit(limit);
+
+      return response.map((room) {
+        return {
+          'type': 'room',
+          'id': room['id']?.toString() ?? '',
+          'data': room,
+          'relevance': 1.0,
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint('Error in advanced search rooms: $e');
+      return [];
     }
-
-    if (category != null && category != 'All') {
-      q = q.where('category', isEqualTo: category);
-    }
-
-    if (country != null) {
-      q = q.where('country', isEqualTo: country);
-    }
-
-    if (fromDate != null) {
-      q = q.where('createdAt', isGreaterThanOrEqualTo: fromDate);
-    }
-
-    if (toDate != null) {
-      q = q.where('createdAt', isLessThanOrEqualTo: toDate);
-    }
-
-    final QuerySnapshot<Map<String, dynamic>> snapshot = await q.limit(limit).get();
-
-    return snapshot.docs.map((doc) => {
-      'type': 'room',
-      'id': doc.id,
-      'data': doc.data(),
-      'relevance': 1.0,
-    }).toList();
   }
 
   Future<List<Map<String, dynamic>>> _advancedSearchGifts({
@@ -394,36 +417,47 @@ class SearchService {
     int? maxPrice,
     int limit = 50,
   }) async {
-    Query<Map<String, dynamic>> q = _firestore.collection('gifts').where('isAvailable', isEqualTo: true);
+    try {
+      var dbQuery = _supabase
+          .from('gifts')
+          .select()
+          .eq('is_available', true);
 
-    if (query.isNotEmpty) {
-      q = q.where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: '$query\uf8ff');
+      if (query.isNotEmpty) {
+        dbQuery = dbQuery.ilike('name', '%$query%');
+      }
+
+      if (category != null && category != 'All') {
+        dbQuery = dbQuery.eq('category', category);
+      }
+
+      if (minPrice != null) {
+        dbQuery = dbQuery.gte('price', minPrice);
+      }
+
+      if (maxPrice != null) {
+        dbQuery = dbQuery.lte('price', maxPrice);
+      }
+
+      final response = await dbQuery.limit(limit);
+
+      return response.map((gift) {
+        return {
+          'type': 'gift',
+          'id': gift['id']?.toString() ?? '',
+          'data': gift,
+          'relevance': 1.0,
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint('Error in advanced search gifts: $e');
+      return [];
     }
-
-    if (category != null && category != 'All') {
-      q = q.where('category', isEqualTo: category);
-    }
-
-    if (minPrice != null) {
-      q = q.where('price', isGreaterThanOrEqualTo: minPrice);
-    }
-
-    if (maxPrice != null) {
-      q = q.where('price', isLessThanOrEqualTo: maxPrice);
-    }
-
-    final QuerySnapshot<Map<String, dynamic>> snapshot = await q.limit(limit).get();
-
-    return snapshot.docs.map((doc) => {
-      'type': 'gift',
-      'id': doc.id,
-      'data': doc.data(),
-      'relevance': 1.0,
-    }).toList();
   }
 
-  // Get search suggestions
+  // ==================== GET SUGGESTIONS ====================
+
+  /// Get search suggestions
   Future<List<String>> getSuggestions(String query) async {
     if (query.length < 2) return [];
 
@@ -431,41 +465,47 @@ class SearchService {
       final Set<String> suggestions = {};
 
       // User suggestions
-      final QuerySnapshot<Map<String, dynamic>> userSnapshot = await _firestore
-          .collection('users')
-          .where('username', isGreaterThanOrEqualTo: query)
-          .where('username', isLessThanOrEqualTo: '$query\uf8ff')
-          .limit(5)
-          .get();
+      final userResponse = await _supabase
+          .from('users')
+          .select('username')
+          .ilike('username', '%$query%')
+          .limit(5);
 
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in userSnapshot.docs) {
-        suggestions.add(doc.data()['username'] as String? ?? '');
+      for (var user in userResponse) {
+        final username = user['username'] as String?;
+        if (username != null && username.isNotEmpty) {
+          suggestions.add(username);
+        }
       }
 
       // Room suggestions
-      final QuerySnapshot<Map<String, dynamic>> roomSnapshot = await _firestore
-          .collection('rooms')
-          .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: '$query\uf8ff')
-          .where('status', isEqualTo: 'active')
-          .limit(5)
-          .get();
+      final roomResponse = await _supabase
+          .from('rooms')
+          .select('name')
+          .ilike('name', '%$query%')
+          .eq('status', 'active')
+          .limit(5);
 
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in roomSnapshot.docs) {
-        suggestions.add(doc.data()['name'] as String? ?? '');
+      for (var room in roomResponse) {
+        final name = room['name'] as String?;
+        if (name != null && name.isNotEmpty) {
+          suggestions.add(name);
+        }
       }
 
       // Gift suggestions
-      final QuerySnapshot<Map<String, dynamic>> giftSnapshot = await _firestore
-          .collection('gifts')
-          .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: '$query\uf8ff')
-          .where('isAvailable', isEqualTo: true)
-          .limit(5)
-          .get();
+      final giftResponse = await _supabase
+          .from('gifts')
+          .select('name')
+          .ilike('name', '%$query%')
+          .eq('is_available', true)
+          .limit(5);
 
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in giftSnapshot.docs) {
-        suggestions.add(doc.data()['name'] as String? ?? '');
+      for (var gift in giftResponse) {
+        final name = gift['name'] as String?;
+        if (name != null && name.isNotEmpty) {
+          suggestions.add(name);
+        }
       }
 
       return suggestions.where((s) => s.isNotEmpty).take(10).toList();
@@ -475,9 +515,78 @@ class SearchService {
     }
   }
 
-  // Clear search cache
+  // ==================== CLEAR CACHE ====================
+
+  /// Clear search cache
   Future<void> clearCache() async {
     // Implementation depends on caching strategy
     debugPrint('Search cache cleared');
+  }
+
+  // ==================== RECENT SEARCHES ====================
+
+  /// Save recent search
+  Future<void> saveRecentSearch(String query) async {
+    final userId = _currentUserId;
+    if (userId == null) return;
+
+    try {
+      await _supabase.from('recent_searches').insert({
+        'user_id': userId,
+        'query': query,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Error saving recent search: $e');
+    }
+  }
+
+  /// Get recent searches
+  Future<List<String>> getRecentSearches({int limit = 10}) async {
+    final userId = _currentUserId;
+    if (userId == null) return [];
+
+    try {
+      final response = await _supabase
+          .from('recent_searches')
+          .select('query')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(limit);
+
+      return response.map<String>((item) => item['query'] as String).toList();
+    } catch (e) {
+      debugPrint('Error getting recent searches: $e');
+      return [];
+    }
+  }
+
+  /// Clear recent searches
+  Future<void> clearRecentSearches() async {
+    final userId = _currentUserId;
+    if (userId == null) return;
+
+    try {
+      await _supabase
+          .from('recent_searches')
+          .delete()
+          .eq('user_id', userId);
+    } catch (e) {
+      debugPrint('Error clearing recent searches: $e');
+    }
+  }
+
+  // ==================== SEARCH STATISTICS ====================
+
+  /// Get popular searches
+  Future<List<Map<String, dynamic>>> getPopularSearches({int limit = 10}) async {
+    try {
+      // This would require aggregating search data
+      // For now, return empty list
+      return [];
+    } catch (e) {
+      debugPrint('Error getting popular searches: $e');
+      return [];
+    }
   }
 }

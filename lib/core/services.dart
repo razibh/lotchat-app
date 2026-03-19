@@ -28,7 +28,7 @@ export 'services/auth_service.dart';
 export 'services/database_service.dart';
 
 /// Firebase Service - Firebase operations
-export 'services/firebase_service.dart';
+export 'services/supabase_service.dart';
 
 /// Notification Service - Push notifications
 export 'services/notification_service.dart';

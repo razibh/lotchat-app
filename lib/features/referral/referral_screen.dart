@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/referral_service.dart';
+import '../../core/di/service_locator.dart';
 
 class ReferralScreen extends StatefulWidget {
   const ReferralScreen({super.key});
@@ -17,6 +17,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
   List<Map<String, dynamic>> _history = [];
   Map<String, dynamic>? _referredBy;
   final List<Map<String, dynamic>> _leaderboard = [];
+
+  // Helper to get current user
+  String? get _currentUserId => ServiceLocator().get<SupabaseClient>().auth.currentSession?.user.id;
 
   @override
   void initState() {
@@ -55,6 +58,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
       appBar: AppBar(
         title: const Text('Refer & Earn'),
         backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
@@ -131,7 +135,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  _stats['code'] ?? 'N/A',
+                  _stats['code']?.toString() ?? 'N/A',
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -279,7 +283,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                     ? NetworkImage(_referredBy!['avatar'])
                     : null,
                 child: _referredBy?['avatar'] == null
-                    ? Text(_referredBy?['name'][0].toUpperCase() ?? 'U')
+                    ? Text(_referredBy?['name']?[0].toUpperCase() ?? 'U')
                     : null,
               ),
               title: Text(_referredBy?['name'] ?? 'User'),
@@ -295,7 +299,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
     final milestone = _stats['nextMilestone'] as Map<String, dynamic>?;
     if (milestone == null) return const SizedBox();
 
-    final progress = (_stats['totalReferrals'] ?? 0) / milestone['next'];
+    final progress = (_stats['totalReferrals'] ?? 0) / (milestone['next'] ?? 1);
 
     return Card(
       child: Padding(
@@ -441,10 +445,10 @@ class _ReferralScreenState extends State<ReferralScreen> {
                             ? NetworkImage(item['referredAvatar'])
                             : null,
                         child: item['referredAvatar'] == null
-                            ? Text(item['referredName'][0].toUpperCase())
+                            ? Text(item['referredName']?[0].toUpperCase() ?? '?')
                             : null,
                       ),
-                      title: Text(item['referredName']),
+                      title: Text(item['referredName'] ?? 'Unknown'),
                       subtitle: Text(_formatDate(item['timestamp'])),
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(
@@ -506,7 +510,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                 itemCount: _leaderboard.length,
                 itemBuilder: (context, index) {
                   final item = _leaderboard[index];
-                  final isCurrentUser = item['userId'] == FirebaseAuth.instance.currentUser?.uid;
+                  final isCurrentUser = item['userId'] == _currentUserId;
 
                   return ListTile(
                     leading: CircleAvatar(
@@ -515,14 +519,14 @@ class _ReferralScreenState extends State<ReferralScreen> {
                           ? NetworkImage(item['avatar'])
                           : null,
                       child: item['avatar'] == null
-                          ? Text(item['name'][0].toUpperCase())
+                          ? Text(item['name']?[0].toUpperCase() ?? '?')
                           : null,
                     ),
                     title: Row(
                       children: [
                         Expanded(
                           child: Text(
-                            item['name'],
+                            item['name'] ?? 'Unknown',
                             style: TextStyle(
                               fontWeight: isCurrentUser ? FontWeight.bold : null,
                               color: isCurrentUser ? Colors.deepPurple : null,
@@ -555,7 +559,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                         const Icon(Icons.people, size: 16, color: Colors.grey),
                         const SizedBox(width: 4),
                         Text(
-                          '${item['totalReferrals']}',
+                          '${item['totalReferrals'] ?? 0}',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -573,17 +577,21 @@ class _ReferralScreenState extends State<ReferralScreen> {
     final code = _stats['code'];
     if (code != null) {
       await _referralService.getReferralLink();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Referral code copied!')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Referral code copied!')),
+        );
+      }
     }
   }
 
   void _shareReferralCode() {
     _referralService.shareReferral();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Opening share dialog...')),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Opening share dialog...')),
+      );
+    }
   }
 
   void _showInfoDialog() {
@@ -612,11 +620,15 @@ class _ReferralScreenState extends State<ReferralScreen> {
   String _formatDate(dynamic date) {
     if (date == null) return 'Unknown';
 
-    final DateTime dt;
-    if (date is Timestamp) {
-      dt = date.toDate();
-    } else if (date is DateTime) {
+    DateTime dt;
+    if (date is DateTime) {
       dt = date;
+    } else if (date is String) {
+      try {
+        dt = DateTime.parse(date);
+      } catch (e) {
+        return 'Unknown';
+      }
     } else {
       return 'Unknown';
     }

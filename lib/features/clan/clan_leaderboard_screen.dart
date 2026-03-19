@@ -1,6 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User hide
+
 import '../../core/di/service_locator.dart';
 import '../clan/services/clan_service.dart';
 import '../../core/services/auth_service.dart';
@@ -43,17 +44,18 @@ class _ClanLeaderboardScreenState extends State<ClanLeaderboardScreen>
   }
 
   Future<void> _getUserClan() async {
-    final User? user = _authService.getCurrentUser();
-    if (user != null) {
-      // Firestore থেকে ইউজারের clanId নিন
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      final clanId = userDoc.data()?['clanId'] as String?;
+    // ✅ Firebase Auth → Supabase Auth
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      // ✅ Firestore → Supabase
+      final userData = await Supabase.instance.client
+          .from('users')
+          .select('clan_id')
+          .eq('id', session.user.id)
+          .maybeSingle();
 
       setState(() {
-        _userClanId = clanId;
+        _userClanId = userData?['clan_id'] as String?;
       });
     }
   }

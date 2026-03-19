@@ -1,14 +1,16 @@
 import 'dart:math';
+import 'dart:developer' as developer;
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode; // ⚡ FIX: Add kDebugMode
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../di/service_locator.dart';
 
 class CallService {
-  static const String appId = 'YOUR_AGORA_APP_ID'; // Replace with your Agora App ID
+  static const String appId = 'cc371f6507f24f6480d631b7f3a7f1c9';
 
-  late RtcEngine _engine;
+  late final SupabaseClient _supabase;
+  RtcEngine? _engine; // Make nullable for web
   String? currentChannelId;
   CallState callState = CallState.idle;
 
@@ -17,45 +19,65 @@ class CallService {
   Function(String channelId, int uid)? onUserOffline;
   Function(String channelId, int uid, int elapsed)? onJoinChannelSuccess;
 
+  // Call listeners for real-time updates
+  RealtimeChannel? _callChannel;
+
   Future<void> initialize() async {
     try {
-      // Request permissions
-      await <Permission>[Permission.microphone, Permission.camera].request();
+      _supabase = getService<SupabaseClient>();
 
-      // Initialize Agora engine
-      _engine = createAgoraRtcEngine();
-      await _engine.initialize(const RtcEngineContext(
-        appId: appId,
-        channelProfile: ChannelProfileType.channelProfileCommunication,
-      ),);
+      // Skip permission request on web
+      if (!kIsWeb) {
+        await <Permission>[Permission.microphone, Permission.camera].request();
+      }
 
-      // Register event handlers - 🟢 Fixed null safety
-      _engine.registerEventHandler(
-        RtcEngineEventHandler(
-          onJoinChannelSuccess: (connection, elapsed) {
-            callState = CallState.connected;
-            onJoinChannelSuccess?.call(connection.channelId ?? '', connection.localUid ?? 0, elapsed);
-          },
-          onUserJoined: (connection, remoteUid, elapsed) {
-            onUserJoined?.call(connection.channelId ?? '', remoteUid);
-          },
-          onUserOffline: (connection, remoteUid, reason) {
-            onUserOffline?.call(connection.channelId ?? '', remoteUid);
-          },
-          onLeaveChannel: (connection, stats) {
-            callState = CallState.ended;
-          },
-          onError: (error, errorDescription) {
-            debugPrint('Agora error: $error - $errorDescription');
-            callState = CallState.error;
-          },
-        ),
-      );
+      // Only initialize Agora on non-web platforms
+      if (!kIsWeb) {
+        _engine = createAgoraRtcEngine();
+        await _engine!.initialize(const RtcEngineContext(
+          appId: appId,
+          channelProfile: ChannelProfileType.channelProfileCommunication,
+        ));
 
-      debugPrint('✅ CallService initialized');
+        _engine!.registerEventHandler(
+          RtcEngineEventHandler(
+            onJoinChannelSuccess: (connection, elapsed) {
+              callState = CallState.connected;
+              onJoinChannelSuccess?.call(connection.channelId ?? '', connection.localUid ?? 0, elapsed);
+            },
+            onUserJoined: (connection, remoteUid, elapsed) {
+              onUserJoined?.call(connection.channelId ?? '', remoteUid);
+            },
+            onUserOffline: (connection, remoteUid, reason) {
+              onUserOffline?.call(connection.channelId ?? '', remoteUid);
+            },
+            onLeaveChannel: (connection, stats) {
+              callState = CallState.ended;
+            },
+            onError: (error, errorDescription) {
+              _debugPrint('Agora error: $error - $errorDescription');
+              callState = CallState.error;
+            },
+          ),
+        );
+        _debugPrint(' Agora engine initialized on mobile');
+      } else {
+        _debugPrint(' Web platform - using webRTC simulation');
+      }
+
+      _debugPrint(' CallService initialized with Supabase');
     } catch (e) {
-      debugPrint('❌ Error initializing CallService: $e');
-      rethrow;
+      _debugPrint(' Error initializing CallService: $e');
+      // Don't rethrow - allow app to continue without calls
+    }
+  }
+
+  // Custom debugPrint method
+  void _debugPrint(String message) {
+    developer.log(message);
+    if (kDebugMode) { // ⚡ FIX: Now kDebugMode is defined
+      // ignore: avoid_print
+      print(message);
     }
   }
 
@@ -65,49 +87,56 @@ class CallService {
     required CallType callType,
     required String roomId,
   }) async {
-    final User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final session = _supabase.auth.currentSession;
+    if (session == null) throw Exception('User not logged in');
+
+    final currentUser = session.user;
 
     try {
-      // Generate unique channel ID
       currentChannelId = 'call_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(1000)}';
 
-      // Enable video if video call
-      if (callType == CallType.video) {
-        await _engine.enableVideo();
-        await _engine.startPreview();
+      // Check if on mobile and engine exists
+      if (!kIsWeb && _engine != null && callType == CallType.video) {
+        await _engine!.enableVideo();
+        await _engine!.startPreview();
       }
 
-      // Join channel - 🟢 Fixed null safety
-      final ChannelMediaOptions options = ChannelMediaOptions(
-        channelProfile: ChannelProfileType.channelProfileCommunication,
-        clientRoleType: ClientRoleType.clientRoleBroadcaster,
-        publishCameraTrack: callType == CallType.video,
-        publishMicrophoneTrack: true,
-        autoSubscribeAudio: true,
-        autoSubscribeVideo: true,
-      );
+      // Only use engine on mobile
+      if (!kIsWeb && _engine != null) {
+        final ChannelMediaOptions options = ChannelMediaOptions(
+          channelProfile: ChannelProfileType.channelProfileCommunication,
+          clientRoleType: ClientRoleType.clientRoleBroadcaster,
+          publishCameraTrack: callType == CallType.video,
+          publishMicrophoneTrack: true,
+          autoSubscribeAudio: true,
+          autoSubscribeVideo: true,
+        );
 
-      await _engine.joinChannel(
-        token: '', // Generate token from your server
-        channelId: currentChannelId!,
-        uid: 0,
-        options: options,
-      );
+        await _engine!.joinChannel(
+          token: '',
+          channelId: currentChannelId!,
+          uid: 0,
+          options: options,
+        );
+      } else {
+        _debugPrint(' Web: Simulating call start');
+      }
 
       callState = CallState.connecting;
 
-      // Save call record to Firestore
       await _saveCallRecord(
         targetUserId: targetUserId,
         callType: callType,
         channelId: currentChannelId!,
         roomId: roomId,
+        callerId: currentUser.id,
+        callerName: currentUser.userMetadata?['full_name'] ?? currentUser.email ?? 'Unknown',
+        callerAvatar: currentUser.userMetadata?['avatar_url'],
       );
 
       return currentChannelId!;
     } catch (e) {
-      debugPrint('Error starting call: $e');
+      _debugPrint('Error starting call: $e');
       throw Exception('Failed to start call');
     }
   }
@@ -117,25 +146,30 @@ class CallService {
     try {
       currentChannelId = channelId;
 
-      const ChannelMediaOptions options = ChannelMediaOptions(
-        channelProfile: ChannelProfileType.channelProfileCommunication,
-        clientRoleType: ClientRoleType.clientRoleBroadcaster,
-        publishCameraTrack: false,
-        publishMicrophoneTrack: true,
-        autoSubscribeAudio: true,
-        autoSubscribeVideo: true,
-      );
+      // Only use engine on mobile
+      if (!kIsWeb && _engine != null) {
+        final ChannelMediaOptions options = ChannelMediaOptions(
+          channelProfile: ChannelProfileType.channelProfileCommunication,
+          clientRoleType: ClientRoleType.clientRoleBroadcaster,
+          publishCameraTrack: false,
+          publishMicrophoneTrack: true,
+          autoSubscribeAudio: true,
+          autoSubscribeVideo: true,
+        );
 
-      await _engine.joinChannel(
-        token: '',
-        channelId: channelId,
-        uid: 0,
-        options: options,
-      );
+        await _engine!.joinChannel(
+          token: '',
+          channelId: channelId,
+          uid: 0,
+          options: options,
+        );
+      } else {
+        _debugPrint('🌐 Web: Simulating call join');
+      }
 
       callState = CallState.connecting;
     } catch (e) {
-      debugPrint('Error joining call: $e');
+      _debugPrint('Error joining call: $e');
       throw Exception('Failed to join call');
     }
   }
@@ -143,7 +177,10 @@ class CallService {
   // End call
   Future<void> endCall() async {
     try {
-      await _engine.leaveChannel();
+      // Only use engine on mobile
+      if (!kIsWeb && _engine != null) {
+        await _engine!.leaveChannel();
+      }
       callState = CallState.ended;
 
       if (currentChannelId != null) {
@@ -151,106 +188,347 @@ class CallService {
       }
       currentChannelId = null;
     } catch (e) {
-      debugPrint('Error ending call: $e');
+      _debugPrint('Error ending call: $e');
     }
   }
 
   // Toggle microphone
   Future<void> toggleMic(bool mute) async {
-    await _engine.muteLocalAudioStream(mute);
+    // Only use engine on mobile
+    if (!kIsWeb && _engine != null) {
+      await _engine!.muteLocalAudioStream(mute);
+    } else {
+      _debugPrint(' Web: Toggle mic: $mute');
+    }
   }
 
   // Toggle camera
   Future<void> toggleCamera(bool enable) async {
-    await _engine.enableLocalVideo(enable);
-    await _engine.muteLocalVideoStream(!enable);
+    // Only use engine on mobile
+    if (!kIsWeb && _engine != null) {
+      await _engine!.enableLocalVideo(enable);
+      await _engine!.muteLocalVideoStream(!enable);
+    } else {
+      _debugPrint(' Web: Toggle camera: $enable');
+    }
   }
 
   // Switch camera
   Future<void> switchCamera() async {
-    await _engine.switchCamera();
+    // Only use engine on mobile
+    if (!kIsWeb && _engine != null) {
+      await _engine!.switchCamera();
+    } else {
+      _debugPrint(' Web: Switch camera');
+    }
   }
 
   // Set speakerphone
   Future<void> setSpeakerphone(bool enable) async {
-    await _engine.setEnableSpeakerphone(enable);
+    // Only use engine on mobile
+    if (!kIsWeb && _engine != null) {
+      await _engine!.setEnableSpeakerphone(enable);
+    } else {
+      _debugPrint(' Web: Set speakerphone: $enable');
+    }
   }
 
-  // Save call record to Firestore - 🟢 Fixed null safety
+  // ==================== DATABASE METHODS ====================
+
+  // Save call record
   Future<void> _saveCallRecord({
     required String targetUserId,
     required CallType callType,
     required String channelId,
     required String roomId,
+    required String callerId,
+    required String callerName,
+    String? callerAvatar,
   }) async {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return;
-
-    final Map<String, Object?> callData = <String, Object?>{
-      'callId': channelId,
-      'callerId': currentUser.uid,
-      'callerName': currentUser.displayName ?? 'Unknown',
-      'callerAvatar': currentUser.photoURL ?? '',
-      'receiverId': targetUserId,
-      'callType': callType.toString().split('.').last,
-      'channelId': channelId,
-      'roomId': roomId,
-      'startTime': FieldValue.serverTimestamp(),
-      'endTime': null,
-      'status': 'ongoing',
-    };
-
-    await FirebaseFirestore.instance.collection('calls').add(callData);
-  }
-
-  // Update call record - 🟢 Fixed null safety
-  Future<void> _updateCallRecord(String channelId) async {
     try {
-      final QuerySnapshot<Map<String, dynamic>> query = await FirebaseFirestore.instance
-          .collection('calls')
-          .where('channelId', isEqualTo: channelId)
-          .where('status', isEqualTo: 'ongoing')
-          .limit(1)
-          .get();
+      final now = DateTime.now().toIso8601String();
 
-      if (query.docs.isNotEmpty) {
-        await query.docs.first.reference.update(<Object, Object?>{
-          'endTime': FieldValue.serverTimestamp(),
-          'status': 'ended',
-        });
-      }
+      final callData = {
+        'call_id': channelId,
+        'caller_id': callerId,
+        'caller_name': callerName,
+        'caller_avatar': callerAvatar,
+        'receiver_id': targetUserId,
+        'call_type': callType.toString().split('.').last,
+        'channel_id': channelId,
+        'room_id': roomId,
+        'started_at': now,
+        'ended_at': null,
+        'status': 'ongoing',
+        'participants': [callerId, targetUserId],
+        'created_at': now,
+      };
+
+      await _supabase.from('calls').insert(callData);
+      _debugPrint('Call record saved: $channelId');
     } catch (e) {
-      debugPrint('Error updating call record: $e');
+      _debugPrint('Error saving call record: $e');
     }
   }
 
-  // Get call history - 🟢 Fixed null safety
-  Stream<List<CallRecord>> getCallHistory() {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return const Stream.empty();
+  // Update call record
+  Future<void> _updateCallRecord(String channelId) async {
+    try {
+      final now = DateTime.now().toIso8601String();
 
-    return FirebaseFirestore.instance
-        .collection('calls')
-        .where('callerId', isEqualTo: currentUser.uid)
-        .orderBy('startTime', descending: true)
-        .limit(50)
-        .snapshots()
-        .map((QuerySnapshot<Map<String, dynamic>> snapshot) => snapshot.docs
-        .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => CallRecord.fromJson(doc.data()))
-        .toList(),);
+      final callRecord = await _supabase
+          .from('calls')
+          .select('started_at')
+          .eq('channel_id', channelId)
+          .eq('status', 'ongoing')
+          .maybeSingle();
+
+      int? duration;
+      if (callRecord != null) {
+        final startedAt = DateTime.parse(callRecord['started_at']);
+        duration = DateTime.now().difference(startedAt).inSeconds;
+      }
+
+      // Separate update query
+      final updateQuery = _supabase
+          .from('calls')
+          .update({
+        'ended_at': now,
+        'status': 'ended',
+        'duration_seconds': duration,
+        'updated_at': now,
+      });
+
+      await updateQuery
+          .eq('channel_id', channelId)
+          .eq('status', 'ongoing');
+
+      _debugPrint('Call record updated: $channelId, duration: ${duration}s');
+    } catch (e) {
+      _debugPrint('Error updating call record: $e');
+    }
+  }
+
+  // ==================== STREAM QUERIES ====================
+
+  // Get caller history as stream
+  Stream<List<CallRecord>> getCallerHistoryStream() {
+    final session = _supabase.auth.currentSession;
+    if (session == null) return const Stream.empty();
+
+    try {
+      final stream = _supabase
+          .from('calls')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        try {
+          final filteredData = data.where((call) =>
+          call['caller_id'] == session!.user.id &&
+              call['status'] == 'ended'
+          ).toList();
+
+          return filteredData.map((call) => CallRecord.fromJson(call)).toList();
+        } catch (e) {
+          _debugPrint('Error parsing caller history: $e');
+          return [];
+        }
+      });
+    } catch (e) {
+      _debugPrint('Error in caller history stream: $e');
+      return const Stream.empty();
+    }
+  }
+
+  // Get receiver history as stream
+  Stream<List<CallRecord>> getReceiverHistoryStream() {
+    final session = _supabase.auth.currentSession;
+    if (session == null) return const Stream.empty();
+
+    try {
+      final stream = _supabase
+          .from('calls')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        try {
+          final filteredData = data.where((call) =>
+          call['receiver_id'] == session!.user.id &&
+              call['status'] == 'ended'
+          ).toList();
+
+          return filteredData.map((call) => CallRecord.fromJson(call)).toList();
+        } catch (e) {
+          _debugPrint('Error parsing receiver history: $e');
+          return [];
+        }
+      });
+    } catch (e) {
+      _debugPrint('Error in receiver history stream: $e');
+      return const Stream.empty();
+    }
+  }
+
+  // Get active calls as stream
+  Stream<List<CallRecord>> getActiveCallsStream() {
+    try {
+      final stream = _supabase
+          .from('calls')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        try {
+          final filteredData = data.where((call) =>
+          call['status'] == 'ongoing'
+          ).toList();
+
+          return filteredData.map((call) => CallRecord.fromJson(call)).toList();
+        } catch (e) {
+          _debugPrint('Error parsing active calls: $e');
+          return [];
+        }
+      });
+    } catch (e) {
+      _debugPrint('Error in active calls stream: $e');
+      return const Stream.empty();
+    }
+  }
+
+  // Get user's calls as stream
+  Stream<List<CallRecord>> getUserCallsStream(String userId) {
+    try {
+      final stream = _supabase
+          .from('calls')
+          .stream(primaryKey: ['id']);
+
+      return stream.map((data) {
+        try {
+          final filteredData = data.where((call) =>
+          call['caller_id'] == userId ||
+              call['receiver_id'] == userId
+          ).toList();
+
+          return filteredData.map((call) => CallRecord.fromJson(call)).toList();
+        } catch (e) {
+          _debugPrint('Error parsing user calls: $e');
+          return [];
+        }
+      });
+    } catch (e) {
+      _debugPrint('Error in user calls stream: $e');
+      return const Stream.empty();
+    }
+  }
+
+  // ==================== FUTURE BASED METHODS ====================
+
+  // Get call history as future
+  Future<List<CallRecord>> getCallHistory() async {
+    final session = _supabase.auth.currentSession;
+    if (session == null) return [];
+
+    final userId = session.user.id;
+
+    try {
+      final response = await _supabase
+          .from('calls')
+          .select()
+          .eq('status', 'ended')
+          .or('caller_id.eq.$userId,receiver_id.eq.$userId')
+          .order('started_at', ascending: false)
+          .limit(50);
+
+      return response.map((call) => CallRecord.fromJson(call)).toList();
+    } catch (e) {
+      _debugPrint('Error getting call history: $e');
+      return [];
+    }
+  }
+
+  // Get active calls as future
+  Future<List<CallRecord>> getActiveCalls() async {
+    try {
+      final response = await _supabase
+          .from('calls')
+          .select()
+          .eq('status', 'ongoing')
+          .order('started_at', ascending: false);
+
+      return response.map((call) => CallRecord.fromJson(call)).toList();
+    } catch (e) {
+      _debugPrint('Error getting active calls: $e');
+      return [];
+    }
+  }
+
+  // Check if user is in a call
+  Future<bool> isUserInCall(String userId) async {
+    try {
+      final response = await _supabase
+          .from('calls')
+          .select('id')
+          .eq('status', 'ongoing')
+          .or('caller_id.eq.$userId,receiver_id.eq.$userId')
+          .maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      _debugPrint('Error checking user in call: $e');
+      return false;
+    }
+  }
+
+  // Rate call
+  Future<void> rateCall(String channelId, int rating, {String? feedback}) async {
+    try {
+      // Separate update query
+      final updateQuery = _supabase
+          .from('calls')
+          .update({
+        'rating': rating,
+        'feedback': feedback,
+        'rated_at': DateTime.now().toIso8601String(),
+      });
+
+      await updateQuery.eq('channel_id', channelId);
+
+      _debugPrint('Call rated: $channelId, rating: $rating');
+    } catch (e) {
+      _debugPrint('Error rating call: $e');
+    }
+  }
+
+  // Get ongoing call for user
+  Future<CallRecord?> getOngoingCall(String userId) async {
+    try {
+      final response = await _supabase
+          .from('calls')
+          .select()
+          .eq('status', 'ongoing')
+          .or('caller_id.eq.$userId,receiver_id.eq.$userId')
+          .maybeSingle();
+
+      return response != null ? CallRecord.fromJson(response) : null;
+    } catch (e) {
+      _debugPrint('Error getting ongoing call: $e');
+      return null;
+    }
   }
 
   // Dispose method
   Future<void> dispose() async {
-    debugPrint('🗑️ Disposing CallService...');
+    _debugPrint(' Disposing CallService...');
     try {
       if (callState == CallState.connected || callState == CallState.connecting) {
         await endCall();
       }
-      _engine.release();
-      debugPrint('✅ CallService disposed successfully');
+      // Only release on mobile
+      if (!kIsWeb && _engine != null) {
+        _engine!.release();
+      }
+      _debugPrint('✅ CallService disposed successfully');
     } catch (e) {
-      debugPrint('❌ Error disposing CallService: $e');
+      _debugPrint('❌ Error disposing CallService: $e');
     }
   }
 }
@@ -273,54 +551,7 @@ enum CallState {
 // ==================== MODEL CLASS ====================
 
 class CallRecord {
-
-  CallRecord({
-    required this.callId,
-    required this.callerId,
-    required this.callerName,
-    this.callerAvatar,
-    required this.receiverId,
-    required this.callType,
-    required this.channelId,
-    required this.roomId,
-    required this.startTime,
-    this.endTime,
-    required this.status,
-  });
-
-  factory CallRecord.fromJson(Map<String, dynamic> json) {
-    // Parse callType safely
-    CallType callType = CallType.audio;
-    final typeStr = json['callType'] as String? ?? '';
-    if (typeStr.toLowerCase() == 'video') {
-      callType = CallType.video;
-    }
-
-    // Parse timestamp safely
-    DateTime startTime = DateTime.now();
-    if (json['startTime'] != null && json['startTime'] is Timestamp) {
-      startTime = (json['startTime'] as Timestamp).toDate();
-    }
-
-    DateTime? endTime;
-    if (json['endTime'] != null && json['endTime'] is Timestamp) {
-      endTime = (json['endTime'] as Timestamp).toDate();
-    }
-
-    return CallRecord(
-      callId: json['callId'] as String? ?? '',
-      callerId: json['callerId'] as String? ?? '',
-      callerName: json['callerName'] as String? ?? 'Unknown',
-      callerAvatar: json['callerAvatar'] as String?,
-      receiverId: json['receiverId'] as String? ?? '',
-      callType: callType,
-      channelId: json['channelId'] as String? ?? '',
-      roomId: json['roomId'] as String? ?? '',
-      startTime: startTime,
-      endTime: endTime,
-      status: json['status'] as String? ?? '',
-    );
-  }
+  final String id;
   final String callId;
   final String callerId;
   final String callerName;
@@ -329,23 +560,91 @@ class CallRecord {
   final CallType callType;
   final String channelId;
   final String roomId;
-  final DateTime startTime;
-  final DateTime? endTime;
+  final DateTime startedAt;
+  final DateTime? endedAt;
   final String status;
+  final int? durationSeconds;
+  final List<String> participants;
+  final int? rating;
+  final String? feedback;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
 
-  Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'callId': callId,
-      'callerId': callerId,
-      'callerName': callerName,
-      'callerAvatar': callerAvatar ?? '',
-      'receiverId': receiverId,
-      'callType': callType.toString().split('.').last,
-      'channelId': channelId,
-      'roomId': roomId,
-      'startTime': Timestamp.fromDate(startTime),
-      'endTime': endTime != null ? Timestamp.fromDate(endTime!) : null,
-      'status': status,
-    };
+  CallRecord({
+    required this.id,
+    required this.callId,
+    required this.callerId,
+    required this.callerName,
+    this.callerAvatar,
+    required this.receiverId,
+    required this.callType,
+    required this.channelId,
+    required this.roomId,
+    required this.startedAt,
+    this.endedAt,
+    required this.status,
+    this.durationSeconds,
+    required this.participants,
+    this.rating,
+    this.feedback,
+    required this.createdAt,
+    this.updatedAt,
+  });
+
+  factory CallRecord.fromJson(Map<String, dynamic> json) {
+    CallType callType = CallType.audio;
+    final typeStr = json['call_type'] as String? ?? '';
+    if (typeStr.toLowerCase() == 'video') {
+      callType = CallType.video;
+    }
+
+    DateTime parseDate(String? dateStr) {
+      if (dateStr == null) return DateTime.now();
+      return DateTime.parse(dateStr);
+    }
+
+    return CallRecord(
+      id: json['id']?.toString() ?? '',
+      callId: json['call_id']?.toString() ?? json['channel_id']?.toString() ?? '',
+      callerId: json['caller_id']?.toString() ?? '',
+      callerName: json['caller_name']?.toString() ?? 'Unknown',
+      callerAvatar: json['caller_avatar']?.toString(),
+      receiverId: json['receiver_id']?.toString() ?? '',
+      callType: callType,
+      channelId: json['channel_id']?.toString() ?? '',
+      roomId: json['room_id']?.toString() ?? '',
+      startedAt: parseDate(json['started_at']),
+      endedAt: json['ended_at'] != null ? parseDate(json['ended_at']) : null,
+      status: json['status']?.toString() ?? '',
+      durationSeconds: json['duration_seconds'] != null
+          ? (json['duration_seconds'] as num).toInt()
+          : null,
+      participants: List<String>.from(json['participants'] ?? []),
+      rating: json['rating'] != null ? (json['rating'] as num).toInt() : null,
+      feedback: json['feedback']?.toString(),
+      createdAt: parseDate(json['created_at']),
+      updatedAt: json['updated_at'] != null ? parseDate(json['updated_at']) : null,
+    );
   }
+
+  Duration? get duration {
+    if (endedAt == null) return null;
+    return endedAt!.difference(startedAt);
+  }
+
+  String get formattedDuration {
+    if (duration == null) return 'Ongoing';
+    final d = duration!;
+    if (d.inHours > 0) {
+      return '${d.inHours}h ${d.inMinutes.remainder(60)}m';
+    } else if (d.inMinutes > 0) {
+      return '${d.inMinutes}m ${d.inSeconds.remainder(60)}s';
+    } else {
+      return '${d.inSeconds}s';
+    }
+  }
+
+  bool get isActive => status == 'ongoing';
+  bool get isEnded => status == 'ended';
+  bool get isRated => rating != null;
 }

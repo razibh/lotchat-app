@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -14,6 +15,7 @@ import 'core/services/logger_service.dart';
 import 'core/services/config_service.dart';
 import 'core/services/analytics_service.dart';
 import 'core/navigation/navigation_service.dart';
+import 'services/agora_service.dart';
 
 // ==================== PROVIDERS ====================
 import 'features/auth/providers/auth_provider.dart';
@@ -24,6 +26,8 @@ import 'core/providers/game_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'features/clan/clan_provider.dart';
 import 'core/providers/language_provider.dart';
+import 'core/providers/country_provider.dart';
+
 
 enum Flavor { dev, prod }
 
@@ -60,8 +64,8 @@ void main() async {
     const String flavor = String.fromEnvironment('FLAVOR', defaultValue: 'dev');
     AppConfig.initialize(flavor == 'prod' ? Flavor.prod : Flavor.dev);
 
-    debugPrint('🚀 Starting ${AppConfig.appName}');
-    debugPrint('🌐 API Base URL: ${AppConfig.baseUrl}');
+    debugPrint(' Starting ${AppConfig.appName}');
+    debugPrint(' API Base URL: ${AppConfig.baseUrl}');
 
     // Load environment variables from .env file
     await dotenv.load(fileName: ".env");
@@ -72,7 +76,7 @@ void main() async {
       anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
     );
 
-    debugPrint('✅ Supabase initialized successfully');
+    debugPrint(' Supabase initialized successfully');
 
     // Initialize Service Locator
     await ServiceLocator.instance.init();
@@ -84,6 +88,17 @@ void main() async {
     // Initialize Analytics Service
     final analyticsService = AnalyticsService();
     await analyticsService.initialize();
+
+    // Initialize Agora Service (অপশনাল - ব্যাকগ্রাউন্ডে initialize)
+    try {
+      final agoraService = AgoraService();
+      await agoraService.initialize();
+      debugPrint(' Agora Service initialized successfully');
+    } catch (e, stackTrace) {
+      // Agora fail করলেও app চলবে
+      debugPrint('️Agora Service initialization failed (app will continue): $e');
+      debugPrint(' Stack trace: $stackTrace');
+    }
 
     // Lock orientation to portrait
     await SystemChrome.setPreferredOrientations([
@@ -103,8 +118,8 @@ void main() async {
 
     runApp(const MyApp());
   } catch (e, stackTrace) {
-    debugPrint('❌ Failed to initialize app: $e');
-    debugPrint('📚 Stack trace: $stackTrace');
+    debugPrint(' Failed to initialize app: $e');
+    debugPrint(' Stack trace: $stackTrace');
     runApp(const ErrorApp());
   }
 }
@@ -116,15 +131,17 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late final LoggerService _logger;
   late final ConfigService _configService;
   late final NotificationService _notificationService;
   late final AnalyticsService _analyticsService;
+  late final AgoraService _agoraService;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeServices();
   }
 
@@ -134,6 +151,7 @@ class _MyAppState extends State<MyApp> {
       _configService = ServiceLocator.instance.get<ConfigService>();
       _notificationService = NotificationService();
       _analyticsService = AnalyticsService();
+      _agoraService = AgoraService();
 
       // Track app open
       _analyticsService.trackScreen(
@@ -145,10 +163,34 @@ class _MyAppState extends State<MyApp> {
         },
       );
 
-      _logger.info('✅ App initialized successfully with flavor: ${AppConfig.flavor}');
+      _logger.info(' App initialized successfully with flavor: ${AppConfig.flavor}');
     } catch (e) {
-      debugPrint('❌ Error initializing services in MyApp: $e');
+      debugPrint(' Error initializing services in MyApp: $e');
     }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        debugPrint('App resumed');
+        break;
+      case AppLifecycleState.paused:
+        debugPrint('App paused');
+        break;
+      case AppLifecycleState.inactive:
+        debugPrint('App inactive');
+        break;
+      case AppLifecycleState.detached:
+        debugPrint('App detached');
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
@@ -163,6 +205,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider(create: (_) => CountryProvider()),
       ],
       child: Consumer2<ThemeProvider, LanguageProvider>(
         builder: (context, themeProvider, languageProvider, child) {
@@ -198,11 +241,6 @@ class _MyAppState extends State<MyApp> {
         },
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }
 
@@ -262,3 +300,6 @@ class ErrorApp extends StatelessWidget {
 
 // Supabase client instance for easy access throughout the app
 final supabase = Supabase.instance.client;
+
+// Global getter for Agora Service
+AgoraService get agoraService => ServiceLocator.instance.get<AgoraService>();

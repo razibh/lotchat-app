@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import '../services/notification_service.dart';
 
 class NotificationProvider extends ChangeNotifier {
@@ -10,33 +9,21 @@ class NotificationProvider extends ChangeNotifier {
   bool _hasUnread = false;
   int _unreadCount = 0;
   String? _lastNotification;
-  StreamSubscription? _messageSubscription;
+  List<Map<String, dynamic>> _notifications = [];
 
   // Getters
   bool get isInitialized => _isInitialized;
   bool get hasUnread => _hasUnread;
   int get unreadCount => _unreadCount;
   String? get lastNotification => _lastNotification;
+  List<Map<String, dynamic>> get notifications => _notifications;
 
   Future<void> initialize() async {
     try {
       await _notificationService.initialize();
 
-      // Listen to foreground messages
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        _handleMessage(message);
-      });
-
-      // Listen to when app is opened from background
-      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        _handleMessage(message);
-      });
-
-      // Get initial message if app was opened from terminated state
-      final RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-      if (initialMessage != null) {
-        _handleMessage(initialMessage);
-      }
+      // Load existing notifications from Supabase
+      await loadNotifications();
 
       _isInitialized = true;
       notifyListeners();
@@ -46,17 +33,89 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  void _handleMessage(RemoteMessage message) {
-    _lastNotification = message.notification?.title;
-    _unreadCount++;
-    _hasUnread = true;
+  // Load notifications from Supabase
+  Future<void> loadNotifications() async {
+    try {
+      _notifications = await _notificationService.getUserNotifications();
+      _updateUnreadCount();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading notifications: $e');
+    }
+  }
+
+  // Handle new notification (called from NotificationService)
+  void handleNewNotification(Map<String, dynamic> notification) {
+    _notifications.insert(0, notification);
+    _updateUnreadCount();
+    _lastNotification = notification['title'];
     notifyListeners();
   }
 
-  void markAllAsRead() {
-    _unreadCount = 0;
-    _hasUnread = false;
-    notifyListeners();
+  void _updateUnreadCount() {
+    _unreadCount = _notifications.where((n) => n['read'] == false).length;
+    _hasUnread = _unreadCount > 0;
+  }
+
+  // Mark single notification as read
+  Future<void> markAsRead(String notificationId) async {
+    try {
+      await _notificationService.markAsRead(notificationId);
+
+      final index = _notifications.indexWhere((n) => n['id'] == notificationId);
+      if (index != -1) {
+        _notifications[index]['read'] = true;
+      }
+
+      _updateUnreadCount();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error marking notification as read: $e');
+    }
+  }
+
+  // Mark all notifications as read
+  Future<void> markAllAsRead() async {
+    try {
+      await _notificationService.markAllAsRead();
+
+      for (var notification in _notifications) {
+        notification['read'] = true;
+      }
+
+      _unreadCount = 0;
+      _hasUnread = false;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error marking all as read: $e');
+    }
+  }
+
+  // Delete notification
+  Future<void> deleteNotification(String notificationId) async {
+    try {
+      await _notificationService.deleteNotification(notificationId);
+
+      _notifications.removeWhere((n) => n['id'] == notificationId);
+      _updateUnreadCount();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error deleting notification: $e');
+    }
+  }
+
+  // Clear all notifications
+  Future<void> clearAllNotifications() async {
+    try {
+      await _notificationService.clearAllNotifications();
+
+      _notifications.clear();
+      _unreadCount = 0;
+      _hasUnread = false;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error clearing notifications: $e');
+    }
   }
 
   void clearLastNotification() {
@@ -64,9 +123,13 @@ class NotificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Refresh notifications
+  Future<void> refresh() async {
+    await loadNotifications();
+  }
+
   @override
   void dispose() {
-    _messageSubscription?.cancel();
     super.dispose();
   }
 }

@@ -1,7 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
-
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User hide
 import '../../core/constants/asset_constants.dart';
 import '../../core/constants/app_routes.dart';
 import '../../core/di/service_locator.dart';
@@ -10,6 +9,7 @@ import '../../core/services/config_service.dart';
 import '../../mixins/loading_mixin.dart';
 import '../auth/login_screen.dart';
 import '../home/home_screen.dart';
+import '../../core/models/user_models.dart' as app;  // ✅ আপনার নিজের User model
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -37,9 +37,9 @@ class _SplashScreenState extends State<SplashScreen> with LoadingMixin {
       return;
     }
 
-    // Check if user is logged in using getCurrentUser()
-    final User? user = _authService.getCurrentUser();
-    final bool isLoggedIn = user != null;
+    // ✅ Check if user is logged in using Supabase session
+    final session = Supabase.instance.client.auth.currentSession;
+    final bool isLoggedIn = session != null;
 
     if (isLoggedIn) {
       // User is logged in, go to home

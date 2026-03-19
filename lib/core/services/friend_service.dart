@@ -1,14 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import '../models/frame_model.dart';
-import '../models/user_models.dart' as app; // 🟢 alias ব্যবহার
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/user_models.dart' as app;
 import '../di/service_locator.dart';
 import 'notification_service.dart';
 
 class FriendService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  late final SupabaseClient _supabase;
   late final NotificationService _notificationService;
 
   FriendService() {
@@ -17,60 +14,29 @@ class FriendService {
 
   void _initializeServices() {
     try {
+      _supabase = getService<SupabaseClient>();
       _notificationService = ServiceLocator.instance.get<NotificationService>();
     } catch (e) {
       debugPrint('Error initializing services: $e');
     }
   }
 
-  // Get friends list
-  Stream<List<app.User>> getFriends(String userId) {
-    return _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('friends')
-        .snapshots()
-        .asyncMap((QuerySnapshot<Map<String, dynamic>> snapshot) async {
-      final List<app.User> friends = [];
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
-        final Map<String, dynamic> friendData = doc.data();
-        final app.User? friendUser = await _getUser(friendData['friendId']);
-        if (friendUser != null) {
-          friends.add(friendUser);
-        }
-      }
-      return friends;
-    });
-  }
+  // ==================== HELPER METHODS ====================
 
-  // Get friend by id
-  Future<app.User?> getFriend(String userId, String friendId) async {
-    try {
-      final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('friends')
-          .doc(friendId)
-          .get();
+  /// Get current user ID
+  String? get _currentUserId => _supabase.auth.currentSession?.user.id;
 
-      if (doc.exists) {
-        return await _getUser(doc.data()!['friendId']);
-      }
-      return null;
-    } catch (e) {
-      debugPrint('Error getting friend: $e');
-      return null;
-    }
-  }
-
-  // Get user
+  /// Get user by id
   Future<app.User?> _getUser(String userId) async {
     try {
-      final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore.collection('users').doc(userId).get();
-      if (doc.exists) {
-        final data = doc.data()!;
-        data['id'] = doc.id;
-        return app.User.fromJson(data);
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (response != null) {
+        return app.User.fromJson(response);
       }
       return null;
     } catch (e) {
@@ -79,111 +45,209 @@ class FriendService {
     }
   }
 
-  // Get online friends
+  // ==================== GET FRIENDS - FIXED ====================
+
+  /// Get friends list as stream - FIXED
+  Stream<List<app.User>> getFriends(String userId) {
+    try {
+      // Stream থেকে data নিয়ে manually filter করছি
+      return _supabase
+          .from('friends')
+          .stream(primaryKey: ['id'])
+          .map((data) async {
+        // Manually filter
+        final filtered = data.where((item) =>
+        item['user_id'] == userId && item['status'] == 'accepted'
+        ).toList();
+
+        final friends = <app.User>[];
+        for (final item in filtered) {
+          final friendId = item['friend_id'] as String;
+          final friend = await _getUser(friendId);
+          if (friend != null) {
+            friends.add(friend);
+          }
+        }
+        return friends;
+      }).asyncMap((event) => event);
+    } catch (e) {
+      debugPrint('Error getting friends stream: $e');
+      return Stream.value([]);
+    }
+  }
+
+  /// Get friend by id
+  Future<app.User?> getFriend(String userId, String friendId) async {
+    try {
+      final response = await _supabase
+          .from('friends')
+          .select()
+          .eq('user_id', userId)
+          .eq('friend_id', friendId)
+          .eq('status', 'accepted')
+          .maybeSingle();
+
+      if (response != null) {
+        return await _getUser(friendId);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting friend: $e');
+      return null;
+    }
+  }
+
+  /// Get online friends - FIXED
   Stream<List<app.User>> getOnlineFriends(String userId) {
-    return getFriends(userId).map((List<app.User> friends) {
-      return friends.where((app.User f) => f.isOnline).toList();
+    return getFriends(userId).map((friends) {
+      return friends.where((f) => f.isOnline).toList();
     });
   }
 
-  // Get friend requests
+  // ==================== FRIEND REQUESTS - FIXED ====================
+
+  /// Get received friend requests - FIXED
   Stream<List<FriendRequestModel>> getFriendRequests(String userId) {
-    return _firestore
-        .collection('friend_requests')
-        .where('receiverId', isEqualTo: userId)
-        .where('status', isEqualTo: 'pending')
-        .orderBy('sentAt', descending: true)
-        .snapshots()
-        .asyncMap((QuerySnapshot<Map<String, dynamic>> snapshot) async {
-      final requests = <FriendRequestModel>[];
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
-        final Map<String, dynamic> data = doc.data();
-        data['id'] = doc.id;
+    try {
+      return _supabase
+          .from('friend_requests')
+          .stream(primaryKey: ['id'])
+          .map((data) async {
+        // Manually filter
+        final filtered = data.where((item) =>
+        item['receiver_id'] == userId && item['status'] == 'pending'
+        ).toList();
 
-        // Get sender info
-        final app.User? sender = await _getUser(data['senderId']);
-        if (sender != null) {
-          data['senderName'] = sender.username;
-          data['senderAvatar'] = sender.avatar;
+        // Sort manually
+        filtered.sort((a, b) {
+          final aTime = DateTime.parse(a['sent_at'] ?? DateTime.now().toIso8601String());
+          final bTime = DateTime.parse(b['sent_at'] ?? DateTime.now().toIso8601String());
+          return bTime.compareTo(aTime); // descending
+        });
+
+        final requests = <FriendRequestModel>[];
+        for (final item in filtered) {
+          final sender = await _getUser(item['sender_id'] as String);
+          if (sender != null) {
+            requests.add(FriendRequestModel(
+              id: item['id'].toString(),
+              senderId: item['sender_id'],
+              senderName: sender.username,
+              senderAvatar: sender.avatar,
+              receiverId: item['receiver_id'],
+              receiverName: null,
+              receiverAvatar: null,
+              message: item['message'],
+              status: item['status'],
+              sentAt: DateTime.parse(item['sent_at']),
+              respondedAt: item['responded_at'] != null
+                  ? DateTime.parse(item['responded_at'])
+                  : null,
+            ));
+          }
         }
-
-        requests.add(FriendRequestModel.fromJson(data));
-      }
-      return requests;
-    });
+        return requests;
+      }).asyncMap((event) => event);
+    } catch (e) {
+      debugPrint('Error getting friend requests: $e');
+      return Stream.value([]);
+    }
   }
 
-  // Get sent requests
+  /// Get sent friend requests - FIXED
   Stream<List<FriendRequestModel>> getSentRequests(String userId) {
-    return _firestore
-        .collection('friend_requests')
-        .where('senderId', isEqualTo: userId)
-        .where('status', isEqualTo: 'pending')
-        .orderBy('sentAt', descending: true)
-        .snapshots()
-        .asyncMap((QuerySnapshot<Map<String, dynamic>> snapshot) async {
-      final requests = <FriendRequestModel>[];
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
-        final Map<String, dynamic> data = doc.data();
-        data['id'] = doc.id;
+    try {
+      return _supabase
+          .from('friend_requests')
+          .stream(primaryKey: ['id'])
+          .map((data) async {
+        // Manually filter
+        final filtered = data.where((item) =>
+        item['sender_id'] == userId && item['status'] == 'pending'
+        ).toList();
 
-        // Get receiver info
-        final app.User? receiver = await _getUser(data['receiverId']);
-        if (receiver != null) {
-          data['receiverName'] = receiver.username;
-          data['receiverAvatar'] = receiver.avatar;
+        // Sort manually
+        filtered.sort((a, b) {
+          final aTime = DateTime.parse(a['sent_at'] ?? DateTime.now().toIso8601String());
+          final bTime = DateTime.parse(b['sent_at'] ?? DateTime.now().toIso8601String());
+          return bTime.compareTo(aTime);
+        });
+
+        final requests = <FriendRequestModel>[];
+        for (final item in filtered) {
+          final receiver = await _getUser(item['receiver_id'] as String);
+          if (receiver != null) {
+            requests.add(FriendRequestModel(
+              id: item['id'].toString(),
+              senderId: item['sender_id'],
+              senderName: '',
+              senderAvatar: null,
+              receiverId: item['receiver_id'],
+              receiverName: receiver.username,
+              receiverAvatar: receiver.avatar,
+              message: item['message'],
+              status: item['status'],
+              sentAt: DateTime.parse(item['sent_at']),
+              respondedAt: item['responded_at'] != null
+                  ? DateTime.parse(item['responded_at'])
+                  : null,
+            ));
+          }
         }
-
-        requests.add(FriendRequestModel.fromJson(data));
-      }
-      return requests;
-    });
+        return requests;
+      }).asyncMap((event) => event);
+    } catch (e) {
+      debugPrint('Error getting sent requests: $e');
+      return Stream.value([]);
+    }
   }
 
-  // Send friend request
+  /// Send friend request
   Future<bool> sendFriendRequest(String receiverId, {String? message}) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
       // Check if already friends
-      final DocumentSnapshot<Map<String, dynamic>> friendDoc = await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('friends')
-          .doc(receiverId)
-          .get();
+      final existingFriend = await _supabase
+          .from('friends')
+          .select()
+          .eq('user_id', userId)
+          .eq('friend_id', receiverId)
+          .eq('status', 'accepted')
+          .maybeSingle();
 
-      if (friendDoc.exists) return false;
+      if (existingFriend != null) return false;
 
       // Check if request already exists
-      final QuerySnapshot<Map<String, dynamic>> existingRequest = await _firestore
-          .collection('friend_requests')
-          .where('senderId', isEqualTo: user.uid)
-          .where('receiverId', isEqualTo: receiverId)
-          .where('status', isEqualTo: 'pending')
-          .get();
+      final existingRequest = await _supabase
+          .from('friend_requests')
+          .select()
+          .eq('sender_id', userId)
+          .eq('receiver_id', receiverId)
+          .eq('status', 'pending')
+          .maybeSingle();
 
-      if (existingRequest.docs.isNotEmpty) return false;
+      if (existingRequest != null) return false;
 
       // Create request
-      await _firestore.collection('friend_requests').add({
-        'senderId': user.uid,
-        'senderName': user.displayName ?? 'User',
-        'receiverId': receiverId,
+      await _supabase.from('friend_requests').insert({
+        'sender_id': userId,
+        'receiver_id': receiverId,
         'message': message,
         'status': 'pending',
-        'sentAt': FieldValue.serverTimestamp(),
+        'sent_at': DateTime.now().toIso8601String(),
       });
 
-      // Send notification
-      await _notificationService?.sendNotification(
-        userId: receiverId,
-        type: 'friend_request',
-        title: 'Friend Request',
-        body: '${user.displayName ?? 'User'} sent you a friend request',
-        data: {'senderId': user.uid},
-      );
+      // Send notification - FIXED
+      try {
+        _notificationService.showNotification(
+          title: 'Friend Request',
+          body: 'You have a new friend request',
+        );
+      } catch (e) {
+        debugPrint('Notification error: $e');
+      }
 
       return true;
     } catch (e) {
@@ -192,71 +256,55 @@ class FriendService {
     }
   }
 
-  // Accept friend request
+  /// Accept friend request
   Future<bool> acceptFriendRequest(String requestId, String senderId) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
-      return await _firestore.runTransaction((Transaction transaction) async {
-        // Update request status
-        final DocumentReference<Map<String, dynamic>> requestRef = _firestore.collection('friend_requests').doc(requestId);
-        transaction.update(requestRef, {
-          'status': 'accepted',
-          'respondedAt': FieldValue.serverTimestamp(),
-        });
+      // Update request status
+      await _supabase
+          .from('friend_requests')
+          .update({
+        'status': 'accepted',
+        'responded_at': DateTime.now().toIso8601String(),
+      })
+          .eq('id', requestId);
 
-        // Add to user's friends
-        final DocumentReference<Map<String, dynamic>> userFriendsRef = _firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('friends')
-            .doc(senderId);
-
-        transaction.set(userFriendsRef, {
-          'friendId': senderId,
-          'addedAt': FieldValue.serverTimestamp(),
-        });
-
-        // Add to sender's friends
-        final DocumentReference<Map<String, dynamic>> senderFriendsRef = _firestore
-            .collection('users')
-            .doc(senderId)
-            .collection('friends')
-            .doc(user.uid);
-
-        transaction.set(senderFriendsRef, {
-          'friendId': user.uid,
-          'addedAt': FieldValue.serverTimestamp(),
-        });
-
-        // Send notification
-        await _notificationService?.sendNotification(
-          userId: senderId,
-          type: 'friend_accept',
-          title: 'Friend Request Accepted',
-          body: '${user.displayName ?? 'User'} accepted your friend request',
-          data: {'userId': user.uid},
-        );
-
-        return true;
+      // Add to user's friends
+      await _supabase.from('friends').insert({
+        'user_id': userId,
+        'friend_id': senderId,
+        'status': 'accepted',
+        'created_at': DateTime.now().toIso8601String(),
       });
+
+      // Add to sender's friends
+      await _supabase.from('friends').insert({
+        'user_id': senderId,
+        'friend_id': userId,
+        'status': 'accepted',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      return true;
     } catch (e) {
       debugPrint('Error accepting friend request: $e');
       return false;
     }
   }
 
-  // Reject friend request
+  /// Reject friend request
   Future<bool> rejectFriendRequest(String requestId) async {
     try {
-      await _firestore
-          .collection('friend_requests')
-          .doc(requestId)
+      await _supabase
+          .from('friend_requests')
           .update({
         'status': 'rejected',
-        'respondedAt': FieldValue.serverTimestamp(),
-      });
+        'responded_at': DateTime.now().toIso8601String(),
+      })
+          .eq('id', requestId);
+
       return true;
     } catch (e) {
       debugPrint('Error rejecting friend request: $e');
@@ -264,10 +312,14 @@ class FriendService {
     }
   }
 
-  // Cancel friend request
+  /// Cancel friend request
   Future<bool> cancelFriendRequest(String requestId) async {
     try {
-      await _firestore.collection('friend_requests').doc(requestId).delete();
+      await _supabase
+          .from('friend_requests')
+          .delete()
+          .eq('id', requestId);
+
       return true;
     } catch (e) {
       debugPrint('Error canceling friend request: $e');
@@ -275,87 +327,82 @@ class FriendService {
     }
   }
 
-  // Remove friend
+  // ==================== FRIEND MANAGEMENT ====================
+
+  /// Remove friend
   Future<bool> removeFriend(String friendId) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
-      return await _firestore.runTransaction((Transaction transaction) async {
-        // Remove from user's friends
-        final DocumentReference<Map<String, dynamic>> userFriendRef = _firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('friends')
-            .doc(friendId);
+      // Remove from user's friends
+      await _supabase
+          .from('friends')
+          .delete()
+          .eq('user_id', userId)
+          .eq('friend_id', friendId);
 
-        transaction.delete(userFriendRef);
+      // Remove from friend's friends
+      await _supabase
+          .from('friends')
+          .delete()
+          .eq('user_id', friendId)
+          .eq('friend_id', userId);
 
-        // Remove from friend's friends
-        final DocumentReference<Map<String, dynamic>> friendFriendRef = _firestore
-            .collection('users')
-            .doc(friendId)
-            .collection('friends')
-            .doc(user.uid);
-
-        transaction.delete(friendFriendRef);
-
-        return true;
-      });
+      return true;
     } catch (e) {
       debugPrint('Error removing friend: $e');
       return false;
     }
   }
 
-  // Block user
+  // ==================== BLOCK/UNBLOCK ====================
+
+  /// Block user
   Future<bool> blockUser(String userId) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final currentUserId = _currentUserId;
+    if (currentUserId == null) throw Exception('User not logged in');
 
     try {
-      return await _firestore.runTransaction((Transaction transaction) async {
-        // Remove from friends if exists
-        final DocumentReference<Map<String, dynamic>> friendRef = _firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('friends')
-            .doc(userId);
+      // Remove from friends if exists
+      await _supabase
+          .from('friends')
+          .delete()
+          .eq('user_id', currentUserId)
+          .eq('friend_id', userId);
 
-        transaction.delete(friendRef);
+      await _supabase
+          .from('friends')
+          .delete()
+          .eq('user_id', userId)
+          .eq('friend_id', currentUserId);
 
-        // Add to blocked list
-        final DocumentReference<Map<String, dynamic>> blockedRef = _firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('blocked')
-            .doc(userId);
-
-        transaction.set(blockedRef, {
-          'blockedId': userId,
-          'blockedAt': FieldValue.serverTimestamp(),
-        });
-
-        return true;
+      // Add to blocked list
+      await _supabase.from('blocked_users').insert({
+        'user_id': currentUserId,
+        'blocked_user_id': userId,
+        'blocked_at': DateTime.now().toIso8601String(),
       });
+
+      return true;
     } catch (e) {
       debugPrint('Error blocking user: $e');
       return false;
     }
   }
 
-  // Unblock user
+  /// Unblock user
   Future<bool> unblockUser(String userId) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final currentUserId = _currentUserId;
+    if (currentUserId == null) throw Exception('User not logged in');
 
     try {
-      await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('blocked')
-          .doc(userId)
-          .delete();
+      await _supabase
+          .from('blocked_users')
+          .delete()
+          .eq('user_id', currentUserId)
+          .eq('blocked_user_id', userId);
+
       return true;
     } catch (e) {
       debugPrint('Error unblocking user: $e');
@@ -363,92 +410,167 @@ class FriendService {
     }
   }
 
-  // Get blocked users
+  /// Get blocked users - FIXED
   Stream<List<app.User>> getBlockedUsers() {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) return Stream.value([]);
 
-    return _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('blocked')
-        .snapshots()
-        .asyncMap((QuerySnapshot<Map<String, dynamic>> snapshot) async {
-      final List<app.User> blocked = [];
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
-        final Map<String, dynamic> data = doc.data();
-        final DocumentSnapshot<Map<String, dynamic>> userDoc = await _firestore
-            .collection('users')
-            .doc(data['blockedId'])
-            .get();
+    try {
+      return _supabase
+          .from('blocked_users')
+          .stream(primaryKey: ['id'])
+          .map((data) async {
+        // Manually filter
+        final filtered = data.where((item) => item['user_id'] == userId).toList();
 
-        if (userDoc.exists) {
-          final userData = userDoc.data()!;
-          userData['id'] = userDoc.id;
-          blocked.add(app.User.fromJson(userData));
+        final blocked = <app.User>[];
+        for (final item in filtered) {
+          final blockedUserId = item['blocked_user_id'] as String;
+          final user = await _getUser(blockedUserId);
+          if (user != null) {
+            blocked.add(user);
+          }
         }
-      }
-      return blocked;
-    });
+        return blocked;
+      }).asyncMap((event) => event);
+    } catch (e) {
+      debugPrint('Error getting blocked users: $e');
+      return Stream.value([]);
+    }
   }
 
-  // Get friend suggestions
+  // ==================== FRIEND STATUS ====================
+
+  /// Check if users are friends
+  Future<bool> areFriends(String userId1, String userId2) async {
+    try {
+      final response = await _supabase
+          .from('friends')
+          .select()
+          .eq('user_id', userId1)
+          .eq('friend_id', userId2)
+          .eq('status', 'accepted')
+          .maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Get friend status
+  Future<String?> getFriendStatus(String userId) async {
+    final currentUserId = _currentUserId;
+    if (currentUserId == null) return null;
+
+    try {
+      // Check if friends
+      if (await areFriends(currentUserId, userId)) {
+        return 'friends';
+      }
+
+      // Check if request sent
+      final sentRequest = await _supabase
+          .from('friend_requests')
+          .select()
+          .eq('sender_id', currentUserId)
+          .eq('receiver_id', userId)
+          .eq('status', 'pending')
+          .maybeSingle();
+
+      if (sentRequest != null) {
+        return 'request_sent';
+      }
+
+      // Check if request received
+      final receivedRequest = await _supabase
+          .from('friend_requests')
+          .select()
+          .eq('sender_id', userId)
+          .eq('receiver_id', currentUserId)
+          .eq('status', 'pending')
+          .maybeSingle();
+
+      if (receivedRequest != null) {
+        return 'request_received';
+      }
+
+      // Check if blocked
+      final blocked = await _supabase
+          .from('blocked_users')
+          .select()
+          .eq('user_id', currentUserId)
+          .eq('blocked_user_id', userId)
+          .maybeSingle();
+
+      if (blocked != null) {
+        return 'blocked';
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('Error getting friend status: $e');
+      return null;
+    }
+  }
+
+  // ==================== FRIEND SUGGESTIONS ====================
+
+  /// Get friend suggestions
   Future<List<FriendSuggestion>> getFriendSuggestions({int limit = 20}) async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
     try {
       // Get user's friends
-      final QuerySnapshot<Map<String, dynamic>> friendsSnapshot = await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('friends')
-          .get();
+      final friendsResponse = await _supabase
+          .from('friends')
+          .select('friend_id')
+          .eq('user_id', userId)
+          .eq('status', 'accepted');
 
-      final Set<String> friendIds = friendsSnapshot.docs
-          .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => doc.data()['friendId'] as String)
+      final friendIds = friendsResponse
+          .map<String>((item) => item['friend_id'] as String)
           .toSet();
 
       // Get blocked users
-      final QuerySnapshot<Map<String, dynamic>> blockedSnapshot = await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('blocked')
-          .get();
+      final blockedResponse = await _supabase
+          .from('blocked_users')
+          .select('blocked_user_id')
+          .eq('user_id', userId);
 
-      final Set<String> blockedIds = blockedSnapshot.docs
-          .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => doc.data()['blockedId'] as String)
+      final blockedIds = blockedResponse
+          .map<String>((item) => item['blocked_user_id'] as String)
           .toSet();
 
       // Get users with mutual friends
       final suggestions = <FriendSuggestion>[];
-      final Set<String> seenIds = {user.uid, ...friendIds, ...blockedIds};
+      final seenIds = <String>{userId, ...friendIds, ...blockedIds};
 
-      for (final String friendId in friendIds) {
-        final QuerySnapshot<Map<String, dynamic>> friendFriends = await _firestore
-            .collection('users')
-            .doc(friendId)
-            .collection('friends')
-            .get();
+      for (final friendId in friendIds) {
+        final friendFriendsResponse = await _supabase
+            .from('friends')
+            .select('friend_id')
+            .eq('user_id', friendId)
+            .eq('status', 'accepted');
 
-        for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in friendFriends.docs) {
-          final String potentialId = doc.data()['friendId'] as String;
+        for (final item in friendFriendsResponse) {
+          final potentialId = item['friend_id'] as String;
           if (!seenIds.contains(potentialId)) {
             seenIds.add(potentialId);
 
-            final DocumentSnapshot<Map<String, dynamic>> userDoc = await _firestore.collection('users').doc(potentialId).get();
-            if (userDoc.exists) {
-              final Map<String, dynamic>? data = userDoc.data();
-              final int mutualCount = await _getMutualFriendsCount(user.uid, potentialId);
-              final List<String> commonInterests = await _getCommonInterests(user.uid, potentialId);
+            final user = await _getUser(potentialId);
+            if (user != null) {
+              final mutualCount = await _getMutualFriendsCount(userId, potentialId);
+              final commonInterests = await _getCommonInterests(userId, potentialId);
 
               // Calculate score
               final score = mutualCount * 10 + commonInterests.length * 5;
 
               suggestions.add(FriendSuggestion(
                 userId: potentialId,
-                name: data?['username'] ?? 'Unknown',
-                avatar: data?['photoURL'],
+                name: user.username,
+                avatar: user.avatar,
                 mutualFriends: mutualCount,
                 commonInterests: commonInterests,
                 score: score,
@@ -467,23 +589,23 @@ class FriendService {
     }
   }
 
-  // Get mutual friends count
+  /// Get mutual friends count
   Future<int> _getMutualFriendsCount(String userId1, String userId2) async {
     try {
-      final QuerySnapshot<Map<String, dynamic>> friends1 = await _firestore
-          .collection('users')
-          .doc(userId1)
-          .collection('friends')
-          .get();
+      final friends1 = await _supabase
+          .from('friends')
+          .select('friend_id')
+          .eq('user_id', userId1)
+          .eq('status', 'accepted');
 
-      final QuerySnapshot<Map<String, dynamic>> friends2 = await _firestore
-          .collection('users')
-          .doc(userId2)
-          .collection('friends')
-          .get();
+      final friends2 = await _supabase
+          .from('friends')
+          .select('friend_id')
+          .eq('user_id', userId2)
+          .eq('status', 'accepted');
 
-      final Set<String> set1 = friends1.docs.map((doc) => doc.data()['friendId'] as String).toSet();
-      final Set<String> set2 = friends2.docs.map((doc) => doc.data()['friendId'] as String).toSet();
+      final set1 = friends1.map<String>((item) => item['friend_id'] as String).toSet();
+      final set2 = friends2.map<String>((item) => item['friend_id'] as String).toSet();
 
       return set1.intersection(set2).length;
     } catch (e) {
@@ -491,151 +613,103 @@ class FriendService {
     }
   }
 
-  // Get common interests
+  /// Get common interests
   Future<List<String>> _getCommonInterests(String userId1, String userId2) async {
     try {
-      final app.User? user1 = await _getUser(userId1);
-      final app.User? user2 = await _getUser(userId2);
+      final user1 = await _getUser(userId1);
+      final user2 = await _getUser(userId2);
 
       if (user1 == null || user2 == null) return [];
 
       return user1.interests
-          .where((String i) => user2.interests.contains(i))
+          .where((i) => user2.interests.contains(i))
           .toList();
     } catch (e) {
       return [];
     }
   }
 
-  // Check if users are friends
-  Future<bool> areFriends(String userId1, String userId2) async {
-    try {
-      final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore
-          .collection('users')
-          .doc(userId1)
-          .collection('friends')
-          .doc(userId2)
-          .get();
+  // ==================== FRIEND STATS ====================
 
-      return doc.exists;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  // Get friend status
-  Future<String?> getFriendStatus(String userId) async {
-    final User? currentUser = _auth.currentUser;
-    if (currentUser == null) return null;
-
-    // Check if friends
-    if (await areFriends(currentUser.uid, userId)) {
-      return 'friends';
-    }
-
-    // Check if request sent
-    final QuerySnapshot<Map<String, dynamic>> sentRequest = await _firestore
-        .collection('friend_requests')
-        .where('senderId', isEqualTo: currentUser.uid)
-        .where('receiverId', isEqualTo: userId)
-        .where('status', isEqualTo: 'pending')
-        .get();
-
-    if (sentRequest.docs.isNotEmpty) {
-      return 'request_sent';
-    }
-
-    // Check if request received
-    final QuerySnapshot<Map<String, dynamic>> receivedRequest = await _firestore
-        .collection('friend_requests')
-        .where('senderId', isEqualTo: userId)
-        .where('receiverId', isEqualTo: currentUser.uid)
-        .where('status', isEqualTo: 'pending')
-        .get();
-
-    if (receivedRequest.docs.isNotEmpty) {
-      return 'request_received';
-    }
-
-    // Check if blocked
-    final DocumentSnapshot<Map<String, dynamic>> blocked = await _firestore
-        .collection('users')
-        .doc(currentUser.uid)
-        .collection('blocked')
-        .doc(userId)
-        .get();
-
-    if (blocked.exists) {
-      return 'blocked';
-    }
-
-    return null;
-  }
-
-  // Get friend stats
+  /// Get friend stats
   Future<FriendStats> getFriendStats() async {
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not logged in');
 
-    final QuerySnapshot<Map<String, dynamic>> friends = await _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('friends')
-        .get();
+    try {
+      // Get friends count
+      final friends = await _supabase
+          .from('friends')
+          .select()
+          .eq('user_id', userId)
+          .eq('status', 'accepted');
 
-    final QuerySnapshot<Map<String, dynamic>> pendingRequests = await _firestore
-        .collection('friend_requests')
-        .where('receiverId', isEqualTo: user.uid)
-        .where('status', isEqualTo: 'pending')
-        .get();
+      // Get pending requests
+      final pendingRequests = await _supabase
+          .from('friend_requests')
+          .select()
+          .eq('receiver_id', userId)
+          .eq('status', 'pending');
 
-    final QuerySnapshot<Map<String, dynamic>> sentRequests = await _firestore
-        .collection('friend_requests')
-        .where('senderId', isEqualTo: user.uid)
-        .where('status', isEqualTo: 'pending')
-        .get();
+      // Get sent requests
+      final sentRequests = await _supabase
+          .from('friend_requests')
+          .select()
+          .eq('sender_id', userId)
+          .eq('status', 'pending');
 
-    final QuerySnapshot<Map<String, dynamic>> blocked = await _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('blocked')
-        .get();
+      // Get blocked users
+      final blocked = await _supabase
+          .from('blocked_users')
+          .select()
+          .eq('user_id', userId);
 
-    // Count online friends
-    var onlineFriends = 0;
-    for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in friends.docs) {
-      final DocumentSnapshot<Map<String, dynamic>> friendDoc = await _firestore
-          .collection('users')
-          .doc(doc.data()['friendId'])
-          .get();
-      if (friendDoc.exists && friendDoc.data()!['isOnline'] == true) {
-        onlineFriends++;
+      // Count online friends
+      var onlineFriends = 0;
+      for (final friend in friends) {
+        final friendId = friend['friend_id'] as String;
+        final friendUser = await _getUser(friendId);
+        if (friendUser != null && friendUser.isOnline) {
+          onlineFriends++;
+        }
       }
+
+      // Count friends this week/month
+      final oneWeekAgo = DateTime.now().subtract(const Duration(days: 7));
+      final oneMonthAgo = DateTime.now().subtract(const Duration(days: 30));
+
+      var friendsThisWeek = 0;
+      var friendsThisMonth = 0;
+
+      for (final friend in friends) {
+        final createdAt = DateTime.parse(friend['created_at']);
+        if (createdAt.isAfter(oneWeekAgo)) friendsThisWeek++;
+        if (createdAt.isAfter(oneMonthAgo)) friendsThisMonth++;
+      }
+
+      return FriendStats(
+        totalFriends: friends.length,
+        onlineFriends: onlineFriends,
+        pendingRequests: pendingRequests.length,
+        sentRequests: sentRequests.length,
+        blockedUsers: blocked.length,
+        mutualFriends: 0,
+        friendsThisWeek: friendsThisWeek,
+        friendsThisMonth: friendsThisMonth,
+      );
+    } catch (e) {
+      debugPrint('Error getting friend stats: $e');
+      return FriendStats(
+        totalFriends: 0,
+        onlineFriends: 0,
+        pendingRequests: 0,
+        sentRequests: 0,
+        blockedUsers: 0,
+        mutualFriends: 0,
+        friendsThisWeek: 0,
+        friendsThisMonth: 0,
+      );
     }
-
-    // Count friends this week/month
-    final DateTime oneWeekAgo = DateTime.now().subtract(const Duration(days: 7));
-    final DateTime oneMonthAgo = DateTime.now().subtract(const Duration(days: 30));
-
-    var friendsThisWeek = 0;
-    var friendsThisMonth = 0;
-
-    for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in friends.docs) {
-      final DateTime addedAt = (doc.data()['addedAt'] as Timestamp).toDate();
-      if (addedAt.isAfter(oneWeekAgo)) friendsThisWeek++;
-      if (addedAt.isAfter(oneMonthAgo)) friendsThisMonth++;
-    }
-
-    return FriendStats(
-      totalFriends: friends.docs.length,
-      onlineFriends: onlineFriends,
-      pendingRequests: pendingRequests.docs.length,
-      sentRequests: sentRequests.docs.length,
-      blockedUsers: blocked.docs.length,
-      mutualFriends: 0,
-      friendsThisWeek: friendsThisWeek,
-      friendsThisMonth: friendsThisMonth,
-    );
   }
 }
 
@@ -679,16 +753,17 @@ class FriendRequestModel {
       receiverAvatar: json['receiverAvatar'],
       message: json['message'],
       status: json['status'] ?? 'pending',
-      sentAt: json['sentAt'] != null
-          ? (json['sentAt'] as Timestamp).toDate()
-          : DateTime.now(),
+      sentAt: json['sentAt'] is String
+          ? DateTime.parse(json['sentAt'])
+          : json['sentAt'] ?? DateTime.now(),
       respondedAt: json['respondedAt'] != null
-          ? (json['respondedAt'] as Timestamp).toDate()
+          ? (json['respondedAt'] is String
+          ? DateTime.parse(json['respondedAt'])
+          : json['respondedAt'])
           : null,
     );
   }
 
-  // ✅ toJson() method add koro
   Map<String, dynamic> toJson() {
     return {
       'id': id,
