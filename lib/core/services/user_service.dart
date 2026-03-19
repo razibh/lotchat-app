@@ -1,41 +1,31 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;  // ✅ Supabase User হাইড করুন
 import '../di/service_locator.dart';
 import 'logger_service.dart';
-import '../models/user_models.dart';
+import '../models/user_models.dart' as app;  // ✅ alias ব্যবহার করুন
 
 class UserService {
   final LoggerService _logger;
+  final SupabaseClient _supabase = getService<SupabaseClient>();
 
   UserService({
     LoggerService? logger,
   }) : _logger = logger ?? ServiceLocator.instance.get<LoggerService>();
 
+  // ==================== USER CRUD OPERATIONS ====================
+
   // Get user by ID
-  Future<User?> getUserById(String userId) async {
+  Future<app.User?> getUserById(String userId) async {  // ✅ app.User ব্যবহার করুন
     try {
       _logger.debug('Fetching user with ID: $userId');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('id', userId)
+          .single();
 
-      return User.regular(
-        id: userId,
-        username: 'johndoe',
-        email: 'john@example.com',
-        name: 'John Doe',
-        countryId: 'BD',
-        avatar: 'https://example.com/avatar.jpg',
-        bio: 'Flutter developer',
-        isVerified: true,
-        coins: 10000,
-        diamonds: 500,
-        tier: UserTier.vip,
-        isOnline: true,
-        interests: ['coding', 'gaming', 'music'],
-        phoneNumber: '+880123456789',
-        createdAt: DateTime.now().subtract(const Duration(days: 365)),
-      );
-
+      return _mapToUserModel(response);
     } catch (e, stackTrace) {
       _logger.error('Failed to fetch user', error: e, stackTrace: stackTrace);
       return null;
@@ -43,31 +33,18 @@ class UserService {
   }
 
   // Get user by email
-  Future<User?> getUserByEmail(String email) async {
+  Future<app.User?> getUserByEmail(String email) async {
     try {
       _logger.debug('Fetching user with email: $email');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('email', email)
+          .maybeSingle();
 
-      return User.regular(
-        id: 'user_123',
-        username: 'johndoe',
-        email: email,
-        name: 'John Doe',
-        countryId: 'BD',
-        avatar: 'https://example.com/avatar.jpg',
-        bio: 'Flutter developer',
-        isVerified: true,
-        coins: 10000,
-        diamonds: 500,
-        tier: UserTier.vip,
-        isOnline: true,
-        interests: ['coding', 'gaming', 'music'],
-        phoneNumber: '+880123456789',
-        createdAt: DateTime.now().subtract(const Duration(days: 365)),
-      );
-
+      if (response == null) return null;
+      return _mapToUserModel(response);
     } catch (e, stackTrace) {
       _logger.error('Failed to fetch user by email', error: e, stackTrace: stackTrace);
       return null;
@@ -75,31 +52,18 @@ class UserService {
   }
 
   // Get user by username
-  Future<User?> getUserByUsername(String username) async {
+  Future<app.User?> getUserByUsername(String username) async {
     try {
       _logger.debug('Fetching user with username: $username');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('username', username)
+          .maybeSingle();
 
-      return User.regular(
-        id: 'user_123',
-        username: username,
-        email: 'john@example.com',
-        name: 'John Doe',
-        countryId: 'BD',
-        avatar: 'https://example.com/avatar.jpg',
-        bio: 'Flutter developer',
-        isVerified: true,
-        coins: 10000,
-        diamonds: 500,
-        tier: UserTier.vip,
-        isOnline: true,
-        interests: ['coding', 'gaming', 'music'],
-        phoneNumber: '+880123456789',
-        createdAt: DateTime.now().subtract(const Duration(days: 365)),
-      );
-
+      if (response == null) return null;
+      return _mapToUserModel(response);
     } catch (e, stackTrace) {
       _logger.error('Failed to fetch user by username', error: e, stackTrace: stackTrace);
       return null;
@@ -111,11 +75,28 @@ class UserService {
     try {
       _logger.debug('Updating profile for user: $userId with data: $data');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      // Convert field names to match database schema
+      final Map<String, dynamic> dbData = {
+        if (data.containsKey('name')) 'name': data['name'],
+        if (data.containsKey('username')) 'username': data['username'],
+        if (data.containsKey('bio')) 'bio': data['bio'],
+        if (data.containsKey('location')) 'location': data['location'],
+        if (data.containsKey('website')) 'website': data['website'],
+        if (data.containsKey('phoneNumber')) 'phone_number': data['phoneNumber'],
+        if (data.containsKey('avatar')) 'avatar': data['avatar'],
+        if (data.containsKey('coverImage')) 'cover_image': data['coverImage'],
+        if (data.containsKey('gender')) 'gender': data['gender'],
+        if (data.containsKey('dateOfBirth')) 'date_of_birth': data['dateOfBirth'],
+        if (data.containsKey('interests')) 'interests': data['interests'],
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      await _supabase
+          .from('users')
+          .update(dbData)
+          .eq('id', userId);
 
       return true;
-
     } catch (e, stackTrace) {
       _logger.error('Failed to update profile', error: e, stackTrace: stackTrace);
       return false;
@@ -127,29 +108,17 @@ class UserService {
     try {
       _logger.debug('Updating settings for user: $userId');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      await _supabase
+          .from('users')
+          .update({
+        'settings': settings,
+        'updated_at': DateTime.now().toIso8601String(),
+      })
+          .eq('id', userId);
 
       return true;
-
     } catch (e, stackTrace) {
       _logger.error('Failed to update settings', error: e, stackTrace: stackTrace);
-      return false;
-    }
-  }
-
-  // Change password
-  Future<bool> changePassword(String userId, String oldPassword, String newPassword) async {
-    try {
-      _logger.debug('Changing password for user: $userId');
-
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
-
-      return true;
-
-    } catch (e, stackTrace) {
-      _logger.error('Failed to change password', error: e, stackTrace: stackTrace);
       return false;
     }
   }
@@ -159,59 +128,69 @@ class UserService {
     try {
       _logger.debug('Deleting account for user: $userId');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 2));
+      await _supabase
+          .from('users')
+          .delete()
+          .eq('id', userId);
 
       return true;
-
     } catch (e, stackTrace) {
       _logger.error('Failed to delete account', error: e, stackTrace: stackTrace);
       return false;
     }
   }
 
+  // ==================== SEARCH ====================
+
   // Search users
-  Future<List<User>> searchUsers(String query, {int page = 1, int limit = 20}) async {
+  Future<List<app.User>> searchUsers(String query, {int page = 1, int limit = 20}) async {
     try {
       _logger.debug('Searching users with query: $query');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      final int offset = (page - 1) * limit;
 
-      return List.generate(10, (index) => User.regular(
-        id: 'user_$index',
-        username: 'user$index',
-        email: 'user$index@example.com',
-        name: 'User $index',
-        countryId: 'BD',
-        avatar: null,
-        bio: 'Bio of user $index',
-        isVerified: index % 5 == 0,
-        coins: 1000 + (index * 100),
-        diamonds: 50 + (index * 10),
-        tier: index % 3 == 0 ? UserTier.vip : UserTier.normal,
-        isOnline: index % 2 == 0,
-        interests: ['interest1', 'interest2'],
-        phoneNumber: null,
-        createdAt: DateTime.now().subtract(Duration(days: index * 30)),
-      ));
+      final response = await _supabase
+          .from('users')
+          .select()
+          .or('username.ilike.%$query%,name.ilike.%$query%')
+          .range(offset, offset + limit - 1)
+          .order('username');
 
+      return response.map((data) => _mapToUserModel(data)).toList();
     } catch (e, stackTrace) {
       _logger.error('Failed to search users', error: e, stackTrace: stackTrace);
       return [];
     }
   }
 
+  // ==================== FOLLOW/UNFOLLOW ====================
+
   // Follow user
   Future<bool> followUser(String userId, String targetUserId) async {
     try {
       _logger.debug('User $userId following $targetUserId');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      // Check if already following
+      final existing = await _supabase
+          .from('follows')
+          .select()
+          .eq('follower_id', userId)
+          .eq('following_id', targetUserId)
+          .maybeSingle();
+
+      if (existing != null) return true; // Already following
+
+      // Create follow relationship
+      await _supabase.from('follows').insert({
+        'follower_id': userId,
+        'following_id': targetUserId,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      // Update follower/following counts
+      await _updateFollowCounts(userId, targetUserId);
 
       return true;
-
     } catch (e, stackTrace) {
       _logger.error('Failed to follow user', error: e, stackTrace: stackTrace);
       return false;
@@ -223,43 +202,79 @@ class UserService {
     try {
       _logger.debug('User $userId unfollowing $targetUserId');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      await _supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', userId)
+          .eq('following_id', targetUserId);
+
+      // Update follower/following counts
+      await _updateFollowCounts(userId, targetUserId);
 
       return true;
-
     } catch (e, stackTrace) {
       _logger.error('Failed to unfollow user', error: e, stackTrace: stackTrace);
       return false;
     }
   }
 
+// Update follower/following counts
+  Future<void> _updateFollowCounts(String userId, String targetUserId) async {
+    try {
+      // Get follower count for target user
+      final followers = await _supabase
+          .from('follows')
+          .select()
+          .eq('following_id', targetUserId);
+
+      final followerCount = followers.length;
+
+      await _supabase
+          .from('users')
+          .update({
+        'followers_count': followerCount,
+        'updated_at': DateTime.now().toIso8601String(),
+      })
+          .eq('id', targetUserId);
+
+      // Get following count for current user
+      final following = await _supabase
+          .from('follows')
+          .select()
+          .eq('follower_id', userId);
+
+      final followingCount = following.length;
+
+      await _supabase
+          .from('users')
+          .update({
+        'following_count': followingCount,
+        'updated_at': DateTime.now().toIso8601String(),
+      })
+          .eq('id', userId);
+
+    } catch (e) {
+      _logger.error('Failed to update follow counts', error: e);
+    }
+  }
+
   // Get followers
-  Future<List<User>> getFollowers(String userId, {int page = 1, int limit = 20}) async {
+  Future<List<app.User>> getFollowers(String userId, {int page = 1, int limit = 20}) async {
     try {
       _logger.debug('Fetching followers for user: $userId');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      final int offset = (page - 1) * limit;
 
-      return List.generate(10, (index) => User.regular(
-        id: 'follower_$index',
-        username: 'follower$index',
-        email: 'follower$index@example.com',
-        name: 'Follower $index',
-        countryId: 'BD',
-        avatar: null,
-        bio: 'Follower bio',
-        isVerified: false,
-        coins: 500,
-        diamonds: 20,
-        tier: UserTier.normal,
-        isOnline: index % 3 == 0,
-        interests: [],
-        phoneNumber: null,
-        createdAt: DateTime.now().subtract(Duration(days: index)),
-      ));
+      final response = await _supabase
+          .from('follows')
+          .select('follower_id, users!follower_id(*)')
+          .eq('following_id', userId)
+          .range(offset, offset + limit - 1);
 
+      return response.map((item) {
+        final userData = item['users'] as Map<String, dynamic>;
+        return _mapToUserModel(userData);
+      }).toList();
     } catch (e, stackTrace) {
       _logger.error('Failed to fetch followers', error: e, stackTrace: stackTrace);
       return [];
@@ -267,31 +282,22 @@ class UserService {
   }
 
   // Get following
-  Future<List<User>> getFollowing(String userId, {int page = 1, int limit = 20}) async {
+  Future<List<app.User>> getFollowing(String userId, {int page = 1, int limit = 20}) async {
     try {
       _logger.debug('Fetching following for user: $userId');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      final int offset = (page - 1) * limit;
 
-      return List.generate(10, (index) => User.regular(
-        id: 'following_$index',
-        username: 'following$index',
-        email: 'following$index@example.com',
-        name: 'Following $index',
-        countryId: 'BD',
-        avatar: null,
-        bio: 'Following bio',
-        isVerified: false,
-        coins: 500,
-        diamonds: 20,
-        tier: UserTier.normal,
-        isOnline: index % 2 == 0,
-        interests: [],
-        phoneNumber: null,
-        createdAt: DateTime.now().subtract(Duration(days: index)),
-      ));
+      final response = await _supabase
+          .from('follows')
+          .select('following_id, users!following_id(*)')
+          .eq('follower_id', userId)
+          .range(offset, offset + limit - 1);
 
+      return response.map((item) {
+        final userData = item['users'] as Map<String, dynamic>;
+        return _mapToUserModel(userData);
+      }).toList();
     } catch (e, stackTrace) {
       _logger.error('Failed to fetch following', error: e, stackTrace: stackTrace);
       return [];
@@ -303,27 +309,48 @@ class UserService {
     try {
       _logger.debug('Checking if $userId follows $targetUserId');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(milliseconds: 500));
+      final response = await _supabase
+          .from('follows')
+          .select()
+          .eq('follower_id', userId)
+          .eq('following_id', targetUserId)
+          .maybeSingle();
 
-      return false;
-
+      return response != null;
     } catch (e, stackTrace) {
       _logger.error('Failed to check following status', error: e, stackTrace: stackTrace);
       return false;
     }
   }
 
+  // ==================== BLOCK/UNBLOCK ====================
+
   // Block user
   Future<bool> blockUser(String userId, String targetUserId) async {
     try {
       _logger.debug('User $userId blocking $targetUserId');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      // Check if already blocked
+      final existing = await _supabase
+          .from('blocks')
+          .select()
+          .eq('blocker_id', userId)
+          .eq('blocked_id', targetUserId)
+          .maybeSingle();
+
+      if (existing != null) return true; // Already blocked
+
+      await _supabase.from('blocks').insert({
+        'blocker_id': userId,
+        'blocked_id': targetUserId,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      // If following, unfollow
+      await unfollowUser(userId, targetUserId);
+      await unfollowUser(targetUserId, userId);
 
       return true;
-
     } catch (e, stackTrace) {
       _logger.error('Failed to block user', error: e, stackTrace: stackTrace);
       return false;
@@ -335,11 +362,13 @@ class UserService {
     try {
       _logger.debug('User $userId unblocking $targetUserId');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      await _supabase
+          .from('blocks')
+          .delete()
+          .eq('blocker_id', userId)
+          .eq('blocked_id', targetUserId);
 
       return true;
-
     } catch (e, stackTrace) {
       _logger.error('Failed to unblock user', error: e, stackTrace: stackTrace);
       return false;
@@ -347,92 +376,104 @@ class UserService {
   }
 
   // Get blocked users
-  Future<List<User>> getBlockedUsers(String userId) async {
+  Future<List<app.User>> getBlockedUsers(String userId) async {
     try {
       _logger.debug('Fetching blocked users for: $userId');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      final response = await _supabase
+          .from('blocks')
+          .select('blocked_id, users!blocked_id(*)')
+          .eq('blocker_id', userId);
 
-      // Mock data
-      return List.generate(5, (index) => User.regular(
-        id: 'blocked_$index',
-        username: 'blockeduser$index',
-        email: 'blocked$index@example.com',
-        name: 'Blocked User $index',
-        countryId: 'BD',
-        avatar: null,
-        bio: 'This user is blocked',
-        isVerified: index % 2 == 0,
-        coins: 0,
-        diamonds: 0,
-        tier: UserTier.normal,
-        isOnline: index % 3 == 0,
-        interests: [],
-        phoneNumber: null,
-        createdAt: DateTime.now().subtract(Duration(days: index * 10)),
-        // stats: UserStats(
-        //   followers: 100 + (index * 50),
-        //   following: 50 + (index * 10),
-        //   totalGifts: 500 + (index * 100),
-        // ),
-      ));
-
+      return response.map((item) {
+        final userData = item['users'] as Map<String, dynamic>;
+        return _mapToUserModel(userData);
+      }).toList();
     } catch (e, stackTrace) {
       _logger.error('Failed to fetch blocked users', error: e, stackTrace: stackTrace);
       return [];
     }
   }
 
+  // ==================== REPORT ====================
+
   // Report user
   Future<bool> reportUser(String userId, String targetUserId, String reason) async {
     try {
       _logger.debug('User $userId reporting $targetUserId for: $reason');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      await _supabase.from('reports').insert({
+        'reporter_id': userId,
+        'reported_id': targetUserId,
+        'reason': reason,
+        'status': 'pending',
+        'created_at': DateTime.now().toIso8601String(),
+      });
 
       return true;
-
     } catch (e, stackTrace) {
       _logger.error('Failed to report user', error: e, stackTrace: stackTrace);
       return false;
     }
   }
 
+  // ==================== STATS & BALANCE ====================
+
   // Get user stats
   Future<Map<String, dynamic>> getUserStats(String userId) async {
     try {
       _logger.debug('Fetching stats for user: $userId');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      final response = await _supabase
+          .from('users')
+          .select('''
+            followers_count,
+            following_count,
+            friends_count,
+            total_rooms,
+            total_hours,
+            total_gifts,
+            total_earnings,
+            total_spent,
+            level,
+            xp,
+            xp_to_next_level,
+            streak,
+            longest_streak,
+            rating,
+            rank,
+            achievements,
+            badges,
+            created_at,
+            last_active
+          ''')
+          .eq('id', userId)
+          .single();
 
       return {
-        'followers_count': 15230,
-        'following_count': 1250,
-        'friends_count': 345,
-        'total_rooms': 156,
-        'total_hours': 312,
-        'total_gifts': 3456,
-        'total_earnings': 125000,
-        'total_spent': 45000,
-        'total_views': 456789,
-        'total_likes': 23456,
-        'total_comments': 5678,
-        'level': 25,
-        'xp': 2500,
-        'xp_to_next_level': 3000,
-        'streak': 15,
-        'longest_streak': 30,
-        'rating': 4.8,
-        'rank': 42,
-        'achievements': 12,
-        'badges': 5,
-        'join_date': DateTime.now().subtract(const Duration(days: 180)).toIso8601String(),
-        'last_active': DateTime.now().toIso8601String(),
+        'followers_count': response['followers_count'] ?? 0,
+        'following_count': response['following_count'] ?? 0,
+        'friends_count': response['friends_count'] ?? 0,
+        'total_rooms': response['total_rooms'] ?? 0,
+        'total_hours': response['total_hours'] ?? 0,
+        'total_gifts': response['total_gifts'] ?? 0,
+        'total_earnings': response['total_earnings'] ?? 0,
+        'total_spent': response['total_spent'] ?? 0,
+        'total_views': response['total_views'] ?? 0,
+        'total_likes': response['total_likes'] ?? 0,
+        'total_comments': response['total_comments'] ?? 0,
+        'level': response['level'] ?? 1,
+        'xp': response['xp'] ?? 0,
+        'xp_to_next_level': response['xp_to_next_level'] ?? 100,
+        'streak': response['streak'] ?? 0,
+        'longest_streak': response['longest_streak'] ?? 0,
+        'rating': response['rating'] ?? 0,
+        'rank': response['rank'] ?? 0,
+        'achievements': response['achievements'] ?? 0,
+        'badges': response['badges'] ?? 0,
+        'join_date': response['created_at'],
+        'last_active': response['last_active'],
       };
-
     } catch (e, stackTrace) {
       _logger.error('Failed to fetch user stats', error: e, stackTrace: stackTrace);
       return {};
@@ -444,11 +485,13 @@ class UserService {
     try {
       _logger.debug('Updating coins for user: $userId by $amount');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Simple update instead of RPC
+      await _supabase.rpc('increment_user_coins', params: {
+        'user_id': userId,
+        'amount': amount,
+      });
 
       return true;
-
     } catch (e, stackTrace) {
       _logger.error('Failed to update coins', error: e, stackTrace: stackTrace);
       return false;
@@ -460,11 +503,12 @@ class UserService {
     try {
       _logger.debug('Updating diamonds for user: $userId by $amount');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(milliseconds: 500));
+      await _supabase.rpc('increment_user_diamonds', params: {
+        'user_id': userId,
+        'amount': amount,
+      });
 
       return true;
-
     } catch (e, stackTrace) {
       _logger.error('Failed to update diamonds', error: e, stackTrace: stackTrace);
       return false;
@@ -472,45 +516,128 @@ class UserService {
   }
 
   // Update tier
-  Future<bool> updateTier(String userId, UserTier tier) async {
+  Future<bool> updateTier(String userId, app.UserTier tier) async {
     try {
       _logger.debug('Updating tier for user: $userId to $tier');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      await _supabase
+          .from('users')
+          .update({
+        'tier': tier.toString().split('.').last,
+        'updated_at': DateTime.now().toIso8601String(),
+      })
+          .eq('id', userId);
 
       return true;
-
     } catch (e, stackTrace) {
       _logger.error('Failed to update tier', error: e, stackTrace: stackTrace);
       return false;
     }
   }
 
+  // ==================== FRIENDS ====================
+
   // Get user's friends
-  Future<List<UserFriend>> getFriends(String userId, {int page = 1, int limit = 20}) async {
+  Future<List<app.UserFriend>> getFriends(String userId, {int page = 1, int limit = 20}) async {
     try {
       _logger.debug('Fetching friends for user: $userId');
 
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      final int offset = (page - 1) * limit;
 
-      return List.generate(10, (index) => UserFriend(
-        userId: 'friend_$index',
-        username: 'friend$index',
-        name: 'Friend $index',
-        avatar: null,
-        isOnline: index % 2 == 0,
-        lastActive: DateTime.now().subtract(Duration(minutes: index * 10)),
-        isFollowing: true,
-        isFollower: true,
-        isMutual: true,
-        friendSince: DateTime.now().subtract(Duration(days: index * 30)),
-      ));
+      // Get mutual follows
+      final response = await _supabase
+          .from('follows')
+          .select('''
+            following_id,
+            users!following_id(*)
+          ''')
+          .eq('follower_id', userId)
+          .range(offset, offset + limit - 1);
 
+      return response.map((item) {
+        final userData = item['users'] as Map<String, dynamic>;
+        return app.UserFriend(
+          userId: userData['id'],
+          username: userData['username'],
+          name: userData['name'] ?? userData['username'],
+          avatar: userData['avatar'],
+          isOnline: userData['is_online'] ?? false,
+          lastActive: userData['last_seen'] != null
+              ? DateTime.parse(userData['last_seen'])
+              : null,
+          isFollowing: true,
+          isFollower: true,
+          isMutual: true,
+          friendSince: userData['created_at'] != null
+              ? DateTime.parse(userData['created_at'])
+              : DateTime.now(),
+        );
+      }).toList();
     } catch (e, stackTrace) {
       _logger.error('Failed to fetch friends', error: e, stackTrace: stackTrace);
       return [];
+    }
+  }
+
+  // ==================== HELPER METHODS ====================
+
+  // Map database row to User model
+  app.User _mapToUserModel(Map<String, dynamic> data) {
+    return app.User.regular(
+      id: data['id'],
+      username: data['username'],
+      email: data['email'],
+      name: data['name'] ?? data['username'],
+      countryId: data['country_id'] ?? 'Unknown',
+      avatar: data['avatar'],
+      bio: data['bio'],
+      isVerified: data['is_verified'] ?? false,
+      coins: data['coins'] ?? 0,
+      diamonds: data['diamonds'] ?? 0,
+      tier: _parseTier(data['tier']),
+      isOnline: data['is_online'] ?? false,
+      interests: List<String>.from(data['interests'] ?? []),
+      phoneNumber: data['phone_number'],
+      createdAt: data['created_at'] != null
+          ? DateTime.parse(data['created_at'])
+          : DateTime.now(),
+      photoURL: data['avatar'],
+      location: data['location'],
+      website: data['website'],
+    );
+  }
+
+  // Parse tier string to UserTier enum
+  app.UserTier? _parseTier(String? tier) {
+    if (tier == null) return null;
+    switch (tier.toLowerCase()) {
+      case 'vip':
+        return app.UserTier.vip;
+      case 'svip':
+        return app.UserTier.svip;
+      default:
+        return app.UserTier.normal;
+    }
+  }
+
+  // Method to change password (note: this is handled by Supabase Auth)
+  Future<bool> changePassword(String userId, String oldPassword, String newPassword) async {
+    try {
+      _logger.debug('Changing password for user: $userId');
+
+      // First verify old password by signing in
+      final user = getService<SupabaseClient>().auth.currentUser;
+      if (user == null) return false;
+
+      // Update password through Supabase Auth
+      await getService<SupabaseClient>().auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+
+      return true;
+    } catch (e, stackTrace) {
+      _logger.error('Failed to change password', error: e, stackTrace: stackTrace);
+      return false;
     }
   }
 }

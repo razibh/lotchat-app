@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ==================== CORE ====================
 import 'core/constants/route_constants.dart';
@@ -14,7 +12,8 @@ import 'core/services/notification_service.dart';
 import 'core/constants/app_theme.dart';
 import 'core/services/logger_service.dart';
 import 'core/services/config_service.dart';
-import 'core/services/analytics_service.dart'; // Analytics Service
+import 'core/services/analytics_service.dart';
+import 'core/navigation/navigation_service.dart';
 
 // ==================== PROVIDERS ====================
 import 'features/auth/providers/auth_provider.dart';
@@ -25,7 +24,6 @@ import 'core/providers/game_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'features/clan/clan_provider.dart';
 import 'core/providers/language_provider.dart';
-import 'core/navigation/navigation_service.dart';
 
 enum Flavor { dev, prod }
 
@@ -54,13 +52,6 @@ class AppConfig {
   static String get baseUrl => apiBaseUrl;
 }
 
-// ==================== PUSH NOTIFICATION HANDLER ====================
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  debugPrint('Handling a background message: ${message.messageId}');
-}
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -72,25 +63,16 @@ void main() async {
     debugPrint('🚀 Starting ${AppConfig.appName}');
     debugPrint('🌐 API Base URL: ${AppConfig.baseUrl}');
 
-    // Initialize Firebase
-    await Firebase.initializeApp(
-      options: AppConfig.isProduction
-          ? const FirebaseOptions(
-        apiKey: 'YOUR_PROD_API_KEY',
-        appId: 'YOUR_PROD_APP_ID',
-        messagingSenderId: 'YOUR_PROD_SENDER_ID',
-        projectId: 'YOUR_PROD_PROJECT_ID',
-      )
-          : const FirebaseOptions(
-        apiKey: 'YOUR_DEV_API_KEY',
-        appId: 'YOUR_DEV_APP_ID',
-        messagingSenderId: 'YOUR_DEV_SENDER_ID',
-        projectId: 'YOUR_DEV_PROJECT_ID',
-      ),
+    // Load environment variables from .env file
+    await dotenv.load(fileName: ".env");
+
+    // Initialize Supabase
+    await Supabase.initialize(
+      url: dotenv.env['SUPABASE_URL']!,
+      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
     );
 
-    // Set background message handler
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    debugPrint('✅ Supabase initialized successfully');
 
     // Initialize Service Locator
     await ServiceLocator.instance.init();
@@ -277,3 +259,6 @@ class ErrorApp extends StatelessWidget {
     );
   }
 }
+
+// Supabase client instance for easy access throughout the app
+final supabase = Supabase.instance.client;

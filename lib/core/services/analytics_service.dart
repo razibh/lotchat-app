@@ -1,9 +1,9 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_analytics/observer.dart';
-import 'package:flutter/foundation.dart'; // 🟢 debugPrint এর জন্য
+import 'package:flutter/foundation.dart';
 
 import '../di/service_locator.dart';
-import '../models/user_models.dart' as app; // 🟢 সঠিক import, alias ব্যবহার
+import '../models/user_models.dart' as app;
 import 'logger_service.dart';
 
 class AnalyticsService {
@@ -12,32 +12,37 @@ class AnalyticsService {
   static final AnalyticsService _instance = AnalyticsService._internal();
 
   final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
-  late final LoggerService _logger; // 🟢 late যোগ করুন
+  late final LoggerService _logger;
 
   // Initialize
   Future<void> initialize() async {
     try {
-      _logger = ServiceLocator.instance.get<LoggerService>(); // 🟢 instance ব্যবহার
+      _logger = ServiceLocator.instance.get<LoggerService>();
       await _analytics.setAnalyticsCollectionEnabled(true);
       _logger.info('Analytics service initialized');
     } catch (e) {
-      debugPrint('Error initializing analytics: $e'); // 🟢 fallback print
+      debugPrint('Error initializing analytics: $e');
     }
   }
 
-  // // Track screen view
-  // Future<void> trackScreen(String screenName, {String? screenClass}) async {
-  //   try {
-  //     await _analytics.logScreenView(
-  //       screenName: screenName,
-  //       screenClass: screenClass ?? screenName,
-  //     );
-  //     _logger?.debug('Screen tracked: $screenName'); // 🟢 null safety
-  //   } catch (e) {
-  //     _logger?.error('Failed to track screen: $screenName', error: e);
-  //   }
-  // }
-// Track screen view
+  // Helper method to convert Map<String, dynamic> to Map<String, Object>
+  Map<String, Object>? _convertToObjectMap(Map<String, dynamic>? map) {
+    if (map == null) return null;
+
+    final Map<String, Object> result = {};
+    map.forEach((key, value) {
+      if (value != null) {
+        // Convert non-null values to Object
+        result[key] = value as Object;
+      } else {
+        // Skip null values or convert to empty string
+        result[key] = '';
+      }
+    });
+    return result;
+  }
+
+  // Track screen view
   Future<void> trackScreen(String screenName, {String? screenClass, Map<String, dynamic>? parameters}) async {
     try {
       await _analytics.logScreenView(
@@ -48,18 +53,18 @@ class AnalyticsService {
 
       // Track with parameters if provided
       if (parameters != null) {
-        await trackEvent('screen_view', parameters: {
-          'screen_name': screenName,
-          ...parameters,
-        });
+        await trackEvent('screen_view', parameters: parameters);
       }
     } catch (e) {
       _logger?.error('Failed to track screen: $screenName', error: e);
     }
   }
-  // Track event
+
   Future<void> trackEvent(String eventName, {Map<String, dynamic>? parameters}) async {
     try {
+      // Convert parameters to the format Firebase expects
+      final convertedParams = _convertToObjectMap(parameters);
+
       await _analytics.logEvent(
         name: eventName,
         parameters: parameters?.map(
@@ -95,7 +100,7 @@ class AnalyticsService {
     }
   }
 
-  // Set user properties - 🟢 app.User ব্যবহার
+  // Set user properties
   Future<void> setUserProperties(app.User user) async {
     try {
       await _analytics.setUserProperty(

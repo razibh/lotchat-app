@@ -90,11 +90,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Environment files
-.env
-.env.dev
-.env.prod
-.env.local
+## Environment files
+#.env
+#.env.dev
+#.env.prod
+#.env.local
 
 # Keys and Secrets
 *.key
