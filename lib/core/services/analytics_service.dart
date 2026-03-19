@@ -67,7 +67,9 @@ class AnalyticsService {
 
       await _analytics.logEvent(
         name: eventName,
-        parameters: convertedParams,
+        parameters: parameters?.map(
+              (String key, value) => MapEntry(key, value as Object),
+        ),
       );
       _logger?.debug('Event tracked: $eventName');
     } catch (e) {

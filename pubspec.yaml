@@ -42,32 +42,17 @@ dependencies:
   audioplayers: ^5.2.0
   confetti: ^0.7.0
 
-  firebase_core: ^3.13.0
-
-  # Firebase Remote Config (5.x - core 3.x compatible)
-  firebase_remote_config: ^5.4.0
-
-  # Firebase Authentication
-  firebase_auth: ^5.5.0
-  firebase_auth_web: ^5.8.13
-
-  # Firebase Crashlytics (4.x - core 3.x compatible)
-  firebase_crashlytics: ^4.3.0
-
-  # Cloud Firestore
-  cloud_firestore: ^5.6.0
-
-  # Google Sign-In
-  google_sign_in: ^6.3.0
-
-  # Firebase Storage
-  firebase_storage: ^12.4.0
-
-  # Firebase Cloud Messaging
-  firebase_messaging: ^15.2.0
-
-  # Firebase Analytics
-  firebase_analytics: ^11.4.0
+  # Firebase প্যাকেজ
+  firebase_core:
+  firebase_remote_config:
+  firebase_auth:
+  firebase_crashlytics:
+  cloud_firestore:
+  google_sign_in: ^6.1.5
+  firebase_storage:
+  firebase_messaging:
+  firebase_analytics:
+  firebase_dynamic_links:
 
   # Firebase Dynamic Links
   firebase_dynamic_links: ^6.1.0
@@ -189,42 +174,45 @@ flutter:
 
   # Assets
   assets:
-      - assets/animations/
-      - assets/badges/
-      - assets/effects/
-      - assets/frames/
-      - assets/gifts/cute/
-      - assets/gifts/luxury/
-      - assets/gifts/svip/
-      - assets/gifts/vip/
-      - assets/icons/animations/
-      - assets/icons/badges/
-      - assets/icons/categories/
-      - assets/icons/gift_types/
-      - assets/icons/ui/
-      - assets/images/app/
-      - assets/images/avatars/
-      - assets/images/backgrounds/
-      - assets/images/badges/
-      - assets/images/emojis/
-      - assets/images/flags/
-      - assets/images/games/
-      - assets/images/icons/
-      - assets/images/onboarding/
-      - assets/images/placeholders/
-      - assets/images/rooms/
-      - assets/sounds/
-      - assets/svgs/emojis/
-      - assets/svgs/games/
-      - assets/svgs/icons/
-      - assets/svgs/illustrations/
-      - assets/svgs/logos/
-      - assets/svgs/navigation/
-      - assets/svgs/social/
-      - assets/svgs/ui/
-      - assets/svgs/wallet/
-
-
+    - assets/animations/
+    - assets/badges/
+    - assets/effects/
+    - assets/frames/
+    - assets/gifts/cute/
+    - assets/gifts/luxury/
+    - assets/gifts/svip/
+    - assets/gifts/vip/
+    - assets/icons/animations/
+    - assets/icons/badges/
+    - assets/icons/categories/
+    - assets/icons/gift_types/
+    - assets/icons/ui/
+#    - assets/images/app
+#    - assets/images/avatars
+#    - assets/images/backgrounds
+#    - assets/images/badges
+#    - assets/images/emojis
+#    - assets/images/flags
+#    - assets/images/games
+#    - assets/images/icons
+#    - assets/images/onboarding
+#    - assets/images/placeholders
+#    - assets/images/rooms
+#    - assets/sounds
+#    - assets/svgs/emojis
+#    - assets/svgs/games
+#    - assets/svgs/icons
+#    - assets/svgs/illustrations
+#    - assets/svgs/logos
+#    - assets/svgs/navigation
+#    - assets/svgs/social
+#    - assets/svgs/ui
+#    - assets/svgs/wallet
+#    - assets/frames/default_frame.png
+#    - assets/frames/vip_frame.png
+#    - assets/frames/svip_frame.png
+#    - assets/frames/gold_frame.png
+#    - assets/frames/diamond_frame.png
   # Fonts
   fonts:
     - family: Poppins
@@ -267,13 +255,6 @@ flutter:
         - asset: assets/fonts/NotoSansDevanagari-Regular.ttf
         - asset: assets/fonts/NotoSansDevanagari-Bold.ttf
           weight: 700
-
-
-#    - .env
-
-#    - family: Urdu
-#      fonts:
-#        - asset: assets/fonts/NotoNastaliqUrdu-Regular.ttf
 
 # Launcher Icons Configuration
 flutter_launcher_icons:
