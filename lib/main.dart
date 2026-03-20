@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -174,16 +173,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     switch (state) {
       case AppLifecycleState.resumed:
         debugPrint('App resumed');
-        break;
       case AppLifecycleState.paused:
         debugPrint('App paused');
-        break;
       case AppLifecycleState.inactive:
         debugPrint('App inactive');
-        break;
       case AppLifecycleState.detached:
         debugPrint('App detached');
-        break;
+      case AppLifecycleState.hidden:
+        debugPrint('App hidden');
+        throw UnimplementedError();
     }
   }
 

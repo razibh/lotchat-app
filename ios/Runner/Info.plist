@@ -2,363 +2,48 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- Basic App Information -->
-    <key>NSCameraUsageDescription</key>
-    <string>We need camera access for video calls and photos</string>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>We need microphone access for audio calls</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>We need photo library access to share images</string>
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>We need location access to share your location</string>
-    <key>NSContactsUsageDescription</key>
-    <string>We need contacts access to share contacts</string>
-    <key>NSCalendarsUsageDescription</key>
-    <string>We need calendar access for events</string>
-    <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>We need bluetooth access for calls</string>
-    <key>NSBluetoothPeripheralUsageDescription</key>
-    <string>We need bluetooth access for calls</string>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>$(DEVELOPMENT_LANGUAGE)</string>
-    <key>CFBundleDisplayName</key>
-    <string>Game &amp; Live</string>
-    <key>CFBundleExecutable</key>
-    <string>$(EXECUTABLE_NAME)</string>
-    <key>CFBundleIdentifier</key>
-    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>game_live_platform</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>$(FLUTTER_BUILD_NAME)</string>
-    <key>CFBundleSignature</key>
-    <string>????</string>
-    <key>CFBundleVersion</key>
-    <string>$(FLUTTER_BUILD_NUMBER)</string>
-
-    <!-- Supported Interface Orientations -->
-    <key>UISupportedInterfaceOrientations</key>
-    <array>
-        <string>UIInterfaceOrientationPortrait</string>
-        <string>UIInterfaceOrientationLandscapeLeft</string>
-        <string>UIInterfaceOrientationLandscapeRight</string>
-    </array>
-    <key>UISupportedInterfaceOrientations~ipad</key>
-    <array>
-        <string>UIInterfaceOrientationPortrait</string>
-        <string>UIInterfaceOrientationPortraitUpsideDown</string>
-        <string>UIInterfaceOrientationLandscapeLeft</string>
-        <string>UIInterfaceOrientationLandscapeRight</string>
-    </array>
-
-    <!-- Background Modes -->
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>audio</string>
-        <string>fetch</string>
-        <string>remote-notification</string>
-    </array>
-
-    <!-- App Transport Security -->
-    <key>NSAppTransportSecurity</key>
-    <dict>
-        <key>NSAllowsArbitraryLoads</key>
-        <true/>
-        <key>NSAllowsArbitraryLoadsForMedia</key>
-        <true/>
-        <key>NSAllowsArbitraryLoadsInWebContent</key>
-        <true/>
-        <key>NSExceptionAllowsInsecureHTTPLoads</key>
-        <true/>
-        <key>NSIncludesSubdomains</key>
-        <true/>
-    </dict>
-    <key>NSCameraUsageDescription</key>
-    <string>We need access to your camera to take photos</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>We need access to your photo library to select images</string>
-    <!-- Camera Permission -->
-    <key>NSCameraUsageDescription</key>
-    <string>This app needs camera access to take photos for your profile and to stream video content</string>
-
-    <!-- Microphone Permission -->
-    <key>NSMicrophoneUsageDescription</key>
-    <string>This app needs microphone access for voice chat and live streaming</string>
-
-    <!-- Photo Library Permission -->
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>This app needs photo library access to upload images for your profile</string>
-
-    <!-- Photo Library Add Permission -->
-    <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>This app needs photo library access to save images</string>
-
-    <!-- Location Permission (if needed) -->
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>This app needs location access to show nearby rooms and events</string>
-    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>This app needs location access to show nearby rooms and events</string>
-
-    <!-- Contacts Permission (if needed) -->
-    <key>NSContactsUsageDescription</key>
-    <string>This app needs contacts access to find friends</string>
-
-    <!-- Bluetooth Permission (if needed) -->
-    <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>This app needs bluetooth access for connecting to devices</string>
-    <key>NSBluetoothPeripheralUsageDescription</key>
-    <string>This app needs bluetooth access for connecting to devices</string>
-
-    <!-- Calendar Permission (for scheduling) -->
-    <key>NSCalendarsUsageDescription</key>
-    <string>This app needs calendar access to schedule your live streams</string>
-    <key>NSRemindersUsageDescription</key>
-    <string>This app needs reminders access to notify you about upcoming streams</string>
-
-    <!-- Face ID Permission (if needed) -->
-    <key>NSFaceIDUsageDescription</key>
-    <string>This app needs Face ID for secure authentication</string>
-
-    <!-- Siri Permission (if needed) -->
-    <key>NSSiriUsageDescription</key>
-    <string>This app needs Siri access for voice commands</string>
-
-    <!-- Apple Music Permission (if needed) -->
-    <key>NSAppleMusicUsageDescription</key>
-    <string>This app needs music library access to play background music</string>
-
-    <!-- Speech Recognition Permission (if needed) -->
-    <key>NSSpeechRecognitionUsageDescription</key>
-    <string>This app needs speech recognition for voice commands and chat</string>
-
-    <!-- Health Kit Permission (if needed for fitness games) -->
-    <key>NSHealthShareUsageDescription</key>
-    <string>This app needs health data for fitness games</string>
-    <key>NSHealthUpdateUsageDescription</key>
-    <string>This app needs health data for fitness games</string>
-
-    <!-- HomeKit Permission (if needed) -->
-    <key>NSHomeKitUsageDescription</key>
-    <string>This app needs HomeKit access for smart home integration</string>
-
-    <!-- Local Notifications -->
-    <key>NSUserNotificationAlertStyle</key>
-    <string>alert</string>
-    <key>NSUserNotificationCenterEnabled</key>
-    <true/>
-
-    <!-- Push Notifications -->
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>remote-notification</string>
-        <string>fetch</string>
-    </array>
-
-    <!-- App Categories -->
-    <key>LSApplicationCategoryType</key>
-    <string>public.app-category.social-networking</string>
-
-    <!-- URL Schemes for Deep Linking -->
-    <key>CFBundleURLTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>CFBundleURLName</key>
-            <string>com.razib.lotchat</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>gamelive</string>
-                <string>fbYOUR_APP_ID</string>
-            </array>
-        </dict>
-    </array>
-
-    <!-- Facebook App ID (if using Facebook Login) -->
-    <key>FacebookAppID</key>
-    <string>YOUR_FACEBOOK_APP_ID</string>
-    <key>FacebookDisplayName</key>
-    <string>Game & Live</string>
-    <key>LSApplicationQueriesSchemes</key>
-    <array>
-        <string>fbapi</string>
-        <string>fb-messenger-share-api</string>
-        <string>fbauth2</string>
-        <string>fbshareextension</string>
-    </array>
-
-    <!-- Google Sign-In (if using Google Login) -->
-    <key>CFBundleURLTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>com.googleusercontent.apps.YOUR_CLIENT_ID</string>
-            </array>
-        </dict>
-    </array>
-
-    <!-- Google Maps API Key (if using maps) -->
-    <key>GMSApiKey</key>
-    <string>YOUR_GOOGLE_MAPS_API_KEY</string>
-
-    <!-- Firebase Configuration -->
-    <key>FirebaseAppDelegateProxyEnabled</key>
-    <false/>
-    <key>FirebaseScreenReportingEnabled</key>
-    <false/>
-    <key>FirebaseAutomaticScreenReportingEnabled</key>
-    <false/>
-
-    <!-- Crash Reporting -->
-    <key>CADisableMinimumFrameDurationOnPhone</key>
-    <true/>
-
-    <!-- App Store Icon (1024x1024) -->
-    <key>CFBundleIcons</key>
-    <dict>
-        <key>CFBundlePrimaryIcon</key>
-        <dict>
-            <key>CFBundleIconFiles</key>
-            <array>
-                <string>Icon-App-20x20</string>
-                <string>Icon-App-20x20@2x</string>
-                <string>Icon-App-20x20@3x</string>
-                <string>Icon-App-29x29</string>
-                <string>Icon-App-29x29@2x</string>
-                <string>Icon-App-29x29@3x</string>
-                <string>Icon-App-40x40</string>
-                <string>Icon-App-40x40@2x</string>
-                <string>Icon-App-40x40@3x</string>
-                <string>Icon-App-60x60@2x</string>
-                <string>Icon-App-60x60@3x</string>
-                <string>Icon-App-76x76</string>
-                <string>Icon-App-76x76@2x</string>
-                <string>Icon-App-83.5x83.5@2x</string>
-                <string>Icon-App-1024x1024@1x</string>
-            </array>
-            <key>UIPrerenderedIcon</key>
-            <true/>
-        </dict>
-    </dict>
-
-    <!-- Launch Screen -->
-    <key>UILaunchStoryboardName</key>
-    <string>LaunchScreen</string>
-
-    <!-- Main Storyboard -->
-    <key>UIMainStoryboardFile</key>
-    <string>Main</string>
-
-    <!-- Status Bar Style -->
-    <key>UIStatusBarStyle</key>
-    <string>UIStatusBarStyleLightContent</string>
-    <key>UIViewControllerBasedStatusBarAppearance</key>
-    <false/>
-
-    <!-- Preferred Content Size Category -->
-    <key>UIApplicationPreferredContentSizeCategory</key>
-    <string>UICTContentSizeCategoryL</string>
-
-    <!-- Requires Full Screen -->
-    <key>UIRequiresFullScreen</key>
-    <true/>
-
-    <!-- File Sharing Enabled -->
-    <key>UIFileSharingEnabled</key>
-    <true/>
-
-    <!-- Documents Folder Sharing -->
-    <key>LSSupportsOpeningDocumentsInPlace</key>
-    <true/>
-
-    <!-- Exported Type Identifiers (for file sharing) -->
-    <key>UTExportedTypeDeclarations</key>
-    <array>
-        <dict>
-            <key>UTTypeIdentifier</key>
-            <string>com.example.gamelive.data</string>
-            <key>UTTypeDescription</key>
-            <string>Game & Live Data</string>
-            <key>UTTypeConformsTo</key>
-            <array>
-                <string>public.data</string>
-            </array>
-            <key>UTTypeTagSpecification</key>
-            <dict>
-                <key>public.filename-extension</key>
-                <array>
-                    <string>gldata</string>
-                </array>
-            </dict>
-        </dict>
-    </array>
-
-    <!-- Imported Type Identifiers -->
-    <key>UTImportedTypeDeclarations</key>
-    <array>
-        <dict>
-            <key>UTTypeIdentifier</key>
-            <string>public.image</string>
-            <key>UTTypeConformsTo</key>
-            <array>
-                <string>public.data</string>
-            </array>
-        </dict>
-    </array>
-
-    <!-- Bundle Version -->
-    <key>CFBundleVersion</key>
-    <string>1</string>
-
-    <!-- Build Machine OS Build -->
-    <key>BuildMachineOSBuild</key>
-    <string>22F82</string>
-
-    <!-- DT Platform Name -->
-    <key>DTPlatformName</key>
-    <string>iphoneos</string>
-
-    <!-- DT SDK Name -->
-    <key>DTSDKName</key>
-    <string>iphoneos16.4</string>
-
-    <!-- Minimum OS Version -->
-    <key>MinimumOSVersion</key>
-    <string>12.0</string>
-
-    <!-- Supported Platforms -->
-    <key>CFBundleSupportedPlatforms</key>
-    <array>
-        <string>iPhoneOS</string>
-    </array>
-
-    <!-- Device Capabilities -->
-    <key>UIDeviceFamily</key>
-    <array>
-        <integer>1</integer> <!-- iPhone -->
-        <integer>2</integer> <!-- iPad -->
-    </array>
-
-    <!-- Exported URL Schemes -->
-    <key>CFBundleURLTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleURLName</key>
-            <string>com.razib.lotchat</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>gamelive</string>
-            </array>
-        </dict>
-    </array>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Lotchat</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>lotchat</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
 </dict>
 </plist>
-
-
