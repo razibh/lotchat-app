@@ -1,11 +1,11 @@
 {
-    "name": "lotchat_app",
-    "short_name": "lotchat_app",
+    "name": "lotchat",
+    "short_name": "lotchat",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "LotChat - Voice Chat, PK Battle App",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "lotchat_app" "\0"
+            VALUE "CompanyName", "com.razibh" "\0"
+            VALUE "FileDescription", "lotchat" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "lotchat_app" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "lotchat_app.exe" "\0"
-            VALUE "ProductName", "lotchat_app" "\0"
+            VALUE "InternalName", "lotchat" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.razibh. All rights reserved." "\0"
+            VALUE "OriginalFilename", "lotchat.exe" "\0"
+            VALUE "ProductName", "lotchat" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../core/di/service_locator.dart';
+import 'package:lotchat/core/di/service_locator.dart';
 import '../../core/services/admin_service.dart';
-import 'package:lotchat_app/core/models/user_models.dart';
+import 'package:lotchat/core/models/user_models.dart';
 import '../../mixins/loading_mixin.dart';
 import '../../mixins/toast_mixin.dart';
 import '../../mixins/dialog_mixin.dart';
-import '../../widgets/common/custom_button.dart';
-import '../../widgets/common/custom_text_field.dart';
 import '../../widgets/common/empty_state_widget.dart';
 
 class UserManagement extends StatefulWidget {
