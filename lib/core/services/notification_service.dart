@@ -1,8 +1,10 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:convert';
+
 import '../di/service_locator.dart';
 
 class NotificationService {
@@ -31,7 +33,7 @@ class NotificationService {
       );
 
       await _localNotifications.initialize(
-        initializationSettings,
+        settings: initializationSettings,
         onDidReceiveNotificationResponse: _onNotificationTap,
       );
 
@@ -67,10 +69,10 @@ class NotificationService {
       );
 
       await _localNotifications.show(
-        DateTime.now().millisecondsSinceEpoch ~/ 1000, // unique id
-        title,
-        body,
-        notificationDetails,
+        id: DateTime.now().millisecondsSinceEpoch ~/ 1000, // unique id
+        title: title,
+        body: body,
+        notificationDetails: notificationDetails,
         payload: data != null ? json.encode(data) : null,
       );
 

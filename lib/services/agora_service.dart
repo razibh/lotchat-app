@@ -1,11 +1,15 @@
-import 'dart:developer';
 import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:developer';
+
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:js' as js;
+import 'package:permission_handler/permission_handler.dart';
+
+// Conditional import for web support
+import 'agora_web_check_mobile.dart' 
+    if (dart.library.js_interop) 'agora_web_checker_web.dart' as web_check;
 
 class AgoraService {
   static final AgoraService _instance = AgoraService._internal();
@@ -36,11 +40,10 @@ class AgoraService {
   /// Initialize Agora Engine with Web Support
   Future<bool> initialize() async {
     try {
-
       if (kIsWeb) {
         log(' Running on Web - Checking Agora Web SDK...');
 
-        if (await _checkAgoraWebSDK()) {
+        if (web_check.isAgoraRTCDefined()) {
           _isWebInitialized = true;
           log(' Agora Web SDK ready');
           return true;
@@ -57,7 +60,7 @@ class AgoraService {
       _engine = createAgoraRtcEngine();
 
       // Initialize engine
-      await _engine!.initialize(RtcEngineContext(
+      await _engine!.initialize(const RtcEngineContext(
         appId: appId,
         channelProfile: ChannelProfileType.channelProfileCommunication,
       ));
@@ -103,82 +106,6 @@ class AgoraService {
       log(' Failed to initialize Agora: $e');
       return false;
     }
-  }
-
-  /// Check if Agora Web SDK is loaded - FIXED VERSION
-  Future<bool> _checkAgoraWebSDK() async {
-    try {
-
-      if (kIsWeb) {
-        try {
-          final agoraRTC = js.context['AgoraRTC'];
-          return agoraRTC != null;
-        } catch (e) {
-          log('️ JS context error: $e');
-        }
-
-        // Method 2: Using js_util (alternative)
-        try {
-          // @ts-ignore
-          final hasAgora = await _checkAgoraWithJsUtil();
-          return hasAgora;
-        } catch (e) {
-          log('⚠ JS util error: $e');
-        }
-
-        // Method 3: Check via html script tags
-        return _checkAgoraViaScript();
-      }
-      return false;
-    } catch (e) {
-      log(' Agora Web SDK check failed: $e');
-      return false;
-    }
-  }
-
-  /// Check Agora using js_util (alternative method)
-  Future<bool> _checkAgoraWithJsUtil() async {
-    try {
-      // This is a workaround using js_util
-      // You may need to import 'dart:js_util' as js_util
-      final hasAgora = await _evaluateJavaScript('typeof AgoraRTC !== "undefined"');
-      return hasAgora == 'true';
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// Evaluate JavaScript and return result
-  Future<String> _evaluateJavaScript(String script) async {
-    // Simple implementation - you may need a more robust solution
-    try {
-      final result = await _callJavaScript(script);
-      return result;
-    } catch (e) {
-      return 'false';
-    }
-  }
-
-  /// Call JavaScript function
-  Future<String> _callJavaScript(String script) async {
-
-    return 'false';
-  }
-
-  /// Check Agora via script tags
-  bool _checkAgoraViaScript() {
-    try {
-
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// Alternative: Simple check without complex JS interop
-  bool _simpleWebCheck() {
-
-    return kIsWeb;
   }
 
   /// Request camera and microphone permissions
@@ -238,14 +165,12 @@ class AgoraService {
 
   /// Join a channel
   Future<bool> joinChannel(String channelName, {int uid = 0}) async {
-    // ⚡ FIX: Web platform handling
     if (kIsWeb) {
       if (!_isWebInitialized) {
         log(' Agora Web not initialized');
         return false;
       }
       log(' Web: Joining channel $channelName');
-      // Web implementation would use AgoraRTC directly
       return true;
     }
 
@@ -254,7 +179,7 @@ class AgoraService {
     try {
       final token = await _getTokenFromServer(channelName, uid: uid);
 
-      ChannelMediaOptions options = ChannelMediaOptions(
+      const ChannelMediaOptions options = ChannelMediaOptions(
         channelProfile: ChannelProfileType.channelProfileCommunication,
         clientRoleType: ClientRoleType.clientRoleBroadcaster,
         publishCameraTrack: true,
@@ -290,7 +215,7 @@ class AgoraService {
     try {
       final token = await _getTokenFromServer(channelName, uid: uid);
 
-      ChannelMediaOptions options = ChannelMediaOptions(
+      const ChannelMediaOptions options = ChannelMediaOptions(
         channelProfile: ChannelProfileType.channelProfileLiveBroadcasting,
         clientRoleType: ClientRoleType.clientRoleAudience,
         publishCameraTrack: false,
