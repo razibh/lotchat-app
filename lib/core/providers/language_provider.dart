@@ -6,19 +6,18 @@ import '../../core/services/logger_service.dart';
 class LanguageProvider extends ChangeNotifier {
   static const String _prefKey = 'app_language';
 
-  final LoggerService _logger = ServiceLocator.instance.get<LoggerService>();
+  // Lazy getter — only resolves when first actually called, not at construction time
+  LoggerService get _logger => ServiceLocator.instance.get<LoggerService>();
 
   Locale _locale = const Locale('en', '');
   bool _isLoading = false;
 
-  // Getters
   Locale get locale => _locale;
   bool get isLoading => _isLoading;
 
-  // Supported locales
   static const List<Locale> supportedLocales = [
-    Locale('en', ''), // English
-    Locale('bn', ''), // Bengali
+    Locale('en', ''),
+    Locale('bn', ''),
   ];
 
   LanguageProvider() {

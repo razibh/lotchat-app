@@ -5,10 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../models/user_models.dart' as app;
 import '../models/gift_model.dart';
-import '../constants/shared_preference_keys.dart'; // ✅ এই import টা ঠিক করুন
+import '../constants/shared_preference_keys.dart';
 import '../di/service_locator.dart';
 
 class StorageService {
@@ -18,18 +17,20 @@ class StorageService {
 
   late SharedPreferences _prefs;
   late Box _hiveBox;
-  late SupabaseClient _supabase;
+
+  // Lazy getter — only resolves when first used, never at init() time
+  SupabaseClient get _supabase => getService<SupabaseClient>();
 
   // ==================== INITIALIZATION ====================
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     _hiveBox = await Hive.openBox('appBox');
-    _supabase = getService<SupabaseClient>();
+    // Removed: _supabase = getService<SupabaseClient>();
+    // SupabaseClient is resolved lazily above so it's never
+    // accessed before it's registered in GetIt
   }
 
   // ==================== SHARED PREFERENCES ====================
-
-  // String
   Future<void> setString(String key, String value) async {
     await _prefs.setString(key, value);
   }
@@ -38,7 +39,6 @@ class StorageService {
     return _prefs.getString(key);
   }
 
-  // Bool
   Future<void> setBool(String key, bool value) async {
     await _prefs.setBool(key, value);
   }
@@ -47,7 +47,6 @@ class StorageService {
     return _prefs.getBool(key);
   }
 
-  // Int
   Future<void> setInt(String key, int value) async {
     await _prefs.setInt(key, value);
   }
@@ -56,7 +55,6 @@ class StorageService {
     return _prefs.getInt(key);
   }
 
-  // Double
   Future<void> setDouble(String key, double value) async {
     await _prefs.setDouble(key, value);
   }
@@ -65,7 +63,6 @@ class StorageService {
     return _prefs.getDouble(key);
   }
 
-  // String List
   Future<void> setStringList(String key, List<String> value) async {
     await _prefs.setStringList(key, value);
   }
@@ -74,34 +71,27 @@ class StorageService {
     return _prefs.getStringList(key);
   }
 
-  // Remove
   Future<void> remove(String key) async {
     await _prefs.remove(key);
   }
 
-  // Clear all
   Future<void> clear() async {
     await _prefs.clear();
   }
 
   // ==================== HIVE STORAGE ====================
-
-  // Save object
   Future<void> saveObject(String key, dynamic value) async {
     await _hiveBox.put(key, value);
   }
 
-  // Get object
   dynamic getObject(String key) {
     return _hiveBox.get(key);
   }
 
-  // Save map
   Future<void> saveMap(String key, Map<String, dynamic> value) async {
     await _hiveBox.put(key, value);
   }
 
-  // Get map
   Map<String, dynamic>? getMap(String key) {
     final value = _hiveBox.get(key);
     if (value is Map) {
@@ -110,12 +100,10 @@ class StorageService {
     return null;
   }
 
-  // Save list
   Future<void> saveList(String key, List<dynamic> value) async {
     await _hiveBox.put(key, value);
   }
 
-  // Get list
   List<dynamic>? getList(String key) {
     final value = _hiveBox.get(key);
     if (value is List) {
@@ -124,29 +112,23 @@ class StorageService {
     return null;
   }
 
-  // Delete
   Future<void> delete(String key) async {
     await _hiveBox.delete(key);
   }
 
-  // Check if exists
   bool containsKey(String key) {
     return _hiveBox.containsKey(key);
   }
 
-  // Get all keys
   Iterable<String> getKeys() {
     return _hiveBox.keys.cast<String>();
   }
 
-  // Clear hive
   Future<void> clearHive() async {
     await _hiveBox.clear();
   }
 
   // ==================== SUPABASE STORAGE (FILE UPLOAD) ====================
-
-  // Upload file to Supabase Storage
   Future<String?> uploadFile({
     required File file,
     required String bucket,
@@ -156,19 +138,12 @@ class StorageService {
     try {
       final String finalFileName = fileName ?? file.path.split('/').last;
       final String filePath = '$path/$finalFileName';
-
       debugPrint('📤 Uploading file to Supabase: $bucket/$filePath');
 
-      // Upload file
-      await _supabase.storage
-          .from(bucket)
-          .upload(filePath, file);
+      await _supabase.storage.from(bucket).upload(filePath, file);
 
-      // Get public URL
-      final String publicUrl = _supabase.storage
-          .from(bucket)
-          .getPublicUrl(filePath);
-
+      final String publicUrl =
+      _supabase.storage.from(bucket).getPublicUrl(filePath);
       debugPrint('✅ File uploaded successfully: $publicUrl');
       return publicUrl;
     } catch (e) {
@@ -177,22 +152,17 @@ class StorageService {
     }
   }
 
-  // Upload image (profile picture, cover image, etc.)
   Future<String?> uploadImage({
     required File image,
     required String userId,
-    required String type, // 'profile', 'cover', 'post'
+    required String type,
   }) async {
     try {
-      final String bucket = 'images';
-      final String path = 'users/$userId/$type';
-      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-
       return await uploadFile(
         file: image,
-        bucket: bucket,
-        path: path,
-        fileName: fileName,
+        bucket: 'images',
+        path: 'users/$userId/$type',
+        fileName: '${DateTime.now().millisecondsSinceEpoch}.jpg',
       );
     } catch (e) {
       debugPrint('Failed to upload image: $e');
@@ -200,21 +170,16 @@ class StorageService {
     }
   }
 
-  // Upload gift image
   Future<String?> uploadGiftImage({
     required File image,
     required String giftId,
   }) async {
     try {
-      final String bucket = 'gifts';
-      final String path = giftId;
-      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-
       return await uploadFile(
         file: image,
-        bucket: bucket,
-        path: path,
-        fileName: fileName,
+        bucket: 'gifts',
+        path: giftId,
+        fileName: '${DateTime.now().millisecondsSinceEpoch}.jpg',
       );
     } catch (e) {
       debugPrint('Failed to upload gift image: $e');
@@ -222,21 +187,16 @@ class StorageService {
     }
   }
 
-  // Upload room cover image
   Future<String?> uploadRoomCover({
     required File image,
     required String roomId,
   }) async {
     try {
-      final String bucket = 'rooms';
-      final String path = roomId;
-      final String fileName = 'cover_${DateTime.now().millisecondsSinceEpoch}.jpg';
-
       return await uploadFile(
         file: image,
-        bucket: bucket,
-        path: path,
-        fileName: fileName,
+        bucket: 'rooms',
+        path: roomId,
+        fileName: 'cover_${DateTime.now().millisecondsSinceEpoch}.jpg',
       );
     } catch (e) {
       debugPrint('Failed to upload room cover: $e');
@@ -244,18 +204,13 @@ class StorageService {
     }
   }
 
-  // Delete file from Supabase Storage
   Future<bool> deleteFile({
     required String bucket,
     required String path,
   }) async {
     try {
       debugPrint('🗑️ Deleting file from Supabase: $bucket/$path');
-
-      await _supabase.storage
-          .from(bucket)
-          .remove([path]);
-
+      await _supabase.storage.from(bucket).remove([path]);
       debugPrint('✅ File deleted successfully');
       return true;
     } catch (e) {
@@ -264,16 +219,13 @@ class StorageService {
     }
   }
 
-  // List files in a directory
   Future<List<String>> listFiles({
     required String bucket,
     required String path,
   }) async {
     try {
-      final response = await _supabase.storage
-          .from(bucket)
-          .list(path: path);
-
+      final response =
+      await _supabase.storage.from(bucket).list(path: path);
       return response.map((file) => file.name).toList();
     } catch (e) {
       debugPrint('Failed to list files: $e');
@@ -281,7 +233,6 @@ class StorageService {
     }
   }
 
-  // Get public URL
   String getPublicUrl({
     required String bucket,
     required String path,
@@ -289,24 +240,21 @@ class StorageService {
     return _supabase.storage.from(bucket).getPublicUrl(path);
   }
 
-  // Get download URL (signed URL for private buckets)
   Future<String?> getDownloadUrl({
     required String bucket,
     required String path,
-    int expiresIn = 60, // seconds
+    int expiresIn = 60,
   }) async {
     try {
-      final url = await _supabase.storage
+      return await _supabase.storage
           .from(bucket)
           .createSignedUrl(path, expiresIn);
-      return url;
     } catch (e) {
       debugPrint('Failed to get download URL: $e');
       return null;
     }
   }
 
-  // Upload bytes data (for web)
   Future<String?> uploadBytes({
     required Uint8List bytes,
     required String bucket,
@@ -314,19 +262,15 @@ class StorageService {
     String? fileName,
   }) async {
     try {
-      final String finalFileName = fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}';
+      final String finalFileName =
+          fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}';
       final String filePath = '$path/$finalFileName';
-
       debugPrint('📤 Uploading bytes to Supabase: $bucket/$filePath');
 
-      await _supabase.storage
-          .from(bucket)
-          .uploadBinary(filePath, bytes);
+      await _supabase.storage.from(bucket).uploadBinary(filePath, bytes);
 
-      final String publicUrl = _supabase.storage
-          .from(bucket)
-          .getPublicUrl(filePath);
-
+      final String publicUrl =
+      _supabase.storage.from(bucket).getPublicUrl(filePath);
       debugPrint('✅ Bytes uploaded successfully');
       return publicUrl;
     } catch (e) {
@@ -336,8 +280,6 @@ class StorageService {
   }
 
   // ==================== USER DATA ====================
-
-  // Save user
   Future<void> saveUser(app.User user) async {
     final String userJson = jsonEncode(user.toJson());
     await setString(PrefKeys.userData, userJson);
@@ -346,13 +288,11 @@ class StorageService {
     await setString(PrefKeys.userEmail, user.email);
     await setInt(PrefKeys.userCoins, user.coins);
     await setInt(PrefKeys.userDiamonds, user.diamonds);
-
     if (user.tier != null) {
       await setInt(PrefKeys.userTier, user.tier!.index);
     }
   }
 
-  // Get user
   app.User? getUser() {
     final String? userJson = getString(PrefKeys.userData);
     if (userJson != null) {
@@ -366,73 +306,56 @@ class StorageService {
     return null;
   }
 
-  // Get user ID
   Future<String?> getUserId() async {
     return getString(PrefKeys.userId);
   }
 
-  // Set user ID
   Future<void> setUserId(String userId) async {
     await setString(PrefKeys.userId, userId);
   }
 
-  // Update user coins
   Future<void> updateUserCoins(int coins) async {
     await setInt(PrefKeys.userCoins, coins);
-
     final app.User? user = getUser();
     if (user != null) {
-      final updatedUser = user.copyWith(coins: coins);
-      await saveUser(updatedUser);
+      await saveUser(user.copyWith(coins: coins));
     }
   }
 
-  // Update user diamonds
   Future<void> updateUserDiamonds(int diamonds) async {
     await setInt(PrefKeys.userDiamonds, diamonds);
-
     final app.User? user = getUser();
     if (user != null) {
-      final updatedUser = user.copyWith(diamonds: diamonds);
-      await saveUser(updatedUser);
+      await saveUser(user.copyWith(diamonds: diamonds));
     }
   }
 
   // ==================== AUTH DATA ====================
-
-  // Save auth token
   Future<void> saveAuthToken(String token) async {
     await setString(PrefKeys.authToken, token);
   }
 
-  // Get auth token
   String? getAuthToken() {
     return getString(PrefKeys.authToken);
   }
 
-  // Save refresh token
   Future<void> saveRefreshToken(String token) async {
     await setString(PrefKeys.refreshToken, token);
   }
 
-  // Get refresh token
   String? getRefreshToken() {
     return getString(PrefKeys.refreshToken);
   }
 
-  // Set logged in
   Future<void> setLoggedIn(bool value) async {
     await setBool(PrefKeys.isLoggedIn, value);
   }
 
-  // Is logged in
   bool isLoggedIn() {
     return getBool(PrefKeys.isLoggedIn) ?? false;
   }
 
   // ==================== APP SETTINGS ====================
-
-  // Theme mode
   Future<void> setThemeMode(String mode) async {
     await setString(PrefKeys.themeMode, mode);
   }
@@ -441,7 +364,6 @@ class StorageService {
     return getString(PrefKeys.themeMode) ?? 'system';
   }
 
-  // Language
   Future<void> setLanguage(String language) async {
     await setString(PrefKeys.language, language);
   }
@@ -450,7 +372,6 @@ class StorageService {
     return getString(PrefKeys.language) ?? 'en';
   }
 
-  // Notifications
   Future<void> setNotificationsEnabled(bool enabled) async {
     await setBool(PrefKeys.notificationsEnabled, enabled);
   }
@@ -459,7 +380,6 @@ class StorageService {
     return getBool(PrefKeys.notificationsEnabled) ?? true;
   }
 
-  // Sound enabled
   Future<void> setSoundEnabled(bool enabled) async {
     await setBool(PrefKeys.soundEnabled, enabled);
   }
@@ -468,7 +388,6 @@ class StorageService {
     return getBool(PrefKeys.soundEnabled) ?? true;
   }
 
-  // Vibration enabled
   Future<void> setVibrationEnabled(bool enabled) async {
     await setBool(PrefKeys.vibrationEnabled, enabled);
   }
@@ -478,8 +397,6 @@ class StorageService {
   }
 
   // ==================== LOCATION DATA ====================
-
-  // Save country
   Future<void> saveCountry(String country) async {
     await setString(PrefKeys.country, country);
   }
@@ -488,7 +405,6 @@ class StorageService {
     return getString(PrefKeys.country);
   }
 
-  // Save region
   Future<void> saveRegion(String region) async {
     await setString(PrefKeys.region, region);
   }
@@ -497,7 +413,6 @@ class StorageService {
     return getString(PrefKeys.region);
   }
 
-  // Save last location
   Future<void> saveLastLocation(Map<String, double> location) async {
     await saveMap(PrefKeys.lastLocation, location.cast<String, dynamic>());
   }
@@ -505,14 +420,13 @@ class StorageService {
   Map<String, double>? getLastLocation() {
     final Map<String, dynamic>? location = getMap(PrefKeys.lastLocation);
     if (location != null) {
-      return location.map((key, value) => MapEntry(key, (value as num).toDouble()));
+      return location.map(
+              (key, value) => MapEntry(key, (value as num).toDouble()));
     }
     return null;
   }
 
   // ==================== CACHE DATA ====================
-
-  // Cache rooms
   Future<void> cacheRooms(List<Map<String, dynamic>> rooms) async {
     await saveList(PrefKeys.cachedRooms, rooms);
     await setInt(PrefKeys.lastSync, DateTime.now().millisecondsSinceEpoch);
@@ -526,7 +440,6 @@ class StorageService {
     return null;
   }
 
-  // Cache gifts
   Future<void> cacheGifts(List<Map<String, dynamic>> gifts) async {
     await saveList(PrefKeys.cachedGifts, gifts);
   }
@@ -539,7 +452,6 @@ class StorageService {
     return null;
   }
 
-  // Last sync time
   int? getLastSyncTime() {
     return getInt(PrefKeys.lastSync);
   }
@@ -547,14 +459,11 @@ class StorageService {
   bool isCacheValid({int maxAgeHours = 24}) {
     final int? lastSync = getLastSyncTime();
     if (lastSync == null) return false;
-
     final int age = DateTime.now().millisecondsSinceEpoch - lastSync;
     return age < (maxAgeHours * 60 * 60 * 1000);
   }
 
   // ==================== ONBOARDING ====================
-
-  // Has seen onboarding
   Future<void> setHasSeenOnboarding(bool value) async {
     await setBool(PrefKeys.hasSeenOnboarding, value);
   }
@@ -563,7 +472,6 @@ class StorageService {
     return getBool(PrefKeys.hasSeenOnboarding) ?? false;
   }
 
-  // Has completed profile
   Future<void> setHasCompletedProfile(bool value) async {
     await setBool(PrefKeys.hasCompletedProfile, value);
   }
@@ -573,8 +481,6 @@ class StorageService {
   }
 
   // ==================== GAME STATS ====================
-
-  // Save game stats
   Future<void> saveGameStats(Map<String, dynamic> stats) async {
     await saveMap(PrefKeys.gameStats, stats);
   }
@@ -583,7 +489,6 @@ class StorageService {
     return getMap(PrefKeys.gameStats);
   }
 
-  // Last game played
   Future<void> setLastGamePlayed(String game) async {
     await setString(PrefKeys.lastGamePlayed, game);
   }
@@ -593,8 +498,6 @@ class StorageService {
   }
 
   // ==================== SECURITY ====================
-
-  // Biometric enabled
   Future<void> setBiometricEnabled(bool enabled) async {
     await setBool(PrefKeys.biometricEnabled, enabled);
   }
@@ -603,7 +506,6 @@ class StorageService {
     return getBool(PrefKeys.biometricEnabled) ?? false;
   }
 
-  // PIN code
   Future<void> setPinCode(String pin) async {
     await setString(PrefKeys.pinCode, pin);
   }
@@ -612,15 +514,12 @@ class StorageService {
     return getString(PrefKeys.pinCode);
   }
 
-  // Verify PIN
   bool verifyPin(String inputPin) {
     final String? savedPin = getPinCode();
     return savedPin != null && savedPin == inputPin;
   }
 
   // ==================== CLEAR DATA ====================
-
-  // Clear user data (logout)
   Future<void> clearUserData() async {
     await remove(PrefKeys.userData);
     await remove(PrefKeys.userId);
@@ -634,7 +533,6 @@ class StorageService {
     await setBool(PrefKeys.isLoggedIn, false);
   }
 
-  // Clear all data
   Future<void> clearAllData() async {
     await clear();
     await clearHive();

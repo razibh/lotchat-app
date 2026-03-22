@@ -30,9 +30,8 @@ import '../services/friend_service.dart';
 import '../../features/clan/services/clan_service.dart';
 import '../services/pk_service.dart';
 
-final GetIt getIt = GetIt.instance;
-
 class ServiceLocator {
+  final GetIt getIt = GetIt.instance;
   // Singleton pattern
   factory ServiceLocator() => _instance;
   ServiceLocator._internal();
@@ -45,27 +44,19 @@ class ServiceLocator {
 
   // Initialize all services
   Future<void> init() async {
-    try {
-      debugPrint('🚀 Initializing ServiceLocator...');
+    debugPrint('🚀 Initializing ServiceLocator...');
 
-      // Register Supabase client first
-      _registerSupabase();
+    // Don't wrap everything in try/catch here — let it throw
+    // so main() can catch it and show ErrorApp
+    _registerSupabase();
+    await _registerCoreServices();
+    _registerApiServices();
+    _registerBusinessServices();
+    _registerUtilityServices();
+    _registerFeatureServices();
+    await _initializeServices();
 
-      // Register all services
-      await _registerCoreServices();
-      _registerApiServices();
-      _registerBusinessServices();
-      _registerUtilityServices();
-      _registerFeatureServices();
-
-      // Initialize async services
-      await _initializeServices();
-
-      debugPrint('✅ ServiceLocator initialized successfully');
-    } catch (e, stackTrace) {
-      debugPrint('❌ ServiceLocator initialization failed: $e');
-      debugPrint('📚 StackTrace: $stackTrace');
-    }
+    debugPrint('✅ ServiceLocator initialized successfully');
   }
 
   // Register Supabase client
@@ -83,8 +74,6 @@ class ServiceLocator {
 
   // Core Services - Async registration
   Future<void> _registerCoreServices() async {
-    debugPrint('📝 Registering Core Services...');
-
     try {
       // Storage Service
       final StorageService storageService = StorageService();
@@ -95,7 +84,10 @@ class ServiceLocator {
       // Logger Service
       final LoggerService loggerService = LoggerService();
       await loggerService.initialize();
-      getIt.registerSingleton<LoggerService>(loggerService);
+
+      if (!getIt.isRegistered<LoggerService>()) {
+        getIt.registerSingleton<LoggerService>(loggerService);
+      }
       debugPrint('   ✅ LoggerService registered');
 
       // Config Service
@@ -116,6 +108,7 @@ class ServiceLocator {
 
     } catch (e) {
       debugPrint('❌ Error registering core services: $e');
+      rethrow;
     }
   }
 
