@@ -10,7 +10,8 @@ import '../../core/widgets/gradient_background.dart';
 import '../../core/widgets/role_based_drawer.dart';
 import '../../widgets/country_selector.dart';
 import '../../core/models/room_model.dart';
-import '../../core/services/navigation_service.dart';
+// Remove NavigationService import
+// import '../../core/services/navigation_service.dart';
 import '../games/games_screen.dart';
 import '../wallet/wallet_screen.dart';
 import '../profile/profile_screen.dart';
@@ -151,9 +152,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final countryProvider = Provider.of<CountryProvider>(context);
-    final notificationProvider = Provider.of<NotificationProvider>(context);
+    final authProvider = Provider.of<AuthProvider?>(context);
+    final countryProvider = Provider.of<CountryProvider?>(context);
+    final notificationProvider = Provider.of<NotificationProvider?>(context);
+
+    if (authProvider == null || countryProvider == null || notificationProvider == null) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     return WillPopScope(
       onWillPop: () async {
@@ -340,11 +349,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   child: IconButton(
                     icon: const Icon(Icons.notifications, color: Colors.white, size: 20),
                     onPressed: () {
-                      NavigationService.navigateTo('/notifications');
+                      // ✅ Use Navigator directly
+                      Navigator.pushNamed(context, '/notifications');
                     },
                   ),
                 ),
-                if (notification.hasUnread)
+                if (notification.unreadCount > 0)
                   const Positioned(
                     top: 5,
                     right: 5,
@@ -490,11 +500,81 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       itemCount: rooms.length,
       itemBuilder: (context, index) {
         final room = rooms[index];
-        return RoomCard(
-          room: room,
+        return GestureDetector(
           onTap: () {
-            NavigationService.navigateTo('/room', arguments: room);
+            // ✅ Use Navigator directly
+            Navigator.pushNamed(context, '/room', arguments: room);
           },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  room.viewerCount > 300 ? Colors.purple : Colors.blue,
+                  room.viewerCount > 300 ? Colors.pink : Colors.cyan,
+                ].map((c) => c.withOpacity(0.3)).toList(),
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: room.status == RoomStatus.active ? Colors.red : Colors.white24,
+                width: room.status == RoomStatus.active ? 2 : 1,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.purple,
+                    child: Text(
+                      room.hostName[0],
+                      style: const TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          room.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          room.hostName,
+                          style: const TextStyle(color: Colors.white70, fontSize: 14),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.visibility, color: Colors.white70, size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${room.viewerCount} viewers',
+                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                            ),
+                            const SizedBox(width: 16),
+                            const Icon(Icons.public, color: Colors.white70, size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              room.country ?? 'International',
+                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         );
       },
     );
@@ -585,19 +665,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  // ✅ FIXED: Use Navigator directly
   void _handleNavigation(int index) {
     switch (index) {
       case 1:
-        NavigationService.navigateTo('/explore');
+        Navigator.pushNamed(context, '/explore');
         break;
       case 2:
-        NavigationService.navigateTo('/games');
+        Navigator.pushNamed(context, '/games');
         break;
       case 3:
-        NavigationService.navigateTo('/wallet');
+        Navigator.pushNamed(context, '/wallet');
         break;
       case 4:
-        NavigationService.navigateTo('/profile');
+        Navigator.pushNamed(context, '/profile');
         break;
     }
   }
@@ -652,11 +733,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 }),
                 _buildDrawerItem(Icons.login, 'Login', () {
                   Navigator.pop(context);
-                  NavigationService.navigateTo('/login');
+                  Navigator.pushReplacementNamed(context, '/login');
                 }),
                 _buildDrawerItem(Icons.app_registration, 'Register', () {
                   Navigator.pop(context);
-                  NavigationService.navigateTo('/register');
+                  Navigator.pushNamed(context, '/register');
                 }),
                 const Divider(color: Colors.white24),
                 _buildDrawerItem(Icons.help, 'Help', () {}),
@@ -735,42 +816,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ))
                         .toList(),
                   ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Room Type',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: ['All', 'Voice', 'Video', 'Games', 'Music']
-                        .map((type) => FilterChip(
-                      label: Text(type),
-                      onSelected: (selected) {},
-                      backgroundColor: Colors.white.withOpacity(0.1),
-                      labelStyle: const TextStyle(color: Colors.white70),
-                    ))
-                        .toList(),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Sort By',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: ['Trending', 'Newest', 'Most Viewers', 'Nearby']
-                        .map((sort) => FilterChip(
-                      label: Text(sort),
-                      onSelected: (selected) {},
-                      backgroundColor: Colors.white.withOpacity(0.1),
-                      labelStyle: const TextStyle(color: Colors.white70),
-                    ))
-                        .toList(),
-                  ),
                 ],
               ),
             ),
@@ -812,7 +857,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _showCountrySelector() {
-    final countryProvider = Provider.of<CountryProvider>(context, listen: false);
+    final countryProvider = Provider.of<CountryProvider?>(context, listen: false);
+    if (countryProvider == null) return;
 
     showModalBottomSheet(
       context: context,
@@ -854,195 +900,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _handleLogout(BuildContext context) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider?>(context, listen: false);
+    if (authProvider == null) return;
+
     await authProvider.logout();
     if (mounted) {
-      NavigationService.navigateToAndRemoveUntil('/login');
+      // ✅ Use Navigator directly
+      Navigator.pushReplacementNamed(context, '/login');
     }
-  }
-}
-
-// Room Card Widget
-class RoomCard extends StatelessWidget {
-  final RoomModel room;
-  final VoidCallback onTap;
-
-  const RoomCard({
-    required this.room,
-    required this.onTap,
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isLive = room.status == RoomStatus.active;
-    final isTrending = room.viewerCount > 300;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              if (isTrending) Colors.purple else Colors.blue,
-              if (isTrending) Colors.pink else Colors.cyan,
-            ].map((c) => c.withOpacity(0.3)).toList(),
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isLive ? Colors.red : Colors.white24,
-            width: isLive ? 2 : 1,
-          ),
-        ),
-        child: Stack(
-          children: [
-            if (isLive)
-              const Positioned(
-                top: 12,
-                left: 12,
-                child: _LiveBadge(),
-              ),
-            if (isTrending)
-              const Positioned(
-                top: 12,
-                right: 12,
-                child: _TrendingBadge(),
-              ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.purple,
-                    child: Text(
-                      room.hostName[0],
-                      style: const TextStyle(color: Colors.white, fontSize: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          room.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          room.hostName,
-                          style: const TextStyle(color: Colors.white70, fontSize: 14),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.visibility, color: Colors.white70, size: 14),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${room.viewerCount} viewers',
-                              style: const TextStyle(color: Colors.white70, fontSize: 12),
-                            ),
-                            const SizedBox(width: 16),
-                            const Icon(Icons.public, color: Colors.white70, size: 14),
-                            const SizedBox(width: 4),
-                            Text(
-                              room.country ?? 'International',
-                              style: const TextStyle(color: Colors.white70, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        if (room.tags != null)
-                          Wrap(
-                            spacing: 8,
-                            children: room.tags!.map((tag) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '#$tag',
-                                  style: const TextStyle(color: Colors.white70, fontSize: 10),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<RoomModel>('room', room));
-    properties.add(ObjectFlagProperty<VoidCallback>.has('onTap', onTap));
-  }
-}
-
-class _LiveBadge extends StatelessWidget {
-  const _LiveBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.red,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.fiber_manual_record, color: Colors.white, size: 8),
-          SizedBox(width: 4),
-          Text(
-            'LIVE',
-            style: TextStyle(color: Colors.white, fontSize: 8),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TrendingBadge extends StatelessWidget {
-  const _TrendingBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.orange,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.whatshot, color: Colors.white, size: 8),
-          SizedBox(width: 4),
-          Text(
-            'TRENDING',
-            style: TextStyle(color: Colors.white, fontSize: 8),
-          ),
-        ],
-      ),
-    );
   }
 }

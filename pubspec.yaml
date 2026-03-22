@@ -52,10 +52,10 @@ dependencies:
   flutter_dotenv: ^6.0.0
 
 
-  # Agora RTC Engine - latest stable version
+#  # Agora RTC Engine - latest stable version
   agora_rtc_engine: ^6.3.0
-
-  # Translation & Speech
+#
+#  # Translation & Speech
   flutter_tts: ^3.8.3
   speech_to_text: ^7.3.0
 
@@ -214,18 +214,19 @@ flutter:
     - assets/icons/categories/
     - assets/icons/gift_types/
     - assets/icons/ui/
-    - assets/images/app/
-    - assets/images/avatars/
-    - assets/images/backgrounds/
-
-    - assets/images/emojis/
-    - assets/images/flags/
-    - assets/images/games/
-
-    - assets/images/onboarding/
-    - assets/images/placeholders/
-    - assets/images/rooms/
-    - assets/sounds/
+    - assets/images/
+#    - assets/images/app/
+#    - assets/images/avatars/
+#    - assets/images/backgrounds/
+#
+#    - assets/images/emojis/
+#    - assets/images/flags/
+#    - assets/images/games/
+#
+#    - assets/images/onboarding/
+#    - assets/images/placeholders/
+#    - assets/images/rooms/
+#    - assets/sounds/
     - assets/svgs/emojis/
     - assets/svgs/games/
     - assets/svgs/icons/

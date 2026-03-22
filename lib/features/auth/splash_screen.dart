@@ -7,7 +7,6 @@ import '../../core/providers/country_provider.dart';
 import '../../core/providers/notification_provider.dart';
 import '../../core/providers/theme_provider.dart';
 import '../../core/providers/locale_provider.dart';
-import '../../core/services/navigation_service.dart';
 import '../../core/services/socket_service.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -130,26 +129,31 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     }
   }
 
+  // ✅ FIXED: Use Navigator directly instead of NavigationService
   void _navigateToNext() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final countryProvider = Provider.of<CountryProvider>(context, listen: false);
 
     if (authProvider.isLoggedIn) {
       if (countryProvider.selectedCountry == null) {
-        NavigationService.navigateToReplacement('/country-select');
+        // ✅ Direct Navigator
+        Navigator.pushReplacementNamed(context, '/country-select');
       } else {
-        NavigationService.navigateToReplacement(authProvider.getHomeRoute());
+        // ✅ Direct Navigator
+        Navigator.pushReplacementNamed(context, authProvider.getHomeRoute());
       }
     } else {
-      NavigationService.navigateToReplacement('/login');
+      // ✅ Direct Navigator
+      Navigator.pushReplacementNamed(context, '/login');
     }
   }
 
+  // ✅ FIXED: Proper dialog context
   void _showErrorDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) => AlertDialog(
+      builder: (BuildContext dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceDark,
         title: const Text(
           'Initialization Error',
@@ -162,7 +166,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               _initializeApp(); // Retry initialization
             },
             child: const Text('Retry'),
@@ -409,7 +413,7 @@ class AnimatedSplashLogo extends StatefulWidget {
   });
 
   @override
-  State<AnimatedSplashLogo> createState() => _AnimatedSplashLogoState();  // ← এই লাইন গুরুত্বপূর্ণ
+  State<AnimatedSplashLogo> createState() => _AnimatedSplashLogoState();
 }
 
 class _AnimatedSplashLogoState extends State<AnimatedSplashLogo> with SingleTickerProviderStateMixin {
@@ -500,8 +504,6 @@ class BrandedSplashScreen extends StatelessWidget {
     this.onLoadComplete,
   });
 
-  // debugFillProperties সরিয়ে দেওয়া হয়েছে
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -561,8 +563,6 @@ class SplashPreloader extends StatelessWidget {
     super.key,
     this.message,
   });
-
-  // debugFillProperties সরিয়ে দেওয়া হয়েছে
 
   @override
   Widget build(BuildContext context) {

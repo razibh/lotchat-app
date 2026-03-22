@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 // ==================== CORE ====================
 import 'core/constants/route_constants.dart';
@@ -26,6 +27,7 @@ import 'core/providers/theme_provider.dart';
 import 'features/clan/clan_provider.dart';
 import 'core/providers/language_provider.dart';
 import 'core/providers/country_provider.dart';
+import 'core/providers/notification_provider.dart';
 
 
 enum Flavor { dev, prod }
@@ -39,7 +41,6 @@ class AppConfig {
   static void initialize(Flavor f) {
     flavor = f;
     isProduction = f == Flavor.prod;
-
     switch (f) {
       case Flavor.dev:
         appName = 'LotChat (Dev)';
@@ -57,55 +58,31 @@ class AppConfig {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   try {
-    // Flavor/Environment setup (default: dev)
     const String flavor = String.fromEnvironment('FLAVOR', defaultValue: 'dev');
     AppConfig.initialize(flavor == 'prod' ? Flavor.prod : Flavor.dev);
+    debugPrint('Starting ${AppConfig.appName}');
+    debugPrint('API Base URL: ${AppConfig.baseUrl}');
 
-    debugPrint(' Starting ${AppConfig.appName}');
-    debugPrint(' API Base URL: ${AppConfig.baseUrl}');
-
-    // Load environment variables from .env file
     await dotenv.load(fileName: ".env");
 
-    // Initialize Supabase
     await Supabase.initialize(
       url: dotenv.env['SUPABASE_URL']!,
       anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
     );
+    debugPrint('Supabase initialized successfully');
 
-    debugPrint(' Supabase initialized successfully');
+    await Hive.initFlutter();
+    debugPrint('Hive initialized successfully');
 
-    // Initialize Service Locator
+    // ServiceLocator handles ALL service initialization
     await ServiceLocator.instance.init();
 
-    // Initialize Notification Service
-    final notificationService = NotificationService();
-    await notificationService.initialize();
-
-    // Initialize Analytics Service
-    final analyticsService = AnalyticsService();
-    await analyticsService.initialize();
-
-    // Initialize Agora Service (অপশনাল - ব্যাকগ্রাউন্ডে initialize)
-    try {
-      final agoraService = AgoraService();
-      await agoraService.initialize();
-      debugPrint(' Agora Service initialized successfully');
-    } catch (e, stackTrace) {
-      // Agora fail করলেও app চলবে
-      debugPrint('️Agora Service initialization failed (app will continue): $e');
-      debugPrint(' Stack trace: $stackTrace');
-    }
-
-    // Lock orientation to portrait
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
 
-    // Set system UI overlay style
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -117,8 +94,8 @@ void main() async {
 
     runApp(const MyApp());
   } catch (e, stackTrace) {
-    debugPrint(' Failed to initialize app: $e');
-    debugPrint(' Stack trace: $stackTrace');
+    debugPrint('Failed to initialize app: $e');
+    debugPrint('Stack trace: $stackTrace');
     runApp(const ErrorApp());
   }
 }
@@ -148,11 +125,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     try {
       _logger = ServiceLocator.instance.get<LoggerService>();
       _configService = ServiceLocator.instance.get<ConfigService>();
-      _notificationService = NotificationService();
-      _analyticsService = AnalyticsService();
-      _agoraService = AgoraService();
+      _notificationService = ServiceLocator.instance.get<NotificationService>();
+      _analyticsService = ServiceLocator.instance.get<AnalyticsService>();
+      _agoraService = ServiceLocator.instance.get<AgoraService>();
 
-      // Track app open
       _analyticsService.trackScreen(
         'App',
         screenClass: 'MyApp',
@@ -162,9 +138,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         },
       );
 
-      _logger.info(' App initialized successfully with flavor: ${AppConfig.flavor}');
+      _logger.info('App initialized successfully with flavor: ${AppConfig.flavor}');
     } catch (e) {
-      debugPrint(' Error initializing services in MyApp: $e');
+      debugPrint('Error initializing services in MyApp: $e');
     }
   }
 
@@ -181,7 +157,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         debugPrint('App detached');
       case AppLifecycleState.hidden:
         debugPrint('App hidden');
-        throw UnimplementedError();
     }
   }
 
@@ -204,29 +179,25 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => CountryProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: Consumer2<ThemeProvider, LanguageProvider>(
         builder: (context, themeProvider, languageProvider, child) {
           return MaterialApp(
             title: AppConfig.appName,
             debugShowCheckedModeBanner: AppConfig.isProduction ? false : true,
-
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
-
             locale: languageProvider.locale,
             supportedLocales: const [
               Locale('en', ''),
               Locale('bn', ''),
             ],
-
             initialRoute: RouteConstants.splash,
             onGenerateRoute: (settings) => RouteGenerator.generateRoute(settings),
             onUnknownRoute: (settings) => RouteGenerator.unknownRoute(),
-
             navigatorKey: NavigationService.navigatorKey,
-
             builder: (context, child) {
               return MediaQuery(
                 data: MediaQuery.of(context).copyWith(
@@ -242,7 +213,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 }
 
-// Error App Widget
 class ErrorApp extends StatelessWidget {
   const ErrorApp({super.key});
 
@@ -296,7 +266,6 @@ class ErrorApp extends StatelessWidget {
   }
 }
 
-// Supabase client instance for easy access throughout the app
 final supabase = Supabase.instance.client;
 
 // Global getter for Agora Service

@@ -2,7 +2,7 @@ import 'package:get_it/get_it.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
@@ -27,12 +27,14 @@ import '../services/gift_service.dart';
 import '../services/leaderboard_service.dart';
 import '../services/search_service.dart';
 import '../services/friend_service.dart';
+import '../services/user_service.dart';  // ✅ UserService import যোগ করা হয়েছে
 import '../../features/clan/services/clan_service.dart';
 import '../services/pk_service.dart';
+import '../../services/agora_service.dart';
 
-final GetIt getIt = GetIt.instance;
 
 class ServiceLocator {
+  final GetIt getIt = GetIt.instance;
   // Singleton pattern
   factory ServiceLocator() => _instance;
   ServiceLocator._internal();
@@ -45,30 +47,19 @@ class ServiceLocator {
 
   // Initialize all services
   Future<void> init() async {
-    try {
-      debugPrint('🚀 Initializing ServiceLocator...');
+    debugPrint('🚀 Initializing ServiceLocator...');
 
-      // Register Supabase client first
-      _registerSupabase();
+    _registerSupabase();
+    await _registerCoreServices();
+    _registerApiServices();
+    _registerBusinessServices();
+    _registerUtilityServices();
+    _registerFeatureServices();
+    await _initializeServices();
 
-      // Register all services
-      await _registerCoreServices();
-      _registerApiServices();
-      _registerBusinessServices();
-      _registerUtilityServices();
-      _registerFeatureServices();
-
-      // Initialize async services
-      await _initializeServices();
-
-      debugPrint('✅ ServiceLocator initialized successfully');
-    } catch (e, stackTrace) {
-      debugPrint('❌ ServiceLocator initialization failed: $e');
-      debugPrint('📚 StackTrace: $stackTrace');
-    }
+    debugPrint('✅ ServiceLocator initialized successfully');
   }
 
-  // Register Supabase client
   void _registerSupabase() {
     debugPrint('📝 Registering Supabase Client...');
 
@@ -81,10 +72,7 @@ class ServiceLocator {
     }
   }
 
-  // Core Services - Async registration
   Future<void> _registerCoreServices() async {
-    debugPrint('📝 Registering Core Services...');
-
     try {
       // Storage Service
       final StorageService storageService = StorageService();
@@ -95,8 +83,18 @@ class ServiceLocator {
       // Logger Service
       final LoggerService loggerService = LoggerService();
       await loggerService.initialize();
-      getIt.registerSingleton<LoggerService>(loggerService);
+      if (!getIt.isRegistered<LoggerService>()) {
+        getIt.registerSingleton<LoggerService>(loggerService);
+      }
       debugPrint('   ✅ LoggerService registered');
+
+      // Analytics Service
+      final AnalyticsService analyticsService = AnalyticsService();
+      await analyticsService.initialize();
+      if (!getIt.isRegistered<AnalyticsService>()) {
+        getIt.registerSingleton<AnalyticsService>(analyticsService);
+      }
+      debugPrint('   ✅ AnalyticsService registered');
 
       // Config Service
       final ConfigService configService = ConfigService();
@@ -114,8 +112,14 @@ class ServiceLocator {
       getIt.registerSingleton<CacheService>(cacheService);
       debugPrint('   ✅ CacheService registered');
 
+      // ✅ UserService যোগ করা হয়েছে
+      final UserService userService = UserService();
+      getIt.registerSingleton<UserService>(userService);
+      debugPrint('   ✅ UserService registered');
+
     } catch (e) {
       debugPrint('❌ Error registering core services: $e');
+      rethrow;
     }
   }
 
@@ -136,11 +140,11 @@ class ServiceLocator {
       });
       debugPrint('   ✅ SocketService registered');
 
-      // Auth Service -  Supabase
+      // Auth Service - Supabase
       getIt.registerSingleton<AuthService>(AuthService());
       debugPrint('   ✅ AuthService registered');
 
-      // Database Service Supabase-
+      // Database Service Supabase
       getIt.registerSingleton<DatabaseService>(DatabaseService());
       debugPrint('   ✅ DatabaseService registered');
 
@@ -184,7 +188,7 @@ class ServiceLocator {
     }
   }
 
-  // Feature Services - Synchronous registration
+  // Feature Services - Synchronous registration (AgoraService যোগ করা হয়েছে)
   void _registerFeatureServices() {
     debugPrint('📝 Registering Feature Services...');
 
@@ -194,6 +198,10 @@ class ServiceLocator {
       getIt.registerFactory<SellerService>(SellerService.new);
       getIt.registerFactory<FriendService>(FriendService.new);
       getIt.registerFactory<ClanService>(ClanService.new);
+
+      // ✅ AgoraService যোগ করা হয়েছে
+      getIt.registerFactory<AgoraService>(AgoraService.new);
+      debugPrint('   ✅ AgoraService registered');
 
       if (!getIt.isRegistered<PKService>()) {
         getIt.registerFactory<PKService>(PKService.new);
@@ -239,6 +247,11 @@ class ServiceLocator {
       if (getIt.isRegistered<CallService>()) {
         await getIt<CallService>().initialize();
         debugPrint('   ✅ CallService initialized');
+      }
+
+      if (getIt.isRegistered<AgoraService>()) {
+        await getIt<AgoraService>().initialize();
+        debugPrint('   ✅ AgoraService initialized');
       }
 
       // Log success
@@ -321,7 +334,10 @@ class ServiceLocator {
         debugPrint('   ✅ CacheService disposed');
       }
 
-      // Note: Supabase client doesn't need explicit disposal
+      if (getIt.isRegistered<AgoraService>()) {
+        await getIt<AgoraService>().dispose();
+        debugPrint('   ✅ AgoraService disposed');
+      }
 
       debugPrint('✅ All services disposed successfully');
     } catch (e) {

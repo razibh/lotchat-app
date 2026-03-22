@@ -970,10 +970,17 @@ class RoleBasedDrawer extends StatelessWidget {
     }
   }
 
+  // ✅ FIXED: _showLogoutConfirmation with null safety
   void _showLogoutConfirmation() {
+    final currentContext = NavigationService.navigatorKey.currentContext;
+    if (currentContext == null) {
+      debugPrint('NavigationService: Cannot show logout dialog - context is null');
+      return;
+    }
+
     showDialog(
-      context: NavigationService.navigatorKey.currentContext!,
-      builder: (BuildContext context) => AlertDialog(
+      context: currentContext,
+      builder: (BuildContext dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceDark,
         title: const Text(
           'Logout',
@@ -985,12 +992,12 @@ class RoleBasedDrawer extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               onLogout();
             },
             style: ElevatedButton.styleFrom(
@@ -1015,7 +1022,7 @@ class RoleBasedDrawer extends StatelessWidget {
   void _showContactSupport(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
+      builder: (BuildContext dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceDark,
         title: const Text(
           'Contact Support',
@@ -1035,7 +1042,7 @@ class RoleBasedDrawer extends StatelessWidget {
                 style: TextStyle(color: Colors.white70),
               ),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 // Launch email
               },
             ),
@@ -1050,7 +1057,7 @@ class RoleBasedDrawer extends StatelessWidget {
                 style: TextStyle(color: Colors.white70),
               ),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 // Launch telegram
               },
             ),
@@ -1065,7 +1072,7 @@ class RoleBasedDrawer extends StatelessWidget {
                 style: TextStyle(color: Colors.white70),
               ),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 // Launch discord
               },
             ),
@@ -1073,7 +1080,7 @@ class RoleBasedDrawer extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Close'),
           ),
         ],
@@ -1084,7 +1091,7 @@ class RoleBasedDrawer extends StatelessWidget {
   void _showAboutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
+      builder: (BuildContext dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceDark,
         title: const Text(
           'About',
@@ -1129,7 +1136,7 @@ class RoleBasedDrawer extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Close'),
           ),
         ],

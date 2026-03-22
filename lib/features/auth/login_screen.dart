@@ -111,25 +111,46 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   Future<void> _handleLogin() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    // Validate form
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
 
-      // final success = await authProvider.login(
-      //   _emailController.text.trim(),
-      //   _passwordController.text,
-      // );
-final success=true;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    try {
+      final success = await authProvider.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
       if (success && mounted) {
-        // Check if country is selected
+        // ✅ Safe navigation with null check
         final countryProvider = Provider.of<CountryProvider>(context, listen: false);
 
-        if (countryProvider.selectedCountry == null) {
-          NavigationService.navigateToReplacement('/country-select');
+        // Check if NavigationService is available
+        if (NavigationService.navigatorKey.currentContext == null) {
+          debugPrint('NavigationService: navigatorKey.currentContext is null');
+          // Fallback: use Navigator directly
+          if (countryProvider.selectedCountry == null) {
+            Navigator.pushReplacementNamed(context, '/country-select');
+          } else {
+            Navigator.pushReplacementNamed(context, authProvider.getHomeRoute());
+          }
         } else {
-          NavigationService.navigateToReplacement(authProvider.getHomeRoute());
+          if (countryProvider.selectedCountry == null) {
+            NavigationService.navigateToReplacement('/country-select');
+          } else {
+            NavigationService.navigateToReplacement(authProvider.getHomeRoute());
+          }
         }
       } else if (mounted) {
         _showErrorSnackBar(authProvider.error ?? 'Login failed');
+      }
+    } catch (e) {
+      debugPrint('Login error: $e');
+      if (mounted) {
+        _showErrorSnackBar('An error occurred. Please try again.');
       }
     }
   }
@@ -282,7 +303,7 @@ final success=true;
                 color: AppColors.accentPurple,
                 size: 16,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 'Demo Accounts',
                 style: TextStyle(
@@ -431,7 +452,11 @@ final success=true;
               ),
               TextButton(
                 onPressed: () {
-                  NavigationService.navigateTo('/forgot-password');
+                  if (NavigationService.navigatorKey.currentContext != null) {
+                    NavigationService.navigateTo('/forgot-password');
+                  } else {
+                    Navigator.pushNamed(context, '/forgot-password');
+                  }
                 },
                 child: const Text(
                   'Forgot Password?',
@@ -453,7 +478,11 @@ final success=true;
       alignment: Alignment.centerRight,
       child: TextButton(
         onPressed: () {
-          NavigationService.navigateTo('/forgot-password');
+          if (NavigationService.navigatorKey.currentContext != null) {
+            NavigationService.navigateTo('/forgot-password');
+          } else {
+            Navigator.pushNamed(context, '/forgot-password');
+          }
         },
         style: TextButton.styleFrom(
           foregroundColor: AppColors.accentPurple,
@@ -512,7 +541,11 @@ final success=true;
         ),
         GestureDetector(
           onTap: () {
-            NavigationService.navigateTo('/register');
+            if (NavigationService.navigatorKey.currentContext != null) {
+              NavigationService.navigateTo('/register');
+            } else {
+              Navigator.pushNamed(context, '/register');
+            }
           },
           child: const Text(
             'Register',
@@ -531,7 +564,11 @@ final success=true;
     return TextButton.icon(
       onPressed: () {
         // Navigate to home as guest
-        NavigationService.navigateToReplacement('/home');
+        if (NavigationService.navigatorKey.currentContext != null) {
+          NavigationService.navigateToReplacement('/home');
+        } else {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       },
       icon: const Icon(Icons.person_outline, color: Colors.white70, size: 16),
       label: const Text(
